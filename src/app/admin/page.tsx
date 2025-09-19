@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User } from '@/types'
 import { format } from 'date-fns'
 import PostDetailModal from '@/components/PostDetailModal'
+import AuthModal from '@/components/AuthModal'
 
 export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
@@ -29,6 +30,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants' | 'boards'>('management')
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [accessDenied, setAccessDenied] = useState(false)
 
   // 대회 관리 관련 상태
   const [competitions, setCompetitions] = useState<Competition[]>([])
@@ -60,15 +63,18 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/login')
+      setLoading(false)
       return
     }
     if (user.role !== 'admin') {
-      router.push('/')
+      setAccessDenied(true)
+      setLoading(false)
       return
     }
     setLoading(false)
-  }, [user, router])
+    setShowAuthModal(false)
+    setAccessDenied(false)
+  }, [user])
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -94,13 +100,13 @@ export default function AdminPage() {
     if (user && user.role === 'admin' && activeTab === 'community') {
       fetchCommunityPosts()
     }
-  }, [currentPostPage, user, activeTab, fetchCommunityPosts])
+  }, [currentPostPage, user, activeTab])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'members') {
       fetchMembers()
     }
-  }, [currentMemberPage, user, activeTab, fetchMembers])
+  }, [currentMemberPage, user, activeTab])
 
 
   // 대회 관리 함수들
@@ -375,20 +381,45 @@ export default function AdminPage() {
     )
   }
 
-  if (!user || user.role !== 'admin') {
+  // 로그인하지 않은 경우
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <Settings className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">로그인이 필요합니다</h1>
+          <p className="text-gray-600 mb-6">관리자 페이지에 접근하려면 먼저 로그인해주세요.</p>
+
+          <div className="space-y-3">
+
+            <Link
+              href="/"
+              className="block w-full py-3 px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              홈으로 돌아가기
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 관리자 권한이 없는 경우
+  if (user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <Settings className="h-12 w-12 text-red-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-4">접근 권한이 없습니다</h1>
           <p className="text-gray-600 mb-6">관리자 권한이 있는 회원만 접근할 수 있습니다.</p>
+          <p className="text-sm text-gray-500 mb-6">현재 로그인: {user.name} ({user.role === 'user' ? '일반회원' : user.role})</p>
 
           <div className="space-y-3">
             <Link
-              href="/login"
+              href="/mypage"
               className="block w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
-              로그인 하기
+              마이페이지로
             </Link>
             <Link
               href="/"
@@ -1269,6 +1300,14 @@ export default function AdminPage() {
           }
         }}
         isAdminView={true}
+      />
+
+      {/* 로그인 모달 */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab="login"
+        onSuccess={() => setShowAuthModal(false)}
       />
     </div>
   )

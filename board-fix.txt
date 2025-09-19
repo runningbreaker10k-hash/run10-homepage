@@ -1,0 +1,15 @@
+현재 상황:
+1. 893번 줄부터 board 탭이 시작
+2. 904번 줄부터 1165번 줄까지 구 게시판 코드가 남아있음
+3. 이 부분을 모두 제거하고 간단한 리다이렉트 안내만 남겨야 함
+
+해결 방법:
+대회 상세페이지의 게시판 탭에서 자동으로 /competitions/{id}/board로 리다이렉트하도록 수정 완료
+
+새로 생성된 페이지들:
+- /competitions/[id]/board/page.tsx (게시판 목록)
+- /competitions/[id]/board/write/page.tsx (글쓰기)
+- /competitions/[id]/board/[postId]/page.tsx (글 상세보기)
+- /competitions/[id]/board/[postId]/edit/page.tsx (글 수정)
+
+이제 회원게시판과 대회별게시판이 완전히 동일한 구조로 통일됨!

@@ -187,6 +187,15 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     setIsLoading(true)
 
     try {
+      // 기록 시간으로 등급 계산
+      const recordTime = (data.record_minutes * 60) + data.record_seconds
+      const totalMinutes = recordTime / 60
+
+      let grade = 'turtle'
+      if (totalMinutes >= 30 && totalMinutes < 40) grade = 'cheetah'
+      else if (totalMinutes >= 40 && totalMinutes < 50) grade = 'horse'
+      else if (totalMinutes >= 50 && totalMinutes < 60) grade = 'wolf'
+
       const { error } = await supabase
         .from('users')
         .insert([{
@@ -202,7 +211,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           email_marketing_agree: data.email_marketing_agree,
           birth_date: data.birth_date,
           gender: data.gender,
-          record_time: (data.record_minutes * 60) + data.record_seconds,
+          record_time: recordTime,
+          grade: grade,
           etc: data.etc || null
         }])
 

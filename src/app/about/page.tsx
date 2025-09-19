@@ -14,8 +14,9 @@ export default function AboutPage() {
           <Image
             src="/images/about-hero-bg.jpg"
             alt="런텐 배경"
-            fill
-            className="object-cover"
+            width={1920}
+            height={1080}
+            className="object-cover w-full h-full"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
             }}
@@ -110,8 +111,9 @@ export default function AboutPage() {
                     <Image
                       src="/images/about-competition.jpg"
                       alt="런텐 대회 현장"
-                      fill
-                      className="object-cover rounded-lg shadow-md"
+                      width={600}
+                      height={338}
+                      className="object-cover rounded-lg shadow-md w-full h-full"
                       onError={(e) => {
                         const parent = e.currentTarget.parentElement;
                         if (parent) {
@@ -132,8 +134,9 @@ export default function AboutPage() {
                     <Image
                       src="/images/about-community.jpg"
                       alt="런텐 커뮤니티"
-                      fill
-                      className="object-cover rounded-lg shadow-md"
+                      width={600}
+                      height={338}
+                      className="object-cover rounded-lg shadow-md w-full h-full"
                       onError={(e) => {
                         const parent = e.currentTarget.parentElement;
                         if (parent) {
@@ -163,30 +166,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* 참여 안내 */}
-      <section className="py-16 bg-red-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">함께 달려요!</h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            RUN10과 함께 건강한 러닝 라이프를 시작하세요. 
-            다양한 대회와 활동을 통해 새로운 도전과 성취를 경험해보세요.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/competitions"
-              className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
-            >
-              대회 참가하기
-            </Link>
-            <Link
-              href="/competitions"
-              className="inline-flex items-center px-6 py-3 bg-white text-red-600 font-medium rounded-lg border-2 border-red-600 hover:bg-red-50 transition-colors"
-            >
-              대회 일정 보기
-            </Link>
-          </div>
-        </div>
-      </section>
+      
     </div>
   )
 }

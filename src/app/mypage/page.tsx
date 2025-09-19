@@ -225,15 +225,6 @@ export default function MyPage() {
     }
   }
 
-  // 비밀번호 해싱
-  const hashPassword = async (password: string): Promise<string> => {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(password)
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-  }
-
   // 비밀번호 변경
   const onPasswordSubmit = async (data: PasswordFormData) => {
     if (!user) return
@@ -241,13 +232,12 @@ export default function MyPage() {
     setIsLoading(true)
 
     try {
-      // 현재 비밀번호 확인
-      const currentHashedPassword = await hashPassword(data.current_password)
+      // 현재 비밀번호 확인 (평문으로 비교)
       const { data: userData, error: checkError } = await supabase
         .from('users')
         .select('password')
         .eq('id', user.id)
-        .eq('password', currentHashedPassword)
+        .eq('password', data.current_password)
         .single()
 
       if (checkError || !userData) {
@@ -255,11 +245,10 @@ export default function MyPage() {
         return
       }
 
-      // 새 비밀번호로 업데이트
-      const newHashedPassword = await hashPassword(data.new_password)
+      // 새 비밀번호로 업데이트 (평문으로 저장)
       const { error } = await supabase
         .from('users')
-        .update({ password: newHashedPassword })
+        .update({ password: data.new_password })
         .eq('id', user.id)
 
       if (error) throw error

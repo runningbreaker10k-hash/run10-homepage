@@ -10,9 +10,10 @@ interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   defaultTab?: 'login' | 'signup'
+  onSuccess?: () => void
 }
 
-export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuccess }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab)
   const { login } = useAuth()
 
@@ -28,11 +29,17 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login' }: Aut
   const handleLoginSuccess = (user: any) => {
     login(user)
     onClose()
+    if (onSuccess) {
+      onSuccess()
+    }
   }
 
   const handleSignupSuccess = () => {
     alert('회원가입이 완료되었습니다! 이제 로그인해주세요.')
     setActiveTab('login')
+    if (onSuccess) {
+      onSuccess()
+    }
   }
 
   const handleShowSignup = () => {
