@@ -270,42 +270,11 @@ export type Database = {
           created_at?: string
         }
       }
-      competition_posts: {
-        Row: {
-          id: string
-          competition_id: string
-          title: string
-          content: string
-          author: string
-          password: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          competition_id: string
-          title: string
-          content: string
-          author: string
-          password: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          competition_id?: string
-          title?: string
-          content?: string
-          author?: string
-          password?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
       community_posts: {
         Row: {
           id: string
           user_id: string
+          competition_id?: string
           title: string
           content: string
           image_url?: string
@@ -317,6 +286,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
+          competition_id?: string
           title: string
           content: string
           image_url?: string
@@ -328,6 +298,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
+          competition_id?: string
           title?: string
           content?: string
           image_url?: string
@@ -382,6 +353,7 @@ export type Database = {
       community_posts_with_author: {
         Row: {
           id: string
+          competition_id?: string
           title: string
           content: string
           image_url?: string

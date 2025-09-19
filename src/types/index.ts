@@ -8,9 +8,13 @@ export type Registration = Database['public']['Tables']['registrations']['Row']
 export type RegistrationInsert = Database['public']['Tables']['registrations']['Insert']
 export type RegistrationUpdate = Database['public']['Tables']['registrations']['Update']
 
-export type CompetitionPost = Database['public']['Tables']['competition_posts']['Row']
-export type CompetitionPostInsert = Database['public']['Tables']['competition_posts']['Insert']
-export type CompetitionPostUpdate = Database['public']['Tables']['competition_posts']['Update']
+// CompetitionPost는 이제 CommunityPost와 통합됨 (competition_id로 구분)
+export type CommunityPost = Database['public']['Tables']['community_posts']['Row']
+export type CommunityPostInsert = Database['public']['Tables']['community_posts']['Insert']
+export type CommunityPostUpdate = Database['public']['Tables']['community_posts']['Update']
+
+// 편의를 위한 별칭 (기존 코드 호환성)
+export type CompetitionPost = CommunityPost
 
 export type User = Database['public']['Tables']['users']['Row']
 export type UserInsert = Database['public']['Tables']['users']['Insert']

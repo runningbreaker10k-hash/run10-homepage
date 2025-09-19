@@ -64,7 +64,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     return isAdminView || (typeof window !== 'undefined' && window.location.pathname.includes('/admin/'))
   }
 
-  // post가 변경될 때마다 editFormData 업데이트 및 답글/댓글 로드
+  // post가 변경될 때마다 editFormData 업데이트 및 댓글 로드
   useEffect(() => {
     if (post) {
       const newFormData = {
@@ -74,31 +74,15 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
       console.log('Post 변경 - editFormData 업데이트:', newFormData)
       setEditFormData(newFormData)
 
-      // community_posts인 경우 댓글 로드, competition_posts인 경우 답글 로드
-      if (post.user_id) { // community_posts 판별 (user_id 존재)
-        loadComments()
-      } else {
-        fetchReplies()
-      }
+      // 통합 시스템에서는 모든 게시글에 댓글 시스템 사용
+      loadComments()
     }
   }, [post])
 
+  // 통합 시스템에서는 답글 시스템 대신 댓글 시스템만 사용
   const fetchReplies = async () => {
-    if (!post || post.parent_id) return // 답글인 경우는 답글을 불러오지 않음
-
-    try {
-      const { data, error } = await supabase
-        .from('competition_posts')
-        .select('*')
-        .eq('parent_id', post.id)
-        .order('created_at', { ascending: true })
-
-      if (error) throw error
-      setReplies(data || [])
-    } catch (error) {
-      console.error('답글 조회 오류:', error)
-      setReplies([])
-    }
+    // 더 이상 사용하지 않음 - 댓글 시스템으로 통합됨
+    setReplies([])
   }
 
   const loadComments = async () => {
@@ -221,18 +205,15 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
 
   const handleDelete = async () => {
     try {
-      const tableName = post.user_id ? 'community_posts' : 'competition_posts'
-
-      // 커뮤니티 게시글인 경우 댓글도 함께 삭제
-      if (post.user_id) {
-        await supabase
-          .from('post_comments')
-          .delete()
-          .eq('post_id', post.id)
-      }
+      // 통합 시스템에서는 모든 게시글이 community_posts 테이블에 저장됨
+      // 댓글도 함께 삭제 (CASCADE 설정으로 자동 삭제되지만 명시적으로 처리)
+      await supabase
+        .from('post_comments')
+        .delete()
+        .eq('post_id', post.id)
 
       const { error } = await supabase
-        .from(tableName)
+        .from('community_posts')
         .delete()
         .eq('id', post.id)
 
@@ -257,10 +238,9 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     setIsSubmitting(true)
 
     try {
-      const tableName = post.user_id ? 'community_posts' : 'competition_posts'
-
+      // 통합 시스템에서는 모든 게시글이 community_posts 테이블에 저장됨
       const { error } = await supabase
-        .from(tableName)
+        .from('community_posts')
         .update({
           title: editFormData.title,
           content: editFormData.content,
@@ -287,44 +267,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     }
   }
 
-  const handleEditReply = (reply: any) => {
-    setEditingReply(reply)
-    setShowReplyEdit(true)
-  }
-
-  const handleDeleteReply = (reply: any) => {
-    setMessageProps({
-      type: 'warning',
-      message: '정말로 이 댓글을 삭제하시겠습니까?',
-      showCancel: true,
-      onConfirm: () => deleteReply(reply.id)
-    })
-    setShowMessage(true)
-  }
-
-
-  const deleteReply = async (replyId: string) => {
-    try {
-      const { error } = await supabase
-        .from('competition_posts')
-        .delete()
-        .eq('id', replyId)
-
-      if (error) throw error
-
-      fetchReplies()
-      onPostUpdated()
-    } catch (error) {
-      console.error('댓글 삭제 오류:', error)
-      setMessageProps({
-        type: 'error',
-        message: '댓글 삭제 중 오류가 발생했습니다.',
-        showCancel: false,
-        onConfirm: undefined
-      })
-      setShowMessage(true)
-    }
-  }
+  // 통합 시스템에서는 답글 대신 댓글 시스템만 사용
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -353,8 +296,10 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     ))
   }
 
-  // 커뮤니티 게시글인지 판별
-  const isCommunityPost = post?.user_id
+  // 통합 시스템에서는 모든 게시글이 community_posts에 저장됨
+  // competition_id가 있으면 대회별 게시글, 없으면 일반 커뮤니티 게시글
+  const isCompetitionPost = post?.competition_id
+  const isCommunityPost = !post?.competition_id
 
   return (
     <>
@@ -364,7 +309,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
           {/* 헤더 */}
           <div className="flex justify-between items-center p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">
-              {isCommunityPost ? '회원게시판' : '대회 게시판'}
+              {isCompetitionPost ? '대회 게시판' : '회원게시판'}
             </h2>
             <button
               onClick={onClose}
@@ -463,7 +408,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                     <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center space-x-1">
-                          {isCommunityPost && post.users ? (
+                          {post.users ? (
                             <>
                               <img
                                 src={getGradeInfo(post.users.grade).icon}
@@ -474,7 +419,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                               <span className="text-xs opacity-75">({getGradeInfo(post.users.grade).display})</span>
                             </>
                           ) : (
-                            <span className="font-medium">{post.author}</span>
+                            <span className="font-medium">알 수 없는 사용자</span>
                           )}
                         </div>
                         <span>•</span>
