@@ -16,8 +16,6 @@ export default function PrivacyPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <div className="mb-8 text-sm text-gray-600">
-              <p>시행일자: 2024년 1월 1일</p>
-              <p>최종 수정일: 2024년 9월 12일</p>
             </div>
 
             <div className="prose max-w-none">
@@ -84,8 +82,8 @@ export default function PrivacyPage() {
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">2. 결제 정보</h4>
                     <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
-                      <li>결제수단, 결제금액, 결제일시</li>
-                      <li>신용카드 번호는 암호화되어 PG사에서 관리</li>
+                      <li>무통장입금 정보 (입금자명, 입금금액, 입금일시)</li>
+                      <li>하나은행 734-910008-72504 (주식회사 러닝브레이커)</li>
                     </ul>
                   </div>
                   <div>
@@ -126,9 +124,9 @@ export default function PrivacyPage() {
                     </thead>
                     <tbody className="text-sm">
                       <tr>
-                        <td className="border border-gray-300 px-4 py-2">NHN KCP</td>
-                        <td className="border border-gray-300 px-4 py-2">결제 처리</td>
-                        <td className="border border-gray-300 px-4 py-2">결제 완료 후 5년</td>
+                        <td className="border border-gray-300 px-4 py-2">하나은행</td>
+                        <td className="border border-gray-300 px-4 py-2">무통장입금 처리</td>
+                        <td className="border border-gray-300 px-4 py-2">입금 확인 후 5년</td>
                       </tr>
                       <tr>
                         <td className="border border-gray-300 px-4 py-2">네이버클라우드</td>
@@ -180,7 +178,7 @@ export default function PrivacyPage() {
                     <li>성명: 김러닝</li>
                     <li>직책: 개인정보보호팀장</li>
                     <li>전화번호: 02-1234-5678</li>
-                    <li>이메일: privacy@run10.kr</li>
+                    <li>이메일: runningbreaker10k@gmail.com</li>
                   </ul>
                 </div>
               </div>
@@ -206,10 +204,10 @@ export default function PrivacyPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">문의처</h3>
                 <div className="text-gray-700">
                   <p>런텐(RUN10)</p>
-                  <p>주소: 서울특별시 강남구 테헤란로 123 런텐빌딩 5층</p>
+                  <p>주소: 대전광역시 대덕구 비래서로9 2층</p>
                   <p>전화: 02-1234-5678</p>
-                  <p>이메일: privacy@run10.kr</p>
-                  <p>운영시간: 평일 09:00 - 18:00 (주말 및 공휴일 휴무)</p>
+                  <p>이메일: runningbreaker10k@gmail.com</p>
+                  <p>운영시간: 평일 11:00 - 16:00 (주말 및 공휴일 휴무)</p>
                 </div>
               </div>
             </div>

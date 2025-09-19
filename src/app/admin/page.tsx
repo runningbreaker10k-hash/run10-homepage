@@ -180,7 +180,7 @@ export default function AdminPage() {
     }
   }
 
-  // 커뮤니티 게시글 관리 함수들
+  // 커뮤니티 게시글 관리 함수들 (회원게시판 - competition_id가 없는 글)
   const fetchCommunityPosts = async () => {
     setPostsLoading(true)
     try {
@@ -190,6 +190,7 @@ export default function AdminPage() {
       const { data, error, count } = await supabase
         .from('community_posts_with_author')
         .select('*', { count: 'exact' })
+        .is('competition_id', null)  // 회원게시판: competition_id가 null인 게시글만
         .range(from, to)
         .order('created_at', { ascending: false })
 
@@ -205,7 +206,7 @@ export default function AdminPage() {
     }
   }
 
-  // 대회 게시글 관리 함수들
+  // 대회 게시글 관리 함수들 (대회별게시판 - competition_id가 있는 글)
   const fetchCompetitionPosts = async () => {
     setPostsLoading(true)
     try {
@@ -213,8 +214,9 @@ export default function AdminPage() {
       const to = from + postsPerPage - 1
 
       let query = supabase
-        .from('competition_posts_with_author')
-        .select('*', { count: 'exact' })
+        .from('community_posts_with_author')
+        .select('*, competitions(title)', { count: 'exact' })
+        .not('competition_id', 'is', null)  // 대회별게시판: competition_id가 있는 게시글만
         .range(from, to)
         .order('created_at', { ascending: false })
 
@@ -239,18 +241,16 @@ export default function AdminPage() {
     if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return
 
     try {
-      const tableName = activeTab === 'community' ? 'community_posts' : 'competition_posts'
+      // 모든 게시글은 community_posts 테이블에 저장됨 (competition_id로 구분)
 
       // 댓글 먼저 삭제
-      if (activeTab === 'community') {
-        await supabase
-          .from('post_comments')
-          .delete()
-          .eq('post_id', postId)
-      }
+      await supabase
+        .from('post_comments')
+        .delete()
+        .eq('post_id', postId)
 
       const { error } = await supabase
-        .from(tableName)
+        .from('community_posts')
         .delete()
         .eq('id', postId)
 
@@ -276,20 +276,39 @@ export default function AdminPage() {
     if (!confirm(message)) return
 
     try {
+      const { error } = await supabase
+        .from('community_posts')
+        .update({ is_notice: !currentStatus })
+        .eq('id', postId)
+
+      if (error) throw error
+
       if (activeTab === 'community') {
-        const { error } = await supabase
-          .from('community_posts')
-          .update({ is_notice: !currentStatus })
-          .eq('id', postId)
-
-        if (error) throw error
+        fetchCommunityPosts()
+      } else {
+        fetchCompetitionPosts()
       }
-
-      fetchCommunityPosts()
       alert(`${!currentStatus ? '공지글로 설정' : '일반글로 변경'}되었습니다.`)
     } catch (error) {
       console.error('공지글 설정 오류:', error)
       alert('공지글 설정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 참가자 결제 상태 변경
+  const updatePaymentStatus = async (registrationId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({ payment_status: newStatus })
+        .eq('id', registrationId)
+
+      if (error) throw error
+      fetchRegistrations()
+      alert('결제 상태가 변경되었습니다.')
+    } catch (error) {
+      console.error('결제 상태 변경 오류:', error)
+      alert('결제 상태 변경 중 오류가 발생했습니다.')
     }
   }
 
@@ -628,7 +647,7 @@ export default function AdminPage() {
                               <div className="flex items-center space-x-3">
                                 <Link
                                   href={`/competitions/${competition.id}`}
-                                  className="text-red-600 hover:text-blue-800"
+                                  className="text-purple-800 hover:text-purple-800"
                                   title="대회 보기"
                                 >
                                   <Eye className="h-4 w-4" />
@@ -639,13 +658,6 @@ export default function AdminPage() {
                                   title="대회 수정"
                                 >
                                   <Edit className="h-4 w-4" />
-                                </Link>
-                                <Link
-                                  href={`/admin/competitions/${competition.id}/registrations`}
-                                  className="text-purple-600 hover:text-purple-800"
-                                  title="참가자 관리"
-                                >
-                                  <UserCheck className="h-4 w-4" />
                                 </Link>
                                 <button
                                   onClick={() => deleteCompetition(competition.id)}
@@ -724,6 +736,9 @@ export default function AdminPage() {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             신청일
                           </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            관리
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -756,6 +771,17 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(registration.created_at), 'yyyy.MM.dd')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <select
+                                value={registration.payment_status}
+                                onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                              >
+                                <option value="pending">입금대기</option>
+                                <option value="confirmed">입금확인</option>
+                                <option value="cancelled">취소</option>
+                              </select>
                             </td>
                           </tr>
                         ))}
@@ -824,21 +850,34 @@ export default function AdminPage() {
                         {posts.map((post) => (
                           <tr key={post.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4">
-                              <button
-                                onClick={() => {
-                                  setSelectedPost(post)
-                                  setShowPostDetail(true)
-                                }}
-                                className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left"
-                              >
-                                {post.title}
-                              </button>
+                              <div className="flex items-start space-x-3">
+                                {post.is_notice && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                    <Pin className="w-3 h-3 mr-1" />
+                                    공지
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setSelectedPost(post)
+                                    setShowPostDetail(true)
+                                  }}
+                                  className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left"
+                                >
+                                  {post.title}
+                                </button>
+                                {post.image_url && (
+                                  <span className="text-xs text-blue-600">📷</span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">{post.author_name}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">{post.competition_title}</div>
+                              <div className="text-sm text-gray-900">
+                                {post.competitions ? post.competitions.title : '대회명 없음'}
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
@@ -846,6 +885,17 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                              <button
+                                onClick={() => toggleNotice(post.id, post.is_notice || false)}
+                                className={`inline-flex items-center px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                  post.is_notice
+                                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                }`}
+                              >
+                                <Pin className="h-3 w-3 mr-1" />
+                                {post.is_notice ? '공지해제' : '공지설정'}
+                              </button>
                               <button
                                 onClick={() => {
                                   setSelectedPost(post)
@@ -1286,14 +1336,14 @@ export default function AdminPage() {
         }}
         post={selectedPost}
         onPostUpdated={() => {
-          if (currentMainTab === 'community') {
+          if (activeTab === 'community') {
             fetchCommunityPosts()
           } else {
             fetchCompetitionPosts()
           }
         }}
         onPostDeleted={() => {
-          if (currentMainTab === 'community') {
+          if (activeTab === 'community') {
             fetchCommunityPosts()
           } else {
             fetchCompetitionPosts()

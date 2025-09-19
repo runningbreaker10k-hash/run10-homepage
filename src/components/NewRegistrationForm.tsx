@@ -393,12 +393,25 @@ export default function NewRegistrationForm({ competition, participationGroups, 
           </div>
 
           <div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">참가비</span>
-                <span className="text-lg font-bold text-blue-600">
-                  ₩{competition.entry_fee.toLocaleString()}
-                </span>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">참가비</span>
+                  <span className="text-lg font-bold text-blue-600">
+                    ₩{competition.entry_fee.toLocaleString()}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-blue-200">
+                  <h5 className="text-sm font-medium text-gray-800 mb-2">무통장입금 계좌정보</h5>
+                  <div className="text-sm text-gray-700 space-y-1">
+                    <p><span className="font-medium">은행:</span> 하나은행</p>
+                    <p><span className="font-medium">계좌번호:</span> 734-910008-72504</p>
+                    <p><span className="font-medium">예금주:</span> 주식회사 러닝브레이커</p>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    입금 시 위에 입력한 '입금자명'과 동일하게 입금해주세요.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

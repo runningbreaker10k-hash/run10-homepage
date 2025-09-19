@@ -64,10 +64,6 @@ export default function EditCompetitionPage() {
 
   const watchStatus = watch('status')
 
-  useEffect(() => {
-    fetchCompetition()
-  }, [competitionId, fetchCompetition])
-
   const fetchCompetition = async () => {
     try {
       const { data, error } = await supabase
@@ -123,6 +119,10 @@ export default function EditCompetitionPage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchCompetition()
+  }, [competitionId])
 
   const handleImageUploaded = (url: string) => {
     setImageUrl(url)

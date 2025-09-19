@@ -44,6 +44,7 @@ export default function CommunityPage() {
       let query = supabase
         .from('community_posts_with_author')
         .select('*', { count: 'exact' })
+        .is('competition_id', null)  // 대회 ID가 없는 글만 표시 (회원게시판)
 
       // 검색 필터
       if (searchTerm) {

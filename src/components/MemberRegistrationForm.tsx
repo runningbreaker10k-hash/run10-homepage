@@ -297,7 +297,7 @@ export default function MemberRegistrationForm({
                 <span className="text-gray-700 font-medium">입금자명:</span> {formData.depositor_name}
               </div>
               <div>
-                <span className="text-gray-700 font-medium">계좌번호:</span> 농협 123-456-7890 (예금주: 런텐)
+                <span className="text-gray-700 font-medium">계좌번호:</span> 하나은행 734-910008-72504 (예금주: 주식회사 러닝브레이커)
               </div>              
               {formData.notes && (
                 <div>
@@ -478,7 +478,7 @@ export default function MemberRegistrationForm({
             ) : (
               <p><strong>참가비:</strong> 종목 선택 후 확인 가능</p>
             )}
-            <p><strong>계좌번호:</strong> 농협 123-456-7890 (예금주: 런텐)</p>
+            <p><strong>계좌번호:</strong> 하나은행 734-910008-72504 (예금주: 주식회사 러닝브레이커)</p>
             <p><strong>입금기한:</strong> 신청 후 3일 이내</p>
             <p className="text-xs mt-2">
               ⚠️ 입금 확인 후 참가 확정됩니다. 기한 내 미입금 시 취소될 수도 있습니다.

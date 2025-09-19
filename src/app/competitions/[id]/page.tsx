@@ -46,7 +46,7 @@ export default function CompetitionDetailPage() {
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const [userRegistration, setUserRegistration] = useState<any>(null)
   const [registrationLoading, setRegistrationLoading] = useState(false)
-  
+
   // 게시판 관련 상태
   const [boardPosts, setBoardPosts] = useState<any[]>([])
   const [boardLoading, setBoardLoading] = useState(false)
@@ -96,6 +96,7 @@ export default function CompetitionDetailPage() {
       fetchBoardPosts()
     }
   }, [activeTab, currentPage, searchKeyword])
+
 
   // 사용자의 신청 상태 확인
   const checkUserRegistration = async () => {
@@ -161,19 +162,20 @@ export default function CompetitionDetailPage() {
         setParticipationGroups(groupsData || [])
       }
 
-      // Fetch competition posts
-      const { data: postsData, error: postsError } = await supabase
-        .from('competition_posts')
-        .select('*')
-        .eq('competition_id', competitionId)
-        .order('created_at', { ascending: true })
+      // Fetch competition posts - 여기는 실제로 필요한 경우에만 사용
+      // const { data: postsData, error: postsError } = await supabase
+      //   .from('competition_posts')
+      //   .select('*')
+      //   .eq('competition_id', competitionId)
+      //   .order('created_at', { ascending: true })
 
-      if (postsError) {
-        console.error('Error fetching posts:', postsError)
-        return
-      }
+      // if (postsError) {
+      //   console.error('Error fetching posts:', postsError)
+      //   // 에러가 발생해도 계속 진행하도록 변경
+      // } else {
+      //   setPosts(postsData || [])
+      // }
 
-      setPosts(postsData || [])
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -184,19 +186,18 @@ export default function CompetitionDetailPage() {
   const fetchBoardPosts = async () => {
     try {
       setBoardLoading(true)
-      
+
       let query = supabase
-        .from('competition_posts')
+        .from('community_posts')
         .select(`
-          id, title, content, author, password, created_at, updated_at,
-          replies:competition_posts!parent_id(count)
+          id, title, content, created_at, updated_at,
+          user_id, users(name)
         `, { count: 'exact' })
         .eq('competition_id', competitionId)
-        .is('parent_id', null)
 
       // 검색 키워드가 있으면 필터링
       if (searchKeyword.trim()) {
-        query = query.or(`title.ilike.%${searchKeyword}%,author.ilike.%${searchKeyword}%`)
+        query = query.or(`title.ilike.%${searchKeyword}%,content.ilike.%${searchKeyword}%`)
       }
 
       // 페이지네이션
@@ -212,7 +213,6 @@ export default function CompetitionDetailPage() {
         return
       }
 
-      console.log('게시글 조회 결과:', data)
       setBoardPosts(data || [])
       setTotalPosts(count || 0)
     } catch (error) {

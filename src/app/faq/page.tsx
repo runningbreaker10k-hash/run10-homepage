@@ -40,11 +40,11 @@ const faqData = [
       },
       {
         question: "결제 방법은 어떤 것들이 있나요?",
-        answer: "신용카드, 계좌이체, 무통장입금이 가능합니다. 온라인 결제 시에는 신용카드와 계좌이체를 이용하실 수 있고, 무통장입금을 원하시는 경우 별도 안내를 받으실 수 있습니다."
+        answer: "무통장입금만 가능합니다. 하나은행 734-910008-72504 (예금주: 주식회사 러닝브레이커)로 참가비를 입금해주세요. 입금자명은 신청 시 입력한 이름과 동일하게 해주셔야 합니다."
       },
       {
         question: "환불은 언제 처리되나요?",
-        answer: "신용카드 결제 시 3-5영업일, 계좌이체 시 5-7영업일이 소요됩니다. 특별 환불의 경우 서류 검토 후 7-10영업일이 걸릴 수 있습니다."
+        answer: "무통장입금으로 결제한 경우 환불 요청 후 5-7영업일이 소요됩니다. 특별 환불의 경우 서류 검토 후 7-10영업일이 걸릴 수 있습니다."
       }
     ]
   },
@@ -218,7 +218,7 @@ export default function FAQPage() {
                 📞 02-1234-5678
               </div>
               <div className="inline-flex items-center px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border">
-                📧 info@run10.kr
+                📧 runningbreaker10k@gmail.com
               </div>
             </div>
           </div>

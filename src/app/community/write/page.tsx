@@ -133,7 +133,7 @@ export default function CommunityWritePage() {
       // 공지글은 관리자만 작성 가능
       const isNotice = user.role === 'admin' ? data.is_notice : false
 
-      // 게시글 저장
+      // 게시글 저장 (회원게시판: competition_id는 null)
       const { error } = await supabase
         .from('community_posts')
         .insert([{
@@ -141,7 +141,8 @@ export default function CommunityWritePage() {
           title: data.title,
           content: data.content,
           image_url: imageUrl,
-          is_notice: isNotice
+          is_notice: isNotice,
+          competition_id: null  // 회원게시판은 대회 ID 없음
         }])
 
       if (error) throw error
