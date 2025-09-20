@@ -148,9 +148,8 @@ export default function CompetitionsPage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">런텐 대회 소개</h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-              런텐(RUN10)은 전국 각지에서 개최되는 다양한 러닝 대회를 통해 러너들의 꿈과 도전을 응원합니다.
+              전국 각지에서 개최되는 다양한 러닝 대회를 통해 러너들의 꿈과 도전을 응원합니다.
               초보자부터 전문 러너까지, 모든 분들이 함께 즐길 수 있는 대회를 준비했습니다.
             </p>
           </div>

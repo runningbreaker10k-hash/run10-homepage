@@ -10,6 +10,7 @@ import {
   Trash2,
   Download
 } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface Member {
   id: string
@@ -122,7 +123,7 @@ export default function AdminMembersPage() {
         gradeInfo.display,
         member.role === 'admin' ? '관리자' : '일반회원',
         member.record_time === 999 ? '미기록' : `${member.record_time}분`,
-        new Date(member.created_at).toLocaleDateString('ko-KR')
+        format(new Date(member.created_at), 'yyyy.MM.dd')
       ].join(',')
     }).join('\n')
 
@@ -293,7 +294,7 @@ export default function AdminMembersPage() {
                         {member.record_time === 999 ? '미기록' : `${member.record_time}분`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(member.created_at).toLocaleDateString('ko-KR')}
+                        {format(new Date(member.created_at), 'yyyy.MM.dd')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button

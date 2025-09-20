@@ -371,7 +371,7 @@ export type Database = {
     }
     Functions: {
       increment_post_views: {
-        Args: { post_uuid: string }
+        Args: { post_id: string }
         Returns: void
       }
     }

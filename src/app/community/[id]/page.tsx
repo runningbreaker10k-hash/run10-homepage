@@ -8,6 +8,7 @@ import { ArrowLeft, Edit, Trash2, MessageSquare, Send, Eye, Pin } from 'lucide-r
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { format } from 'date-fns'
 
 const commentSchema = z.object({
   content: z.string()
@@ -223,13 +224,7 @@ export default function CommunityPostPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return format(new Date(dateString), 'yyyy년 MM월 dd일 HH:mm')
   }
 
   const formatContent = (content: string) => {

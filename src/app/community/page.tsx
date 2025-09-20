@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { MessageCircle, Search, Plus, Eye, MessageSquare, Pin, Edit, Trash2, Lock } from 'lucide-react'
 import Link from 'next/link'
+import { format } from 'date-fns'
 
 interface Post {
   id: string
@@ -82,7 +83,7 @@ export default function CommunityPage() {
   const handlePostClick = async (postId: string) => {
     // 조회수 증가
     try {
-      const { error } = await supabase.rpc('increment_post_views', { post_uuid: postId })
+      const { error } = await supabase.rpc('increment_post_views', { post_id: postId })
       if (error) console.error('조회수 증가 오류:', error)
     } catch (error) {
       console.error('조회수 증가 오류:', error)
@@ -104,16 +105,9 @@ export default function CommunityPage() {
     const diffHours = Math.floor(diff / (1000 * 60 * 60))
 
     if (diffHours < 24) {
-      return date.toLocaleTimeString('ko-KR', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false
-      })
+      return format(date, 'HH:mm')
     } else {
-      return date.toLocaleDateString('ko-KR', {
-        month: '2-digit',
-        day: '2-digit'
-      })
+      return format(date, 'MM.dd')
     }
   }
 

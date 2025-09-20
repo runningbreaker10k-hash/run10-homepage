@@ -8,6 +8,7 @@ import { User, Calendar, Settings, Eye, EyeOff, Trash2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { format } from 'date-fns'
 
 // 회원 정보 수정 스키마
 const profileSchema = z.object({
@@ -44,7 +45,7 @@ type PasswordFormData = z.infer<typeof passwordSchema>
 interface Registration {
   id: string
   competition_id: string
-  category?: string
+  distance?: string
   payment_status: string
   created_at: string
   competitions: {
@@ -148,31 +149,79 @@ export default function MyPage() {
   }
 
   const loadRegistrations = async () => {
-    if (!user) return
+    if (!user) {
+      console.log('사용자 정보가 없습니다')
+      return
+    }
+
+    console.log('신청 내역 로드 시작, user.id:', user.id)
 
     try {
-      const { data, error } = await supabase
+      // Step 1: registrations 데이터 먼저 가져오기
+      const { data: registrationData, error: registrationError } = await supabase
         .from('registrations')
         .select(`
           id,
           competition_id,
-          category,
+          distance,
           payment_status,
-          created_at,
-          competitions!inner (
-            title,
-            date,
-            location
-          )
+          created_at
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (registrationError) {
+        console.error('신청 내역 조회 오류:', registrationError)
+        throw new Error(`신청 내역 조회 실패: ${registrationError.message}`)
+      }
 
-      setRegistrations((data || []) as unknown as Registration[])
+      console.log('신청 내역 데이터:', registrationData)
+
+      if (!registrationData || registrationData.length === 0) {
+        console.log('신청 내역이 없습니다')
+        setRegistrations([])
+        return
+      }
+
+      // Step 2: 각 신청의 대회 정보 가져오기
+      const competitionIds = [...new Set(registrationData.map(r => r.competition_id))]
+      console.log('대회 ID들:', competitionIds)
+
+      const { data: competitionData, error: competitionError } = await supabase
+        .from('competitions')
+        .select('id, title, date, location')
+        .in('id', competitionIds)
+
+      if (competitionError) {
+        console.error('대회 정보 조회 오류:', competitionError)
+        throw new Error(`대회 정보 조회 실패: ${competitionError.message}`)
+      }
+
+      console.log('대회 정보 데이터:', competitionData)
+
+      // Step 3: 데이터 결합
+      const registrationsWithCompetitions = registrationData.map(registration => {
+        const competition = competitionData?.find(c => c.id === registration.competition_id)
+        return {
+          ...registration,
+          competitions: competition || {
+            title: '알 수 없는 대회',
+            date: '',
+            location: ''
+          }
+        }
+      })
+
+      console.log('최종 결합된 데이터:', registrationsWithCompetitions)
+      setRegistrations(registrationsWithCompetitions as unknown as Registration[])
+
     } catch (error) {
       console.error('신청 내역 로드 오류:', error)
+      if (error instanceof Error) {
+        console.error('오류 메시지:', error.message)
+      }
+      // 빈 배열로 설정하여 UI가 깨지지 않도록 함
+      setRegistrations([])
     }
   }
 
@@ -722,12 +771,12 @@ export default function MyPage() {
                           {registration.competitions.title}
                         </h3>
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                          <span>📅 {new Date(registration.competitions.date).toLocaleDateString('ko-KR')}</span>
+                          <span>📅 {format(new Date(registration.competitions.date), 'yyyy.MM.dd')}</span>
                           <span>📍 {registration.competitions.location}</span>
-                          {registration.category && <span>🏃 {registration.category}</span>}
+                          {registration.distance && <span>🏃 {registration.distance}</span>}
                         </div>
                         <div className="mt-1 text-xs text-gray-400">
-                          신청일: {new Date(registration.created_at).toLocaleDateString('ko-KR')}
+                          신청일: {format(new Date(registration.created_at), 'yyyy.MM.dd')}
                         </div>
                       </div>
                       <div className="ml-4">

@@ -881,7 +881,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
-                                {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                                {format(new Date(post.created_at), 'yyyy.MM.dd')}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -1018,7 +1018,7 @@ export default function AdminPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                              {format(new Date(post.created_at), 'yyyy.MM.dd')}
                             </div>
                             {post.created_at !== post.updated_at && (
                               <div className="text-xs text-gray-500">(수정됨)</div>

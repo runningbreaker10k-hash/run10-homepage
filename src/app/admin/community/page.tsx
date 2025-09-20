@@ -14,6 +14,7 @@ import {
   Pin,
   Download
 } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface CommunityPost {
   id: string
@@ -137,7 +138,7 @@ export default function AdminCommunityPage() {
         post.is_notice ? '공지' : '일반',
         post.views,
         commentCount,
-        new Date(post.created_at).toLocaleDateString('ko-KR')
+        format(new Date(post.created_at), 'yyyy.MM.dd')
       ].join(',')
     }).join('\n')
 
@@ -327,7 +328,7 @@ export default function AdminCommunityPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                          {format(new Date(post.created_at), 'yyyy.MM.dd')}
                         </div>
                         {post.created_at !== post.updated_at && (
                           <div className="text-xs text-gray-500">(수정됨)</div>

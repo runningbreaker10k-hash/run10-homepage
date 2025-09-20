@@ -572,14 +572,6 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
           회원가입
         </button>
       </div>
-
-      {/* 임시 관리자 로그인 안내 */}
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-        <p className="text-yellow-800 text-xs text-center">
-          <strong>개발용 관리자 계정:</strong><br />
-          아이디: admin / 비밀번호: admin2024!
-        </p>
-      </div>
     </div>
   )
 }

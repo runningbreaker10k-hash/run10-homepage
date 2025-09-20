@@ -23,8 +23,7 @@ export default function AboutPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">런텐</h1>
-          <h2 className="text-2xl md:text-3xl font-semibold mb-6">RUN10</h2>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">런텐 RUN10</h1>
           <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
             전국의 러너들이 함께 달리며 건강한 러닝 문화를 만들어 가겠습니다
           </p>
@@ -35,9 +34,8 @@ export default function AboutPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">RUN10(런텐)</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              RUN10(런텐)은 2024년에 설립되어 대한민국 곳곳에서 러닝 대회를 개최하며 
+              2024년에 설립되어 대한민국 곳곳에서 러닝 대회를 개최하며 
               건강한 러닝 문화 확산에 앞장서고 있습니다. 초보 러너부터 전문 마라토너까지 
               모든 수준의 참가자들이 함께 즐길 수 있는 다양한 대회를 운영하고 있습니다.
             </p>

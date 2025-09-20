@@ -278,13 +278,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    return format(new Date(dateString), 'yyyy년 MM월 dd일 HH:mm')
   }
 
   const formatContent = (content: string) => {
