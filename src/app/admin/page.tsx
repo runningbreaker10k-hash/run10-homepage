@@ -113,13 +113,33 @@ export default function AdminPage() {
   const fetchCompetitions = async () => {
     setCompetitionsLoading(true)
     try {
-      const { data, error } = await supabase
+      // 대회 목록과 실제 참가자 수 조회
+      const { data: competitionsData, error: competitionsError } = await supabase
         .from('competitions')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      setCompetitions(data || [])
+      if (competitionsError) throw competitionsError
+
+      // 각 대회별 실제 참가자 수 계산
+      const competitionsWithCount = await Promise.all(
+        (competitionsData || []).map(async (competition) => {
+          const { count, error: countError } = await supabase
+            .from('registrations')
+            .select('id', { count: 'exact', head: true })
+            .eq('competition_id', competition.id)
+            .neq('payment_status', 'cancelled') // 취소된 참가자는 제외
+
+          if (countError) {
+            console.error(`대회 ${competition.id} 참가자 수 계산 오류:`, countError)
+            return { ...competition, actual_participants: 0 }
+          }
+
+          return { ...competition, actual_participants: count || 0 }
+        })
+      )
+
+      setCompetitions(competitionsWithCount)
     } catch (error) {
       console.error('대회 로드 오류:', error)
       setCompetitions([])
@@ -143,6 +163,32 @@ export default function AdminPage() {
     } catch (error) {
       console.error('대회 삭제 오류:', error)
       alert('대회 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 대회의 current_participants를 실제 DB 값으로 동기화
+  const syncParticipantCount = async (competitionId: string) => {
+    try {
+      const { count, error: countError } = await supabase
+        .from('registrations')
+        .select('id', { count: 'exact', head: true })
+        .eq('competition_id', competitionId)
+        .neq('payment_status', 'cancelled')
+
+      if (countError) throw countError
+
+      const { error: updateError } = await supabase
+        .from('competitions')
+        .update({ current_participants: count || 0 })
+        .eq('id', competitionId)
+
+      if (updateError) throw updateError
+
+      fetchCompetitions()
+      alert(`참가자 수가 ${count || 0}명으로 동기화되었습니다.`)
+    } catch (error) {
+      console.error('참가자 수 동기화 오류:', error)
+      alert('참가자 수 동기화 중 오류가 발생했습니다.')
     }
   }
 
@@ -638,16 +684,25 @@ export default function AdminPage() {
                               {getStatusBadge(competition.status)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {competition.current_participants} / {competition.max_participants}
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {(competition as any).actual_participants || 0} / {competition.max_participants}
+                                </span>
+                                {(competition as any).actual_participants !== competition.current_participants && (
+                                  <span className="text-xs text-red-500">
+                                    (DB: {(competition as any).actual_participants}, 설정: {competition.current_participants})
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {format(new Date(competition.date), 'yyyy.MM.dd')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center space-x-3">
+                              <div className="flex items-center space-x-2">
                                 <Link
                                   href={`/competitions/${competition.id}`}
-                                  className="text-purple-800 hover:text-purple-800"
+                                  className="text-purple-600 hover:text-purple-800"
                                   title="대회 보기"
                                 >
                                   <Eye className="h-4 w-4" />
@@ -659,6 +714,15 @@ export default function AdminPage() {
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Link>
+                                {(competition as any).actual_participants !== competition.current_participants && (
+                                  <button
+                                    onClick={() => syncParticipantCount(competition.id)}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    title="참가자 수 동기화"
+                                  >
+                                    <UserCheck className="h-4 w-4" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => deleteCompetition(competition.id)}
                                   className="text-red-600 hover:text-red-800"

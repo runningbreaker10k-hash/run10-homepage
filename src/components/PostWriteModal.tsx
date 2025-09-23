@@ -1,9 +1,25 @@
 'use client'
 
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Image, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 import MessageModal from './MessageModal'
+
+const postSchema = z.object({
+  title: z.string()
+    .min(2, '제목은 최소 2자 이상이어야 합니다')
+    .max(200, '제목은 최대 200자까지 가능합니다'),
+  content: z.string()
+    .min(10, '내용은 최소 10자 이상이어야 합니다')
+    .max(10000, '내용은 최대 10,000자까지 가능합니다'),
+  is_notice: z.boolean().optional()
+})
+
+type PostFormData = z.infer<typeof postSchema>
 
 interface PostWriteModalProps {
   isOpen: boolean
@@ -13,80 +29,202 @@ interface PostWriteModalProps {
 }
 
 export default function PostWriteModal({ isOpen, onClose, competitionId, onPostCreated }: PostWriteModalProps) {
-  const [formData, setFormData] = useState({
-    author: '',
-    title: '',
-    password: '',
-    passwordConfirm: '',
-    content: ''
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { user, getGradeInfo } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [showMessage, setShowMessage] = useState(false)
   const [messageProps, setMessageProps] = useState({
     type: 'info' as 'success' | 'error' | 'warning' | 'info',
     message: ''
   })
 
-  if (!isOpen) return null
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors }
+  } = useForm<PostFormData>({
+    resolver: zodResolver(postSchema),
+    defaultValues: {
+      is_notice: false
+    }
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    if (formData.password !== formData.passwordConfirm) {
+  // 로그인 확인
+  useEffect(() => {
+    if (isOpen && !user) {
       setMessageProps({
         type: 'error',
-        message: '비밀번호가 일치하지 않습니다.'
+        message: '로그인 후 이용해주세요'
       })
       setShowMessage(true)
-      setIsSubmitting(false)
+      onClose()
+    }
+  }, [isOpen, user, onClose])
+
+  if (!isOpen) return null
+
+  // 이미지 선택 처리
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 파일 크기 체크 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessageProps({
+        type: 'error',
+        message: '이미지 크기는 5MB 이하여야 합니다'
+      })
+      setShowMessage(true)
       return
     }
 
-    // 디버깅을 위한 로그
-    console.log('게시글 작성 데이터:', {
-      competitionId,
-      title: formData.title,
-      content: formData.content,
-      author: formData.author,
-      password: formData.password
-    })
-
-    try {
-      const { error } = await supabase
-        .from('competition_posts')
-        .insert({
-          competition_id: competitionId,
-          title: formData.title,
-          content: formData.content,
-          author: formData.author,
-          password: formData.password
-        })
-
-      if (error) throw error
-
-      onPostCreated()
-      setFormData({ author: '', title: '', password: '', passwordConfirm: '', content: '' })
-      onClose()
-    } catch (error) {
-      console.error('게시글 작성 오류:', error)
+    // 파일 형식 체크
+    if (!file.type.startsWith('image/')) {
       setMessageProps({
         type: 'error',
-        message: '게시글 작성 중 오류가 발생했습니다.'
+        message: '이미지 파일만 업로드 가능합니다'
       })
       setShowMessage(true)
-    } finally {
-      setIsSubmitting(false)
+      return
+    }
+
+    setSelectedImage(file)
+
+    // 미리보기 생성
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // 이미지 제거
+  const removeImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+    const fileInput = document.getElementById('image-input') as HTMLInputElement
+    if (fileInput) fileInput.value = ''
+  }
+
+  // 이미지 업로드
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `community/${fileName}`
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('competition-images')
+        .upload(filePath, file, {
+          onUploadProgress: (progress) => {
+            setUploadProgress((progress.loaded / progress.total) * 100)
+          }
+        })
+
+      if (uploadError) {
+        console.error('이미지 업로드 오류:', uploadError)
+        return null
+      }
+
+      // 공개 URL 가져오기
+      const { data: urlData } = supabase.storage
+        .from('competition-images')
+        .getPublicUrl(filePath)
+
+      return urlData.publicUrl
+    } catch (error) {
+      console.error('이미지 업로드 중 오류:', error)
+      return null
     }
   }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+  const onSubmit = async (data: PostFormData) => {
+    if (!user) {
+      setMessageProps({
+        type: 'error',
+        message: '로그인이 필요합니다'
+      })
+      setShowMessage(true)
+      return
+    }
+
+    setIsLoading(true)
+    setUploadProgress(0)
+
+    try {
+      let imageUrl: string | null = null
+
+      // 이미지가 선택된 경우 업로드
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage)
+        if (!imageUrl) {
+          setMessageProps({
+            type: 'error',
+            message: '이미지 업로드에 실패했습니다'
+          })
+          setShowMessage(true)
+          return
+        }
+      }
+
+      // 관리자 권한 확인 (공지글 작성 시)
+      const isAdmin = user.role === 'admin'
+      const canWriteNotice = isAdmin && data.is_notice
+
+      // 게시글 저장 (community_posts 테이블 사용)
+      const { error } = await supabase
+        .from('community_posts')
+        .insert({
+          user_id: user.id,
+          competition_id: competitionId, // 대회별 게시판임을 표시
+          title: data.title,
+          content: data.content,
+          image_url: imageUrl,
+          is_notice: canWriteNotice || false
+        })
+
+      if (error) {
+        console.error('게시글 작성 오류:', error)
+        setMessageProps({
+          type: 'error',
+          message: '게시글 작성 중 오류가 발생했습니다'
+        })
+        setShowMessage(true)
+        return
+      }
+
+      // 성공 처리
+      setMessageProps({
+        type: 'success',
+        message: '게시글이 성공적으로 작성되었습니다'
+      })
+      setShowMessage(true)
+
+      // 폼 초기화
+      reset()
+      removeImage()
+      onPostCreated()
+      onClose()
+
+    } catch (error) {
+      console.error('게시글 작성 중 오류:', error)
+      setMessageProps({
+        type: 'error',
+        message: '게시글 작성 중 오류가 발생했습니다'
+      })
+      setShowMessage(true)
+    } finally {
+      setIsLoading(false)
+      setUploadProgress(0)
+    }
   }
+
+  const gradeInfo = user ? getGradeInfo(user.grade) : null
+  const isAdmin = user?.role === 'admin'
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -95,107 +233,158 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
           <h2 className="text-xl font-bold">게시글 작성</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            disabled={isLoading}
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
-              작성자 *
-            </label>
-            <input
-              type="text"
-              id="author"
-              name="author"
-              value={formData.author}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="작성자명을 입력하세요"
-            />
+        {user && (
+          <div className="flex items-center mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            {gradeInfo && (
+              <img
+                src={gradeInfo.icon}
+                alt={gradeInfo.display}
+                className="w-6 h-6 mr-2"
+              />
+            )}
+            <span className="font-medium text-blue-900">{user.name}</span>
+            <span className="text-blue-700 ml-2">({gradeInfo?.display})</span>
           </div>
+        )}
 
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* 관리자 공지글 옵션 */}
+          {isAdmin && (
+            <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <input
+                {...register('is_notice')}
+                type="checkbox"
+                id="is_notice"
+                className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+              />
+              <label htmlFor="is_notice" className="text-sm font-medium text-amber-900">
+                📢 공지글로 작성
+              </label>
+            </div>
+          )}
+
+          {/* 제목 */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               제목 *
             </label>
             <input
+              {...register('title')}
               type="text"
               id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="제목을 입력하세요"
             />
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호 *
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="게시글 접근 시 필요한 비밀번호"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호 확인 *
-            </label>
-            <input
-              type="password"
-              id="passwordConfirm"
-              name="passwordConfirm"
-              value={formData.passwordConfirm}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="비밀번호를 다시 입력하세요"
-            />
-          </div>
-
+          {/* 내용 */}
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
               내용 *
             </label>
             <textarea
+              {...register('content')}
               id="content"
-              name="content"
-              value={formData.content}
-              onChange={handleInputChange}
-              required
-              rows={10}
+              rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="내용을 입력하세요"
             />
+            {errors.content && (
+              <p className="mt-1 text-sm text-red-600">{errors.content.message}</p>
+            )}
           </div>
 
+          {/* 이미지 업로드 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              이미지 첨부 (선택)
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="미리보기"
+                    className="max-w-full h-40 object-cover mx-auto rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <Image className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      id="image-input"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="image-input"
+                      className="cursor-pointer text-blue-600 hover:text-blue-500"
+                    >
+                      클릭하여 이미지 선택
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">5MB 이하, JPG, PNG, GIF</p>
+                </div>
+              )}
+
+              {/* 업로드 진행률 */}
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="mt-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">업로드 중... {Math.round(uploadProgress)}%</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 버튼 */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+              disabled={isLoading}
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
             >
               취소
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              disabled={isLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
             >
-              {isSubmitting ? '작성 중...' : '작성하기'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                  작성 중...
+                </>
+              ) : (
+                '작성하기'
+              )}
             </button>
           </div>
         </form>

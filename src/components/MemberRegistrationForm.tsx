@@ -175,11 +175,13 @@ export default function MemberRegistrationForm({
 
       const age = calculateAge(userDetails.birth_date)
 
-      // 회원 정보로 신청 등록 (단계별 테스트)
+      // 회원 정보로 신청 등록 (누락된 필드들 추가)
       const { error: insertError } = await supabase
         .from('registrations')
         .insert([{
           competition_id: competition.id,
+          user_id: user.id,  // 누락된 필드 추가
+          participation_group_id: formData.participation_group_id,  // 누락된 필드 추가
           name: userDetails.name,
           email: userDetails.email,
           phone: userDetails.phone,
@@ -189,7 +191,10 @@ export default function MemberRegistrationForm({
           shirt_size: formData.shirt_size,
           depositor_name: formData.depositor_name,
           password: 'member_' + user.user_id,
-          age: age
+          age: age,
+          distance: selectedGroup.distance,  // 누락된 필드 추가
+          entry_fee: selectedGroup.entry_fee,  // 누락된 필드 추가
+          is_member_registration: true  // 회원 신청임을 표시
         }])
 
       if (insertError) {

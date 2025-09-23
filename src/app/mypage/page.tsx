@@ -764,10 +764,14 @@ export default function MyPage() {
               {registrations.map((registration) => {
                 const status = getPaymentStatusDisplay(registration.payment_status)
                 return (
-                  <div key={registration.id} className="p-6 hover:bg-gray-50">
+                  <div
+                    key={registration.id}
+                    className="group p-6 hover:bg-blue-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent hover:border-blue-500"
+                    onClick={() => router.push(`/competitions/${registration.competition_id}?tab=lookup`)}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-900">
+                        <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-700 transition-colors">
                           {registration.competitions.title}
                         </h3>
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
@@ -778,11 +782,17 @@ export default function MyPage() {
                         <div className="mt-1 text-xs text-gray-400">
                           신청일: {format(new Date(registration.created_at), 'yyyy.MM.dd')}
                         </div>
+                        <div className="mt-2 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                          👆 클릭하여 상세 신청 내역 보기
+                        </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 flex flex-col items-end space-y-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
                           {status.text}
                         </span>
+                        <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                          상세 보기 →
+                        </div>
                       </div>
                     </div>
                   </div>

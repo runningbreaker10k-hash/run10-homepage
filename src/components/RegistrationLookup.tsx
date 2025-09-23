@@ -33,6 +33,7 @@ const lookupSchema = z.object({
 })
 
 const updateSchema = z.object({
+  participation_group_id: z.string().min(1, '참가 종목을 선택해주세요'),
   phone: z.string().regex(/^[0-9-+().\s]+$/, '올바른 전화번호 형식을 입력해주세요'),
   email: z.string().email('올바른 이메일 형식을 입력해주세요'),
   address: z.string().min(5, '주소를 입력해주세요'),
@@ -50,6 +51,11 @@ interface RegistrationWithCompetition extends Registration {
     entry_fee: number
     date: string
   }
+  participation_groups?: {
+    name: string
+    distance: string
+    entry_fee: number
+  }
 }
 
 interface RegistrationLookupProps {
@@ -65,6 +71,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
   const [isUpdating, setIsUpdating] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [autoSearchAttempted, setAutoSearchAttempted] = useState(false)
+  const [participationGroups, setParticipationGroups] = useState<any[]>([])
+  const [selectedGroup, setSelectedGroup] = useState<any>(null)
 
   const {
     register: registerLookup,
@@ -90,7 +98,28 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
       searchMemberRegistration()
       setAutoSearchAttempted(true)
     }
+    // 참가 그룹 목록 로드
+    loadParticipationGroups()
   }, [user, autoSearchAttempted])
+
+  const loadParticipationGroups = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('participation_groups')
+        .select('*')
+        .eq('competition_id', competition.id)
+        .order('distance')
+
+      if (error) {
+        console.error('Error loading participation groups:', error)
+        return
+      }
+
+      setParticipationGroups(data || [])
+    } catch (error) {
+      console.error('Error loading participation groups:', error)
+    }
+  }
 
   const searchMemberRegistration = async () => {
     if (!user) return
@@ -104,6 +133,11 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             title,
             entry_fee,
             date
+          ),
+          participation_groups (
+            name,
+            distance,
+            entry_fee
           )
         `)
         .eq('competition_id', competition.id)
@@ -121,6 +155,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       // 수정 폼에 기존 데이터 설정
       resetUpdate({
+        participation_group_id: registrationData.participation_group_id || '',
         phone: registrationData.phone,
         email: registrationData.email,
         address: registrationData.address,
@@ -147,6 +182,11 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             title,
             entry_fee,
             date
+          ),
+          participation_groups (
+            name,
+            distance,
+            entry_fee
           )
         `)
         .eq('competition_id', competition.id)
@@ -166,9 +206,10 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
       }
 
       setRegistration(registrationData as RegistrationWithCompetition)
-      
+
       // 수정 폼에 기존 데이터 설정
       resetUpdate({
+        participation_group_id: registrationData.participation_group_id || '',
         phone: registrationData.phone,
         email: registrationData.email,
         address: registrationData.address,
@@ -187,13 +228,82 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
   const onUpdateSubmit = async (data: UpdateFormData) => {
     if (isUpdating || !registration) return
-    
+
     setIsUpdating(true)
 
     try {
+      // 선택된 참가 그룹 정보 가져오기
+      const selectedGroup = participationGroups.find(group => group.id === data.participation_group_id)
+
+      if (!selectedGroup) {
+        alert('선택된 참가 종목을 찾을 수 없습니다.')
+        return
+      }
+
+      // 참가종목 변경 시 검증
+      const isGroupChanged = registration.participation_group_id !== data.participation_group_id
+
+      if (isGroupChanged) {
+        // 1. 참가비 차이 확인 및 안내
+        const currentFee = registration.participation_groups?.entry_fee || registration.entry_fee || 0
+        const newFee = selectedGroup.entry_fee
+        const feeDifference = newFee - currentFee
+
+        if (feeDifference !== 0) {
+          const feeMessage = feeDifference > 0
+            ? `참가비가 ₩${Math.abs(feeDifference).toLocaleString()} 증가합니다. 추가 입금이 필요합니다.`
+            : `참가비가 ₩${Math.abs(feeDifference).toLocaleString()} 감소합니다. 환불 처리는 대회 문의처로 연락해주세요.`
+
+          const confirmChange = confirm(
+            `참가 종목을 "${selectedGroup.name} (${selectedGroup.distance})"로 변경하시겠습니까?\n\n${feeMessage}\n\n계속하시겠습니까?`
+          )
+
+          if (!confirmChange) {
+            return
+          }
+        }
+
+        // 2. 참가 그룹 정원 확인
+        const { data: groupRegistrations, error: countError } = await supabase
+          .from('registrations')
+          .select('id')
+          .eq('participation_group_id', selectedGroup.id)
+          .eq('competition_id', competition.id)
+
+        if (countError) {
+          console.error('Error checking group capacity:', countError)
+          alert('참가 종목 정원 확인 중 오류가 발생했습니다.')
+          return
+        }
+
+        const currentGroupCount = groupRegistrations?.length || 0
+        if (currentGroupCount >= selectedGroup.max_participants) {
+          alert(`선택한 참가 종목의 정원이 마감되었습니다. (${currentGroupCount}/${selectedGroup.max_participants})`)
+          return
+        }
+
+        // 3. 결제 상태에 따른 안내
+        if (registration.payment_status === 'confirmed' && feeDifference !== 0) {
+          alert(
+            '이미 입금이 확인된 상태입니다.\n' +
+            '참가비 변경에 따른 추가 입금 또는 환불은 대회 주최측에 별도 문의해주세요.\n\n' +
+            '대회 문의: 대회 게시판 또는 주최측 연락처'
+          )
+        }
+      }
+
+      const updateData = {
+        ...data,
+        // 참가 그룹이 변경되면 distance와 entry_fee도 업데이트
+        ...(selectedGroup && {
+          distance: selectedGroup.distance,
+          entry_fee: selectedGroup.entry_fee
+        })
+      }
+
       const { error } = await supabase
         .from('registrations')
-        .update(data)
+        .update(updateData)
         .eq('id', registration.id)
 
       if (error) {
@@ -202,11 +312,20 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         return
       }
 
-      // 업데이트된 데이터로 상태 갱신
-      setRegistration(prev => prev ? { ...prev, ...data } : null)
+      // 업데이트된 데이터로 상태 갱신 (participation_groups 정보도 업데이트)
+      setRegistration(prev => prev ? {
+        ...prev,
+        ...updateData,
+        participation_groups: selectedGroup
+      } : null)
       setIsEditing(false)
-      alert('신청 정보가 성공적으로 수정되었습니다!')
-      
+
+      let successMessage = '신청 정보가 성공적으로 수정되었습니다!'
+      if (isGroupChanged) {
+        successMessage += '\n\n참가 종목이 변경되었습니다. 참가비 차이가 있는 경우 입금 안내를 확인해주세요.'
+      }
+      alert(successMessage)
+
     } catch (error) {
       console.error('Error:', error)
       alert('수정 중 오류가 발생했습니다. 다시 시도해주세요.')
@@ -378,10 +497,10 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
               <div>
                 <h4 className="text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
                 <div className="text-sm text-yellow-700 space-y-1">
-                  <p>은행: 국민은행</p>
-                  <p>계좌: 123-456-789012</p>
-                  <p>예금주: RUN10(런텐)</p>
-                  <p>입금액: ₩{registration.competitions?.entry_fee.toLocaleString()}</p>
+                  <p>은행: 하나은행</p>
+                  <p>계좌: 734-910008-72504</p>
+                  <p>예금주: 주식회사 러닝브레이커</p>
+                  <p>입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
                   <p className="font-medium">입금자명: {registration.depositor_name}</p>
                 </div>
               </div>
@@ -465,6 +584,27 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   </div>
                 </div>
                 <div className="flex items-center">
+                  <User className="h-5 w-5 text-gray-400 mr-3" />
+                  <div>
+                    <p className="text-sm text-gray-500">참가 종목</p>
+                    <p className="font-medium">
+                      {registration.participation_groups?.name || registration.distance || '미설정'}
+                      {registration.participation_groups?.distance && (
+                        <span className="text-gray-500 ml-2">({registration.participation_groups.distance})</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <CreditCard className="h-5 w-5 text-gray-400 mr-3" />
+                  <div>
+                    <p className="text-sm text-gray-500">참가비</p>
+                    <p className="font-medium">
+                      ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center">
                   <Shirt className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="text-sm text-gray-500">티셔츠 사이즈</p>
@@ -489,6 +629,45 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
           ) : (
             <form onSubmit={handleSubmitUpdate(onUpdateSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    참가 종목 *
+                  </label>
+                  <select
+                    {...registerUpdate('participation_group_id')}
+                    onChange={(e) => {
+                      const group = participationGroups.find(g => g.id === e.target.value)
+                      setSelectedGroup(group)
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">참가 종목을 선택하세요</option>
+                    {participationGroups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} ({group.distance}) - ₩{group.entry_fee.toLocaleString()}
+                      </option>
+                    ))}
+                  </select>
+                  {updateErrors.participation_group_id && (
+                    <p className="mt-1 text-sm text-red-600">{updateErrors.participation_group_id.message}</p>
+                  )}
+                  {selectedGroup && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>선택된 종목:</strong> {selectedGroup.name} ({selectedGroup.distance})
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        <strong>참가비:</strong> ₩{selectedGroup.entry_fee.toLocaleString()}
+                      </p>
+                      {registration.participation_groups?.entry_fee !== selectedGroup.entry_fee && (
+                        <p className="text-sm text-amber-700 mt-1">
+                          ⚠️ 참가비가 변경됩니다. 차액에 대한 추가 입금 또는 환불 문의는 대회 주최측에 연락하세요.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     연락처 *

@@ -16,7 +16,9 @@ import {
   Route,
   Award,
   Search,
-  CheckCircle
+  CheckCircle,
+  Pin,
+  X
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, CompetitionPost } from '@/types'
@@ -35,7 +37,7 @@ export default function CompetitionDetailPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const competitionId = params.id as string
-  const { user } = useAuth()
+  const { user, getGradeInfo } = useAuth()
   
   const [competition, setCompetition] = useState<Competition | null>(null)
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
@@ -53,13 +55,13 @@ export default function CompetitionDetailPage() {
   const [showPostForm, setShowPostForm] = useState(false)
   const [selectedPost, setSelectedPost] = useState<any>(null)
   const [showPostDetail, setShowPostDetail] = useState(false)
-  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
-  const [passwordInput, setPasswordInput] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
   const [searchKeyword, setSearchKeyword] = useState('')
   const postsPerPage = 10
   const [showMessage, setShowMessage] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<{url: string, alt: string} | null>(null)
   const [messageProps, setMessageProps] = useState({
     type: 'info' as 'success' | 'error' | 'warning' | 'info',
     message: ''
@@ -190,8 +192,8 @@ export default function CompetitionDetailPage() {
       let query = supabase
         .from('community_posts')
         .select(`
-          id, title, content, created_at, updated_at,
-          user_id, users(name)
+          id, title, content, created_at, updated_at, views, is_notice,
+          user_id, users(user_id, name, grade, role)
         `, { count: 'exact' })
         .eq('competition_id', competitionId)
 
@@ -205,7 +207,8 @@ export default function CompetitionDetailPage() {
       const to = from + postsPerPage - 1
 
       const { data, error, count } = await query
-        .order('created_at', { ascending: true })
+        .order('is_notice', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(from, to)
 
       if (error) {
@@ -229,40 +232,22 @@ export default function CompetitionDetailPage() {
     return false
   }
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!selectedPost || !passwordInput) {
-      setMessageProps({
-        type: 'error',
-        message: '비밀번호를 입력해주세요.'
-      })
-      setShowMessage(true)
-      return
+
+  const handlePostClick = async (post: any) => {
+    // 조회수 증가
+    const { error } = await supabase
+      .from('community_posts')
+      .update({ views: (post.views || 0) + 1 })
+      .eq('id', post.id)
+
+    if (error) {
+      console.error('조회수 업데이트 오류:', error)
     }
 
-    if (passwordInput !== selectedPost.password) {
-      setMessageProps({
-        type: 'error',
-        message: '비밀번호가 일치하지 않습니다.'
-      })
-      setShowMessage(true)
-      return
-    }
-
-    setShowPasswordPrompt(false)
-    setPasswordInput('')
+    // 업데이트된 조회수로 상태 업데이트
+    const updatedPost = { ...post, views: (post.views || 0) + 1 }
+    setSelectedPost(updatedPost)
     setShowPostDetail(true)
-  }
-
-  const handlePostClick = (post: any) => {
-    setSelectedPost(post)
-    
-    if (isAdmin()) {
-      setShowPostDetail(true)
-    } else {
-      setShowPasswordPrompt(true)
-    }
   }
 
   const getStatusBadge = (competition: Competition) => {
@@ -504,13 +489,18 @@ export default function CompetitionDetailPage() {
         
         {competition.course_image_url && (
           <div className="mb-6">
-            <div className="relative w-full max-w-4xl mx-auto aspect-video">
-              <Image
+            <div className="w-full max-w-4xl mx-auto">
+              <img
                 src={competition.course_image_url}
                 alt="코스 이미지"
-                fill
-                className="object-cover rounded-lg shadow-lg"
+                className="w-full h-auto object-contain rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                style={{ maxHeight: '600px' }}
+                onClick={() => {
+                  setSelectedImage({url: competition.course_image_url!, alt: '코스 이미지'})
+                  setShowImageModal(true)
+                }}
               />
+              <p className="text-center text-sm text-gray-500 mt-2">클릭하면 확대해서 볼 수 있습니다</p>
             </div>
           </div>
         )}
@@ -534,13 +524,18 @@ export default function CompetitionDetailPage() {
         
         {competition.prizes_image_url && (
           <div className="mb-6">
-            <div className="relative w-full max-w-4xl mx-auto aspect-video">
-              <Image
+            <div className="w-full max-w-4xl mx-auto">
+              <img
                 src={competition.prizes_image_url}
                 alt="시상품 이미지"
-                fill
-                className="object-cover rounded-lg shadow-lg"
+                className="w-full h-auto object-contain rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+                style={{ maxHeight: '600px' }}
+                onClick={() => {
+                  setSelectedImage({url: competition.prizes_image_url!, alt: '시상품 이미지'})
+                  setShowImageModal(true)
+                }}
               />
+              <p className="text-center text-sm text-gray-500 mt-2">클릭하면 확대해서 볼 수 있습니다</p>
             </div>
           </div>
         )}
@@ -618,15 +613,15 @@ export default function CompetitionDetailPage() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">은행</span>
-                    <span className="font-semibold text-gray-900">농협</span>
+                    <span className="font-semibold text-gray-900">하나은행</span>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">계좌번호</span>
-                    <span className="font-semibold text-gray-900">123-456-7890</span>
+                    <span className="font-semibold text-gray-900">734-910008-72504</span>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">예금주</span>
-                    <span className="font-semibold text-gray-900">런텐</span>
+                    <span className="font-semibold text-gray-900">주식회사 러닝브레이커</span>
                   </div>
                   <div className="py-2">
                     <span className="text-gray-600 font-medium block mb-2">입금액</span>
@@ -991,81 +986,142 @@ export default function CompetitionDetailPage() {
           </div>
         ) : (
           <>
-            {/* 게시글 테이블 */}
+            {/* 게시글 목록 헤더 */}
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">작성자</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">작성일</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {boardPosts.map((post, index) => (
-                    <tr 
-                      key={post.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handlePostClick(post)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 hover:text-blue-600">
-                          {post.title}
-                          {(post as any).replies && (post as any).replies[0]?.count > 0 && (
-                            <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                              ({(post as any).replies[0].count})
+              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="col-span-1 text-center">번호</div>
+                  <div className="col-span-6">제목</div>
+                  <div className="col-span-2 text-center">작성자</div>
+                  <div className="col-span-2 text-center">작성일</div>
+                  <div className="col-span-1 text-center">조회</div>
+                </div>
+              </div>
+
+              {/* 게시글 목록 */}
+              <div className="divide-y divide-gray-200">
+                {boardPosts.map((post, index) => (
+                  <div
+                    key={post.id}
+                    className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => handlePostClick(post)}
+                  >
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      {/* 번호 */}
+                      <div className="col-span-1 text-center text-sm text-gray-500">
+                        {post.is_notice ? (
+                          <Pin className="w-4 h-4 text-red-600 mx-auto" />
+                        ) : (
+                          totalPosts - (currentPage - 1) * postsPerPage - index
+                        )}
+                      </div>
+
+                      {/* 제목 */}
+                      <div className="col-span-6">
+                        <div className="flex items-center space-x-2">
+                          {post.is_notice && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                              공지
                             </span>
                           )}
+                          <span className="font-medium text-gray-900 hover:text-blue-600">
+                            {post.title}
+                          </span>
+                          {post.image_url && (
+                            <span className="text-xs text-blue-600">📷</span>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{post.author}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                      </div>
+
+                      {/* 작성자 */}
+                      <div className="col-span-2 text-center">
+                        <div className="flex items-center justify-center space-x-2">
+                          {post.users?.grade && (
+                            <img
+                              src={getGradeInfo(post.users.grade).icon}
+                              alt="등급"
+                              className="w-4 h-4"
+                            />
+                          )}
+                          <span className="text-sm text-gray-700">
+                            {post.users?.name || '삭제된 사용자'}
+                          </span>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+
+                      {/* 작성일 */}
+                      <div className="col-span-2 text-center text-sm text-gray-500">
+                        {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                      </div>
+
+                      {/* 조회수 */}
+                      <div className="col-span-1 text-center text-sm text-gray-500">
+                        {post.views || 0}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* 페이지네이션 */}
-            {totalPosts > postsPerPage && (
-              <div className="flex items-center justify-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  이전
-                </button>
-                
-                {Array.from({ length: Math.ceil(totalPosts / postsPerPage) }, (_, i) => i + 1)
-                  .filter(page => Math.abs(page - currentPage) <= 2)
-                  .map(page => (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 text-sm border rounded ${
-                        page === currentPage
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                
-                <button
-                  onClick={() => setCurrentPage(Math.min(Math.ceil(totalPosts / postsPerPage), currentPage + 1))}
-                  disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  다음
-                </button>
+            {Math.ceil(totalPosts / postsPerPage) > 1 && (
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="flex justify-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    처음
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    이전
+                  </button>
+
+                  {/* 페이지 번호 */}
+                  {Array.from({ length: Math.min(5, Math.ceil(totalPosts / postsPerPage)) }, (_, i) => {
+                    const startPage = Math.max(1, currentPage - 2)
+                    const pageNumber = startPage + i
+                    const totalPages = Math.ceil(totalPosts / postsPerPage)
+
+                    if (pageNumber <= totalPages) {
+                      return (
+                        <button
+                          key={pageNumber}
+                          onClick={() => setCurrentPage(pageNumber)}
+                          className={`px-3 py-1 text-sm border rounded ${
+                            currentPage === pageNumber
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:bg-gray-100'
+                          }`}
+                        >
+                          {pageNumber}
+                        </button>
+                      )
+                    }
+                    return null
+                  })}
+
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    다음
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.ceil(totalPosts / postsPerPage))}
+                    disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                  >
+                    끝
+                  </button>
+                </div>
               </div>
             )}
           </>
@@ -1081,63 +1137,6 @@ export default function CompetitionDetailPage() {
           }}
         />
 
-        {/* 비밀번호 확인 모달 */}
-        {showPasswordPrompt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">게시글 접근 확인</h3>
-                <button
-                  onClick={() => {
-                    setShowPasswordPrompt(false)
-                    setPasswordInput('')
-                    setSelectedPost(null)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <form onSubmit={handlePasswordSubmit}>
-                <div className="mb-4">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                    게시글 작성 시 설정한 비밀번호를 입력하세요
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="비밀번호"
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPasswordPrompt(false)
-                      setPasswordInput('')
-                      setSelectedPost(null)
-                    }}
-                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    취소
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    확인
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
 
         {/* 게시글 상세 모달 */}
         <PostDetailModal
@@ -1241,6 +1240,36 @@ export default function CompetitionDetailPage() {
         onClose={() => setShowAuthModal(false)}
         defaultTab={authDefaultTab}
       />
+
+      {/* 이미지 확대 모달 */}
+      {showImageModal && selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
+            <button
+              onClick={() => {
+                setShowImageModal(false)
+                setSelectedImage(null)
+              }}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 bg-black bg-opacity-50 rounded-full p-2 z-10"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.alt}
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div
+            className="absolute inset-0"
+            onClick={() => {
+              setShowImageModal(false)
+              setSelectedImage(null)
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }
