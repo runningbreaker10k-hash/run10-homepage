@@ -303,7 +303,7 @@ export default function SafetyPage() {
                   <p className="text-gray-700">소방서 (응급상황)</p>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">02-1234-5678</div>
+                  <div className="text-2xl font-bold text-blue-600">042-710-2058</div>
                   <p className="text-gray-700">대회 본부</p>
                 </div>
                 <div>

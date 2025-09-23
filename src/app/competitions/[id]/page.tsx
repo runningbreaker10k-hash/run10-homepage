@@ -232,6 +232,21 @@ export default function CompetitionDetailPage() {
     return false
   }
 
+  // 이름 마스킹 함수
+  const maskName = (name: string) => {
+    if (!name || name.length <= 1) return name
+
+    if (name.length === 2) {
+      // 2글자: 첫글자 + *
+      return name[0] + '*'
+    } else if (name.length === 3) {
+      // 3글자: 첫글자 + * + 마지막글자
+      return name[0] + '*' + name[2]
+    } else {
+      // 4글자 이상: 첫글자 + * + 마지막글자
+      return name[0] + '*' + name[name.length - 1]
+    }
+  }
 
   const handlePostClick = async (post: any) => {
     // 조회수 증가
@@ -1044,7 +1059,7 @@ export default function CompetitionDetailPage() {
                             />
                           )}
                           <span className="text-sm text-gray-700">
-                            {post.users?.name || '삭제된 사용자'}
+                            {post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}
                           </span>
                         </div>
                       </div>

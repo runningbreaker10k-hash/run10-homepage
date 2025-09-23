@@ -215,7 +215,7 @@ export default function FAQPage() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <div className="inline-flex items-center px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border">
-                📞 02-1234-5678
+                📞 042-710-2058
               </div>
               <div className="inline-flex items-center px-6 py-3 bg-white text-gray-700 font-medium rounded-lg border">
                 📧 runningbreaker10k@gmail.com

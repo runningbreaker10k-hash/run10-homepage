@@ -177,7 +177,7 @@ export default function PrivacyPage() {
                   <ul className="space-y-1 text-sm">
                     <li>성명: 김러닝</li>
                     <li>직책: 개인정보보호팀장</li>
-                    <li>전화번호: 02-1234-5678</li>
+                    <li>전화번호: 042-710-2058</li>
                     <li>이메일: runningbreaker10k@gmail.com</li>
                   </ul>
                 </div>
@@ -205,7 +205,7 @@ export default function PrivacyPage() {
                 <div className="text-gray-700">
                   <p>런텐(RUN10)</p>
                   <p>주소: 대전광역시 대덕구 비래서로9 2층</p>
-                  <p>전화: 02-1234-5678</p>
+                  <p>전화: 042-710-2058</p>
                   <p>이메일: runningbreaker10k@gmail.com</p>
                   <p>운영시간: 평일 11:00 - 16:00 (주말 및 공휴일 휴무)</p>
                 </div>

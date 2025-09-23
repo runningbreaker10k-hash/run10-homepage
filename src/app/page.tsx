@@ -17,13 +17,14 @@ export default function Home() {
 
   const fetchUpcomingCompetitions = async () => {
     try {
+      const now = new Date()
       const { data, error } = await supabase
         .from('competitions')
         .select('*')
         .eq('status', 'published')
-        .gte('date', new Date().toISOString())
-        .order('date', { ascending: true })
-        .limit(1)
+        .gte('registration_end', now.toISOString()) // 신청 마감일이 현재 시점보다 나중인 것
+        .order('registration_end', { ascending: true }) // 마감일이 가까운 순서로 정렬
+        .limit(1) // 하나의 대회만 가져오기
 
       if (error) {
         console.error('Error fetching competitions:', error)
@@ -96,11 +97,11 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               {/* 대회 이미지 */}
               <div className="order-2 lg:order-1">
-                <div 
+                <div
                   className="w-full h-96 bg-cover bg-center bg-no-repeat rounded-lg shadow-2xl"
                   style={{
-                    backgroundImage: upcomingCompetitions.length > 0 && upcomingCompetitions[0]?.image_url 
-                      ? `url('${upcomingCompetitions[0].image_url}')` 
+                    backgroundImage: upcomingCompetitions.length > 0 && upcomingCompetitions[0]?.image_url
+                      ? `url('${upcomingCompetitions[0].image_url}')`
                       : "url('/images/competition-bg.jpg')"
                   }}
                 >
@@ -115,18 +116,18 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              
+
               {/* 대회 정보 */}
               <div className="order-1 lg:order-2 text-center lg:text-left">
                 <h2 className="text-5xl md:text-7xl font-black mb-8 tracking-tight">
                   <span className="block text-white">
-                    {upcomingCompetitions.length > 0 && upcomingCompetitions[0] 
-                      ? upcomingCompetitions[0].title 
+                    {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
+                      ? upcomingCompetitions[0].title
                       : 'JUST RUN 10'
                     }
                   </span>
                 </h2>
-                
+
                 {upcomingCompetitions.length > 0 && upcomingCompetitions[0] ? (
                   <div className="space-y-5 mb-8">
                     <div className="flex items-center justify-center lg:justify-start text-xl">
@@ -146,22 +147,14 @@ export default function Home() {
                   <div className="space-y-5 mb-8">
                     <div className="flex items-center justify-center lg:justify-start text-xl">
                       <Calendar className="h-6 w-6 mr-3" />
-                      <span>2025년 10월 11일</span>
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start text-xl">
-                      <MapPin className="h-6 w-6 mr-3" />
-                      <span>한강공원 일원</span>
-                    </div>
-                    <div className="flex items-center justify-center lg:justify-start text-xl">
-                      <Clock className="h-6 w-6 mr-3" />
-                      <span>신청마감: 9월 27일</span>
+                      <span>새로운 대회가 곧 공개됩니다</span>
                     </div>
                   </div>
                 )}
-                
+
                 <Link
-                  href={upcomingCompetitions.length > 0 && upcomingCompetitions[0] 
-                    ? `/competitions/${upcomingCompetitions[0].id}` 
+                  href={upcomingCompetitions.length > 0 && upcomingCompetitions[0]
+                    ? `/competitions/${upcomingCompetitions[0].id}`
                     : '/competitions'
                   }
                   className="bg-white text-red-600 px-12 py-4 rounded-lg font-bold text-xl inline-block"
@@ -188,38 +181,38 @@ export default function Home() {
           
           {/* 4개 부족 이미지 - 반응형 그리드 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* 터틀족 */}
+            {/* 치타족 */}
             <div className="text-center">
-              <img 
-                src="/images/grades/main_turtle.png" 
-                alt="터틀족" 
-                className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
-              />
-            </div>
-
-            {/* 울프족 */}
-            <div className="text-center">
-              <img 
-                src="/images/grades/main_wolf.png" 
-                alt="울프족" 
+              <img
+                src="/images/grades/main_cheetah.png"
+                alt="치타족"
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
               />
             </div>
 
             {/* 홀스족 */}
             <div className="text-center">
-              <img 
-                src="/images/grades/main_house.png" 
-                alt="홀스족" 
+              <img
+                src="/images/grades/main_house.png"
+                alt="홀스족"
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
               />
             </div>
 
-            {/* 치타족 */}
+            {/* 울프족 */}
             <div className="text-center">
-              <img 
-                src="/images/grades/main_cheetah.png" 
-                alt="치타족" 
+              <img
+                src="/images/grades/main_wolf.png"
+                alt="울프족"
+                className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+              />
+            </div>
+
+            {/* 터틀족 */}
+            <div className="text-center">
+              <img
+                src="/images/grades/main_turtle.png"
+                alt="터틀족"
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
               />
             </div>

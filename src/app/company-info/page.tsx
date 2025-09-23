@@ -46,7 +46,7 @@ export default function CompanyInfoPage() {
                     <Phone className="h-5 w-5 text-red-600" />
                     <div>
                       <p className="font-medium text-gray-900">전화번호</p>
-                      <p className="text-gray-600">02-1234-5678</p>
+                      <p className="text-gray-600">042-710-2058</p>
                     </div>
                   </div>
                   
