@@ -91,14 +91,28 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   const watchedUserId = watch('user_id')
   const watchedRecordMinutes = watch('record_minutes')
   const watchedRecordSeconds = watch('record_seconds')
+  const watchedGender = watch('gender')
 
-  // 기록에 따른 등급 표시 (범위 기반으로 수정)
-  const getGradeDisplay = (minutes: number, seconds: number = 0) => {
+  // 기록에 따른 등급 표시 (성별별 다른 기준 적용)
+  const getGradeDisplay = (minutes: number, seconds: number = 0, gender?: string) => {
     const totalMinutes = minutes + (seconds / 60)
-    if (totalMinutes >= 30 && totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-    if (totalMinutes >= 40 && totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-    if (totalMinutes >= 50 && totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
-    return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+
+    if (gender === 'male') {
+      // 남성 기준
+      if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    } else if (gender === 'female') {
+      // 여성 기준
+      if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    } else {
+      // 성별 미선택 시 기본 안내
+      return { grade: 'turtle', display: '성별을 선택하세요', icon: '/images/grades/turtle.png', color: 'text-gray-400' }
+    }
   }
 
   // 아이디 중복 확인
@@ -187,14 +201,25 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     setIsLoading(true)
 
     try {
-      // 기록 시간으로 등급 계산
+      // 기록 시간으로 등급 계산 (성별에 따라 다른 기준 적용)
       const recordTime = (data.record_minutes * 60) + data.record_seconds
       const totalMinutes = recordTime / 60
 
       let grade = 'turtle'
-      if (totalMinutes >= 30 && totalMinutes < 40) grade = 'cheetah'
-      else if (totalMinutes >= 40 && totalMinutes < 50) grade = 'horse'
-      else if (totalMinutes >= 50 && totalMinutes < 60) grade = 'wolf'
+
+      if (data.gender === 'male') {
+        // 남성 기준
+        if (totalMinutes < 40) grade = 'cheetah'          // 00:00~39:59
+        else if (totalMinutes < 50) grade = 'horse'       // 40:00~49:59
+        else if (totalMinutes < 60) grade = 'wolf'        // 50:00~59:59
+        else grade = 'turtle'                             // 60:00 이상
+      } else {
+        // 여성 기준
+        if (totalMinutes < 50) grade = 'cheetah'          // 00:00~49:59
+        else if (totalMinutes < 60) grade = 'horse'       // 50:00~59:59
+        else if (totalMinutes < 70) grade = 'wolf'        // 60:00~69:59
+        else grade = 'turtle'                             // 70:00 이상
+      }
 
       const { error } = await supabase
         .from('users')
@@ -510,13 +535,13 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             <span className="text-gray-500">초</span>
           </div>
           {watchedRecordMinutes && (
-            <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0).color}`}>
+            <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).color}`}>
               <img
-                src={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0).icon}
-                alt={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0).display}
+                src={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).icon}
+                alt={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).display}
                 className="w-5 h-5"
               />
-              → {getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0).display}
+              → {getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).display}
             </div>
           )}
         </div>

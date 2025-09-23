@@ -102,6 +102,7 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
           phone,
           grade,
           role,
+          gender,
           created_at
         `)
         .eq('user_id', data.user_id)

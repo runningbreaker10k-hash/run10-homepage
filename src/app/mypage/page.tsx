@@ -234,13 +234,26 @@ export default function MyPage() {
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`
   }
 
-  // 기록에 따른 등급 표시 (범위 기반으로 수정)
-  const getGradeDisplayLocal = (minutes: number, seconds: number = 0) => {
+  // 기록에 따른 등급 표시 (성별별 다른 기준 적용)
+  const getGradeDisplayLocal = (minutes: number, seconds: number = 0, gender?: string) => {
     const totalMinutes = minutes + (seconds / 60)
-    if (totalMinutes >= 30 && totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-    if (totalMinutes >= 40 && totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-    if (totalMinutes >= 50 && totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
-    return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+
+    if (gender === 'male') {
+      // 남성 기준
+      if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    } else if (gender === 'female') {
+      // 여성 기준
+      if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    } else {
+      // 성별 정보가 없을 때는 기본 터틀족
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    }
   }
 
   // 회원 정보 수정
@@ -250,10 +263,31 @@ export default function MyPage() {
     try {
       console.log('폼에서 받은 데이터:', data)
 
-      // 분과 초를 초 단위로 변환
+      // 기록에 따른 등급 계산 (성별에 따라 다른 기준 적용)
+      const recordTime = (data.record_minutes * 60) + data.record_seconds
+      const totalMinutes = recordTime / 60
+
+      let grade = 'turtle'
+
+      if (data.gender === 'male') {
+        // 남성 기준
+        if (totalMinutes < 40) grade = 'cheetah'          // 00:00~39:59
+        else if (totalMinutes < 50) grade = 'horse'       // 40:00~49:59
+        else if (totalMinutes < 60) grade = 'wolf'        // 50:00~59:59
+        else grade = 'turtle'                             // 60:00 이상
+      } else {
+        // 여성 기준
+        if (totalMinutes < 50) grade = 'cheetah'          // 00:00~49:59
+        else if (totalMinutes < 60) grade = 'horse'       // 50:00~59:59
+        else if (totalMinutes < 70) grade = 'wolf'        // 60:00~69:59
+        else grade = 'turtle'                             // 70:00 이상
+      }
+
+      // 분과 초를 초 단위로 변환하고 등급 포함
       const updateData = {
         ...data,
-        record_time: (data.record_minutes * 60) + data.record_seconds
+        record_time: recordTime,
+        grade: grade
       }
 
       // record_minutes, record_seconds 제거 (DB에 없는 필드)
@@ -609,13 +643,13 @@ export default function MyPage() {
                 <span className="text-gray-500">초</span>
               </div>
               {profileForm.watch('record_minutes') && (
-                <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0).color}`}>
+                <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0, profileForm.watch('gender')).color}`}>
                   <img
-                    src={getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0).icon}
-                    alt={getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0).display}
+                    src={getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0, profileForm.watch('gender')).icon}
+                    alt={getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0, profileForm.watch('gender')).display}
                     className="w-5 h-5"
                   />
-                  → {getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0).display}
+                  → {getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0, profileForm.watch('gender')).display}
                 </div>
               )}
             </div>
