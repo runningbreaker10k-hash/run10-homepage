@@ -132,6 +132,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
 
       reset()
       await loadComments()
+      onPostUpdated() // 댓글 추가 시 부모 컴포넌트에 알림
     } catch (error) {
       console.error('댓글 등록 오류:', error)
       alert('댓글 등록 중 오류가 발생했습니다')
@@ -160,6 +161,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         if (error) throw error
 
         await loadComments()
+        onPostUpdated() // 댓글 삭제 시 부모 컴포넌트에 알림
       } catch (error) {
         console.error('댓글 삭제 오류:', error)
         alert('댓글 삭제 중 오류가 발생했습니다')
@@ -450,8 +452,8 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                   </div>
                 </article>
 
-                {/* 댓글 섹션 - 커뮤니티 게시글인 경우만 */}
-                {isCommunityPost && (
+                {/* 댓글 섹션 - 모든 게시글에서 사용 */}
+                {(
                   <section className="bg-white rounded-lg shadow">
                     {/* 댓글 헤더 */}
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -557,8 +559,8 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                   </section>
                 )}
 
-                {/* 답글 목록 - 대회 게시글인 경우만 */}
-                {!isCommunityPost && replies.length > 0 && (
+                {/* 답글 목록 - 더 이상 사용하지 않음 */}
+                {false && (
                   <div className="mt-8 border-t pt-6">
                     <h4 className="text-lg font-medium text-gray-900 mb-4">댓글 ({replies.length})</h4>
                     <div className="space-y-4">
@@ -606,8 +608,8 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                   </div>
                 )}
 
-                {/* 관리자 댓글 작성 버튼 - 대회 게시글인 경우만 */}
-                {!isCommunityPost && isAdmin() && !post.parent_id && (
+                {/* 관리자 댓글 작성 버튼 - 대회 게시글에서만 별도 버튼 제공 */}
+                {isCompetitionPost && isAdmin() && !post.parent_id && (
                   <div className="mt-6 text-center">
                     <button
                       onClick={() => setShowAdminReply(true)}
@@ -631,7 +633,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         onClose={() => setShowAdminReply(false)}
         parentPost={post}
         onReplyCreated={() => {
-          fetchReplies()
+          loadComments()
           onPostUpdated()
         }}
       />

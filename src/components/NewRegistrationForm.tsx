@@ -406,7 +406,7 @@ export default function NewRegistrationForm({ competition, participationGroups, 
                   <div className="text-sm text-gray-700 space-y-1">
                     <p><span className="font-medium">은행:</span> 하나은행</p>
                     <p><span className="font-medium">계좌번호:</span> 734-910008-72504</p>
-                    <p><span className="font-medium">예금주:</span> 주식회사 러닝브레이커</p>
+                    <p><span className="font-medium">예금주:</span> (주)러닝브레이커</p>
                   </div>
                   <p className="text-xs text-gray-600 mt-2">
                     입금 시 위에 입력한 '입금자명'과 동일하게 입금해주세요.

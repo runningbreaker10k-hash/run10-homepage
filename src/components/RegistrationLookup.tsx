@@ -499,7 +499,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 <div className="text-sm text-yellow-700 space-y-1">
                   <p>은행: 하나은행</p>
                   <p>계좌: 734-910008-72504</p>
-                  <p>예금주: 주식회사 러닝브레이커</p>
+                  <p>예금주: (주)러닝브레이커</p>
                   <p>입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
                   <p className="font-medium">입금자명: {registration.depositor_name}</p>
                 </div>

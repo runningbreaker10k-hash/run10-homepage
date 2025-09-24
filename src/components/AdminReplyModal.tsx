@@ -28,18 +28,24 @@ export default function AdminReplyModal({ isOpen, onClose, parentPost, onReplyCr
     setIsSubmitting(true)
 
     try {
+      // 관리자 계정 찾기
+      const { data: adminUser, error: adminError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1)
+        .single()
+
+      if (adminError || !adminUser) {
+        throw new Error('관리자 계정을 찾을 수 없습니다.')
+      }
+
       const { error } = await supabase
-        .from('competition_posts')
+        .from('post_comments')
         .insert({
-          competition_id: parentPost.competition_id,
-          title: `Re: ${parentPost.title}`,
-          content: content,
-          author: '관리자',
-          password: 'admin123',
-          parent_id: parentPost.id,
-          is_admin_reply: true,
-          reply_depth: 1,
-          reply_order: 1
+          post_id: parentPost.id,
+          user_id: adminUser.id,
+          content: content
         })
 
       if (error) throw error

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-이 파일은 Claude Code (claude.ai/code)가 이 저장소에서 작업할 때 필요한 지침을 제공합니다.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 프로젝트 개요
 
@@ -142,25 +142,34 @@ CREATE TABLE post_comments (
 );
 ```
 
-## 개발 명령어
+## Development Commands
 
-### 핵심 명령어
+### Core Commands
 ```bash
-npm run dev         # 개발 서버 시작 (http://localhost:3000)
-npm run build       # 프로덕션 빌드
-npm run start       # 프로덕션 서버 시작
-npm run lint        # ESLint 코드 검사
+npm run dev         # Start development server (http://localhost:3000)
+npm run build       # Production build
+npm run start       # Start production server
+npm run lint        # ESLint code checking
 ```
 
-### 환경 설정
-`.env.local` 파일 생성:
+### Environment Setup
+Create `.env.local` file:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
-## 아키텍처 구조
+## Architecture Overview
+
+### Technology Stack
+- **Framework**: Next.js 15.5.2 with TypeScript
+- **Styling**: Tailwind CSS v4
+- **Database**: Supabase (PostgreSQL)
+- **File Storage**: Supabase Storage
+- **Forms**: React Hook Form + Zod validation
+- **Icons**: Lucide React
+- **Deployment**: Vercel
 
 ### App Router 구조
 ```

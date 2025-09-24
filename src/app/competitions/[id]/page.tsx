@@ -18,7 +18,8 @@ import {
   Search,
   CheckCircle,
   Pin,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, CompetitionPost } from '@/types'
@@ -193,7 +194,8 @@ export default function CompetitionDetailPage() {
         .from('community_posts')
         .select(`
           id, title, content, created_at, updated_at, views, is_notice,
-          user_id, users(user_id, name, grade, role)
+          user_id, users(user_id, name, grade, role),
+          post_comments(id)
         `, { count: 'exact' })
         .eq('competition_id', competitionId)
 
@@ -216,6 +218,7 @@ export default function CompetitionDetailPage() {
         return
       }
 
+      console.log('게시글 데이터:', data) // 디버깅용
       setBoardPosts(data || [])
       setTotalPosts(count || 0)
     } catch (error) {
@@ -1042,6 +1045,12 @@ export default function CompetitionDetailPage() {
                           <span className="font-medium text-gray-900 hover:text-blue-600">
                             {post.title}
                           </span>
+                          {(post.post_comments?.length || 0) > 0 && (
+                            <span className="flex items-center text-xs text-red-600">
+                              <MessageSquare className="w-3 h-3 mr-1" />
+                              {post.post_comments?.length || 0}
+                            </span>
+                          )}
                           {post.image_url && (
                             <span className="text-xs text-blue-600">📷</span>
                           )}
