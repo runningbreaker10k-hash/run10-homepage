@@ -636,7 +636,7 @@ export default function CompetitionDetailPage() {
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">예금주</span>
-                    <span className="font-semibold text-gray-900">주식회사 러닝브레이커</span>
+                    <span className="font-semibold text-gray-900">(주)러닝브레이커</span>
                   </div>
                   <div className="py-2">
                     <span className="text-gray-600 font-medium block mb-2">입금액</span>
@@ -1228,10 +1228,10 @@ export default function CompetitionDetailPage() {
             {[
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'course', label: '코스', icon: Route },
-              { key: 'prizes', label: '시상', icon: Award },
+              { key: 'prizes', label: '상금/상품', icon: Award },
               { key: 'register', label: '신청', icon: Users },
               { key: 'lookup', label: '조회', icon: Search },
-              { key: 'board', label: '게시판', icon: MessageCircle }
+              { key: 'board', label: '대회게시판', icon: MessageCircle }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}

@@ -5,6 +5,7 @@ import { Calendar, Users, Trophy, MapPin, Clock, Star, Zap, Target, Award } from
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 import { useState, useEffect } from 'react'
 
 export default function Home() {
@@ -18,11 +19,13 @@ export default function Home() {
   const fetchUpcomingCompetitions = async () => {
     try {
       const now = new Date()
+      // 로컬 타임존으로 날짜 비교 (UTC 변환 방지)
+      const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString()
       const { data, error } = await supabase
         .from('competitions')
         .select('*')
         .eq('status', 'published')
-        .gte('registration_end', now.toISOString()) // 신청 마감일이 현재 시점보다 나중인 것
+        .gte('registration_end', localNow) // 신청 마감일이 현재 시점보다 나중인 것
         .order('registration_end', { ascending: true }) // 마감일이 가까운 순서로 정렬
         .limit(1) // 하나의 대회만 가져오기
 
@@ -118,49 +121,59 @@ export default function Home() {
               </div>
 
               {/* 대회 정보 */}
-              <div className="order-1 lg:order-2 text-center lg:text-left">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black mb-6 sm:mb-8 tracking-tight leading-tight">
-                  <span className="block text-white">
+              <div className="order-1 lg:order-2 text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
+                <div className="space-y-4 sm:space-y-5">
+                  {/* 대회명 */}
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white">
                     {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
                       ? upcomingCompetitions[0].title
                       : 'JUST RUN 10'
                     }
-                  </span>
-                </h2>
+                  </h2>
 
-                {upcomingCompetitions.length > 0 && upcomingCompetitions[0] ? (
-                  <div className="space-y-3 sm:space-y-5 mb-6 sm:mb-8">
-                    <div className="flex items-center justify-center lg:justify-start text-base sm:text-lg lg:text-xl">
-                      <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="break-words">{format(new Date(upcomingCompetitions[0].date), 'yyyy년 M월 d일')}</span>
+                  {/* 대회설명 */}
+                  {upcomingCompetitions.length > 0 && upcomingCompetitions[0] ? (
+                    <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-5 sm:p-6 border-l-4 border-red-500 shadow-lg">
+                      <div className="flex items-start text-base sm:text-lg mb-3">
+                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-3 flex-shrink-0 text-red-600 mt-1" />
+                        <div className="space-y-1">
+                          <div className="font-bold text-gray-900">
+                            {format(new Date(upcomingCompetitions[0].date), 'yyyy년 M월 d일 (E)', { locale: ko })}
+                          </div>
+                          <div className="text-red-600 font-semibold text-sm sm:text-base">
+                            시작시간: {format(new Date(upcomingCompetitions[0].date), 'HH:mm')}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center text-sm sm:text-base mb-2">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-3 flex-shrink-0 text-red-600" />
+                        <span className="font-medium text-gray-800">{upcomingCompetitions[0].location}</span>
+                      </div>
+                      <div className="flex items-center text-sm sm:text-base">
+                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-3 flex-shrink-0 text-red-600" />
+                        <span className="font-medium text-gray-800">신청마감: {format(new Date(upcomingCompetitions[0].registration_end), 'M월 d일')}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center lg:justify-start text-base sm:text-lg lg:text-xl">
-                      <MapPin className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="break-words">{upcomingCompetitions[0].location}</span>
+                  ) : (
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 sm:p-6 border-l-4 border-gray-400">
+                      <div className="flex items-center text-base sm:text-lg">
+                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-3 flex-shrink-0 text-gray-600" />
+                        <span className="font-medium text-gray-800">새로운 대회가 곧 공개됩니다</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center lg:justify-start text-base sm:text-lg lg:text-xl">
-                      <Clock className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span className="break-words">신청마감: {format(new Date(upcomingCompetitions[0].registration_end), 'M월 d일')}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3 sm:space-y-5 mb-6 sm:mb-8">
-                    <div className="flex items-center justify-center lg:justify-start text-base sm:text-lg lg:text-xl">
-                      <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
-                      <span>새로운 대회가 곧 공개됩니다</span>
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                <Link
-                  href={upcomingCompetitions.length > 0 && upcomingCompetitions[0]
-                    ? `/competitions/${upcomingCompetitions[0].id}`
-                    : '/competitions'
-                  }
-                  className="bg-white text-red-600 px-8 py-3 sm:px-12 sm:py-4 rounded-lg font-bold text-lg sm:text-xl inline-block hover:bg-gray-100 transition-colors"
-                >
-                  대회 참가하기
-                </Link>
+                  {/* 대회참가버튼 */}
+                  <Link
+                    href={upcomingCompetitions.length > 0 && upcomingCompetitions[0]
+                      ? `/competitions/${upcomingCompetitions[0].id}`
+                      : '/competitions'
+                    }
+                    className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl block hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500 w-full text-center"
+                  >
+                    대회 참가하기
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -180,7 +193,7 @@ export default function Home() {
           </div>
 
           {/* 4개 부족 이미지 - 반응형 그리드 */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-6">
             {/* 치타족 */}
             <div className="text-center">
               <img

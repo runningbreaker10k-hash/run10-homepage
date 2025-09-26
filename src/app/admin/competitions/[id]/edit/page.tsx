@@ -157,7 +157,13 @@ export default function EditCompetitionPage() {
       // Convert dates to the format expected by datetime-local inputs
       const formatDateForInput = (dateString: string) => {
         const date = new Date(dateString)
-        return date.toISOString().slice(0, 16)
+        // 로컬 타임존 유지하여 변환 (UTC 변환 방지)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        return `${year}-${month}-${day}T${hours}:${minutes}`
       }
 
       reset({

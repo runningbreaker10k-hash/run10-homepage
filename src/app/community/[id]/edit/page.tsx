@@ -208,7 +208,8 @@ export default function CommunityEditPage() {
           content: data.content,
           image_url: finalImageUrl,
           is_notice: isNotice,
-          updated_at: new Date().toISOString()
+          // 로컬 타임존으로 업데이트 시간 설정 (UTC 변환 방지)
+          updated_at: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString()
         })
         .eq('id', postId)
 

@@ -137,7 +137,7 @@ export default function CommunityPage() {
         <div className="absolute inset-0 opacity-20">
           <img
             src="/images/community-hero-bg.jpg"
-            alt="회원게시판 배경"
+            alt="자유게시판 배경"
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
@@ -145,7 +145,7 @@ export default function CommunityPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">회원게시판</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">자유게시판</h1>
           <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
             런텐 회원들과 자유롭게 소통해보세요
           </p>

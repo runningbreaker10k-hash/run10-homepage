@@ -243,7 +243,8 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         .update({
           title: editFormData.title,
           content: editFormData.content,
-          updated_at: new Date().toISOString()
+          // 로컬 타임존으로 업데이트 시간 설정 (UTC 변환 방지)
+          updated_at: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString()
         })
         .eq('id', post.id)
 
