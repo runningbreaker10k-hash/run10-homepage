@@ -22,9 +22,8 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Competition, CompetitionPost } from '@/types'
+import { Competition } from '@/types'
 import { format } from 'date-fns'
-import ConsentForm from '@/components/ConsentForm'
 import MemberRegistrationForm from '@/components/MemberRegistrationForm'
 import RegistrationLookup from '@/components/RegistrationLookup'
 import PostWriteModal from '@/components/PostWriteModal'
@@ -511,8 +510,7 @@ export default function CompetitionDetailPage() {
               <img
                 src={competition.course_image_url}
                 alt="코스 이미지"
-                className="w-full h-auto object-contain rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-                style={{ maxHeight: '600px' }}
+                className="w-full h-auto object-contain rounded-lg cursor-pointer"
                 onClick={() => {
                   setSelectedImage({url: competition.course_image_url!, alt: '코스 이미지'})
                   setShowImageModal(true)
@@ -546,8 +544,7 @@ export default function CompetitionDetailPage() {
               <img
                 src={competition.prizes_image_url}
                 alt="시상품 이미지"
-                className="w-full h-auto object-contain rounded-lg shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-                style={{ maxHeight: '600px' }}
+                className="w-full h-auto object-contain rounded-lg cursor-pointer"
                 onClick={() => {
                   setSelectedImage({url: competition.prizes_image_url!, alt: '시상품 이미지'})
                   setShowImageModal(true)

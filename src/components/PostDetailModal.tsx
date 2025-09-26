@@ -9,7 +9,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import AdminReplyModal from './AdminReplyModal'
-import ReplyEditModal from './ReplyEditModal'
 import MessageModal from './MessageModal'
 
 const commentSchema = z.object({
@@ -38,8 +37,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAdminReply, setShowAdminReply] = useState(false)
-  const [showReplyEdit, setShowReplyEdit] = useState(false)
-  const [editingReply, setEditingReply] = useState<any>(null)
   const [replies, setReplies] = useState<any[]>([])
   const [comments, setComments] = useState<any[]>([])
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
@@ -638,19 +635,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         }}
       />
 
-      {/* 댓글 수정 모달 */}
-      <ReplyEditModal
-        isOpen={showReplyEdit}
-        onClose={() => {
-          setShowReplyEdit(false)
-          setEditingReply(null)
-        }}
-        reply={editingReply}
-        onReplyUpdated={() => {
-          fetchReplies()
-          onPostUpdated()
-        }}
-      />
 
       <MessageModal
         isOpen={showMessage}
