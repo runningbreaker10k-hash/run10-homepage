@@ -27,9 +27,6 @@ export default function AboutPage() {
             width={1920}
             height={1080}
             className="object-cover w-full h-full"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -47,9 +44,6 @@ export default function AboutPage() {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
               전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다.
               정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
-            </p>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              치타족, 홀스족, 울프족, 터틀족까지 - 나의 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
             </p>
           </div>
 
@@ -124,12 +118,6 @@ export default function AboutPage() {
                       width={600}
                       height={338}
                       className="object-cover rounded-lg shadow-md w-full h-full"
-                      onError={(e) => {
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="text-gray-400 text-center"><p>대회 현장 이미지</p><p class="text-sm">/images/about-competition.jpg</p></div>';
-                        }
-                      }}
                     />
                   </div>
                 </div>
@@ -147,12 +135,6 @@ export default function AboutPage() {
                       width={600}
                       height={338}
                       className="object-cover rounded-lg shadow-md w-full h-full"
-                      onError={(e) => {
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) {
-                          parent.innerHTML = '<div class="text-gray-400 text-center"><p>커뮤니티 이미지</p><p class="text-sm">/images/about-community.jpg</p></div>';
-                        }
-                      }}
                     />
                   </div>
                 </div>
