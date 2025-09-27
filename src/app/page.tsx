@@ -7,6 +7,7 @@ import { Competition } from '@/types'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useState, useEffect } from 'react'
+import Head from 'next/head'
 
 export default function Home() {
   const [upcomingCompetitions, setUpcomingCompetitions] = useState<Competition[]>([])
@@ -58,10 +59,11 @@ export default function Home() {
           <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
-        {/* 텍스트 오버레이 - 모바일에서는 중앙, 데스크톱에서는 우측 */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="flex justify-center sm:justify-end">
-            <div className="text-center sm:text-right text-white">
+        {/* 텍스트 오버레이 - 텍스트1(오른쪽 상단), 텍스트2(왼쪽 하단) */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full">
+          {/* 텍스트1 - 기존 오른쪽 상단 텍스트 */}
+          <div className="flex justify-end absolute top-8 right-4 lg:right-8">
+            <div className="text-right text-white">
               <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-4 sm:mb-6 tracking-tight">
                 <span className="block">we are</span>
                 <span className="block text-red-500">RUN10</span>
@@ -70,6 +72,20 @@ export default function Home() {
                 <p className="opacity-90">we can RUN10</p>
                 <p className="opacity-90">we must RUN10</p>
                 <p className="opacity-90">we like RUN10</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 텍스트2 - 새로운 왼쪽 하단 텍스트 */}
+          <div className="absolute bottom-16 lg:bottom-20 left-4 lg:left-8">
+            <div className="text-left text-white">
+              <div className="space-y-2 text-lg md:text-xl font-medium leading-relaxed">
+                <p className="opacity-90">전국 러닝 협회가 인증하는</p>
+                <p className="opacity-90">10km 러너들의 공식 플랫폼,</p>
+                <div className="my-3">
+                  <div className="border-l-2 border-white opacity-60 h-8"></div>
+                </div>
+                <p className="text-2xl md:text-3xl font-black text-white">런텐(RUN10)</p>
               </div>
             </div>
           </div>
@@ -101,20 +117,37 @@ export default function Home() {
               {/* 대회 이미지 */}
               <div className="order-2 lg:order-1">
                 <div
-                  className="w-full h-64 sm:h-80 lg:h-96 bg-cover bg-center bg-no-repeat rounded-lg shadow-2xl"
+                  className="w-full h-64 sm:h-80 lg:h-96 bg-cover bg-center bg-no-repeat rounded-lg shadow-2xl relative"
                   style={{
                     backgroundImage: upcomingCompetitions.length > 0 && upcomingCompetitions[0]?.image_url
                       ? `url('${upcomingCompetitions[0].image_url}')`
                       : "url('/images/competition-bg.jpg')"
                   }}
                 >
-                  <div className="w-full h-full rounded-lg flex items-end">
-                    <div className="p-4 sm:p-6 text-white">
-                      <div className="bg-red-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg inline-block">
-                        <span className="text-xs sm:text-sm font-bold">
-                          {upcomingCompetitions.length > 0 ? '접수중' : 'Coming Soon'}
-                        </span>
+                  {/* 배경 오버레이 */}
+                  <div className="absolute inset-0 rounded-lg" style={{backgroundColor: '#00000070'}}></div>
+
+                  {/* 대회 특장점 텍스트 */}
+                  <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 sm:p-6">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">
+                        JUST RUN 10 대회 특장점
+                      </h3>
+                      <div className="space-y-2 text-sm sm:text-base lg:text-lg">
+                        <p>1. 평지코스 정확한 기록 인증</p>
+                        <p>2. 깨끗하고 쾌적한 러닝코스</p>
+                        <p>3. 70명 대상 국내 최고 경품</p>
+                        <p>4. 수준별 출발 안정적 레이스</p>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 접수중/Coming Soon 배지 */}
+                  <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
+                    <div className="bg-red-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg inline-block">
+                      <span className="text-xs sm:text-sm font-bold text-white">
+                        {upcomingCompetitions.length > 0 ? '접수중' : 'Coming Soon'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -187,8 +220,11 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
               RUN10 티어
             </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-black mb-6 sm:mb-8 lg:mb-12">
+            <p className="text-lg sm:text-xl md:text-2xl text-black mb-2 sm:mb-3">
               나의 RUN10 티어를 확인해 보세요.
+            </p>
+            <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 lg:mb-12">
+              마이페이지에서 언제든지 수정 가능합니다.
             </p>
           </div>
 

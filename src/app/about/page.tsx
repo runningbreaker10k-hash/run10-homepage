@@ -1,8 +1,18 @@
-'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
 import { Users, Target, Award, Heart } from 'lucide-react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "런텐 소개 | RUN10 전국 러닝 협회 인증 플랫폼",
+  description: "전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다. 정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다. 치타족, 홀스족, 울프족, 터틀족까지 나의 RUN10 티어를 확인하세요.",
+  keywords: "런텐소개, RUN10소개, 러닝협회, 10km러닝, 티어시스템, 치타족, 홀스족, 울프족, 터틀족",
+  openGraph: {
+    title: "런텐 소개 | RUN10 전국 러닝 협회 인증 플랫폼",
+    description: "전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다.",
+    url: "https://runten.co.kr/about",
+  },
+}
 
 export default function AboutPage() {
   return (
@@ -34,10 +44,12 @@ export default function AboutPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              2024년에 설립되어 대한민국 곳곳에서 러닝 대회를 개최하며 
-              건강한 러닝 문화 확산에 앞장서고 있습니다. 초보 러너부터 전문 마라토너까지 
-              모든 수준의 참가자들이 함께 즐길 수 있는 다양한 대회를 운영하고 있습니다.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
+              전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다.
+              정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
+            </p>
+            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+              치타족, 홀스족, 울프족, 터틀족까지 - 나의 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
             </p>
           </div>
 
@@ -92,16 +104,16 @@ export default function AboutPage() {
             <div className="mb-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="order-2 lg:order-1">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">정기 대회 개최</h3>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">JUST RUN 10 대회</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">
-                    매월 전국 각지에서 다양한 러닝 대회를 개최합니다. 
-                    많은 러너들이 참여할 수 있는 다채로운 대회를 제공합니다.
+                    전국 러닝 협회가 인증하는 공식 10km 대회를 개최합니다.
+                    정확한 기록 측정과 함께 최고의 러닝 경험을 제공합니다.
                   </p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
-                    <li>월 1회 정기 대회</li>
-                    <li>계절별 특별 대회</li>
-                    <li>초보자부터 전문가까지 모든 레벨 지원</li>
-                    <li>안전하고 체계적인 대회 운영</li>
+                    <li>평지코스 정확한 기록 인증</li>
+                    <li>깨끗하고 쾌적한 러닝코스</li>
+                    <li>70명 대상 국내 최고 경품</li>
+                    <li>수준별 출발 안정적 레이스</li>
                   </ul>
                 </div>
                 <div className="order-1 lg:order-2">
@@ -145,17 +157,16 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <div className="order-2">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">러닝 커뮤니티</h3>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">RUN10 티어 시스템</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">
-                    러너들 간의 정보 공유와 소통을 위한 다양한 플랫폼을 운영합니다. 
-                    러닝 팁, 훈련 방법, 대회 후기 등을 나누며 
-                    함께 성장하는 러닝 커뮤니티를 만들어갑니다.
+                    개인 기록에 따른 체계적인 등급 시스템을 운영합니다.
+                    나의 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
                   </p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
-                    <li>온라인 커뮤니티 운영</li>
-                    <li>러닝 정보 및 팁 공유</li>
-                    <li>대회별 게시판 운영</li>
-                    <li>러너들 간의 네트워킹 지원</li>
+                    <li>치타족 (30-39분59초) - 최상급 러너</li>
+                    <li>홀스족 (40-49분59초) - 상급 러너</li>
+                    <li>울프족 (50-59분59초) - 중급 러너</li>
+                    <li>터틀족 (60분 이상) - 초급 러너</li>
                   </ul>
                 </div>
               </div>

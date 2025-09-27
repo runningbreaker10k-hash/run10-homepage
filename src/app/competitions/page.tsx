@@ -6,6 +6,8 @@ import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter } from 'lucide-r
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
+import { Metadata } from 'next'
+
 
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([])
@@ -149,8 +151,8 @@ export default function CompetitionsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-              전국 각지에서 개최되는 다양한 러닝 대회를 통해 러너들의 꿈과 도전을 응원합니다.
-              초보자부터 전문 러너까지, 모든 분들이 함께 즐길 수 있는 대회를 준비했습니다.
+              전국 러닝 협회가 공식 인증하는 10km 대회입니다.
+              정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
             </p>
           </div>
 
@@ -159,9 +161,9 @@ export default function CompetitionsPage() {
               <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Trophy className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">다양한 대회</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">평지코스</h3>
               <p className="text-gray-600">
-                10km부터 하프마라톤까지 다양한 거리의 대회를 전국 각지에서 개최합니다.
+                정확한 기록 인증을 위한 평지코스에서 최고의 러닝 경험을 제공합니다.
               </p>
             </div>
 
@@ -169,9 +171,9 @@ export default function CompetitionsPage() {
               <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Users className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">커뮤니티</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">수준별 출발</h3>
               <p className="text-gray-600">
-                같은 목표를 가진 러너들과 함께 달리며 새로운 인연을 만들어보세요.
+                개인 기록에 따른 수준별 출발로 안정적이고 공정한 레이스를 진행합니다.
               </p>
             </div>
 
@@ -179,32 +181,32 @@ export default function CompetitionsPage() {
               <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Calendar className="h-8 w-8 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">정기 개최</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">최고 경품</h3>
               <p className="text-gray-600">
-                매월 정기적으로 개최되는 대회를 통해 꾸준한 러닝 목표를 달성하세요.
+                70명을 대상으로 국내 최고 수준의 경품을 제공하여 참가자들에게 특별한 혜택을 드립니다.
               </p>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8">
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-8">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">대회 참가 혜택</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">JUST RUN 10 대회 특장점</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <div className="font-semibold text-blue-600 mb-2">완주메달</div>
-                  <p className="text-sm text-gray-600">모든 완주자에게 기념품 제공</p>
+                  <div className="font-semibold text-red-600 mb-2">평지코스</div>
+                  <p className="text-sm text-gray-600">정확한 기록 인증</p>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-green-600 mb-2">기록 측정</div>
-                  <p className="text-sm text-gray-600">정확한 개인 기록 측정</p>
+                  <div className="font-semibold text-green-600 mb-2">쾌적한 코스</div>
+                  <p className="text-sm text-gray-600">깨끗하고 쾌적한 러닝코스</p>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-purple-600 mb-2">시상품</div>
-                  <p className="text-sm text-gray-600">연령대별 시상품 수여</p>
+                  <div className="font-semibold text-purple-600 mb-2">최고 경품</div>
+                  <p className="text-sm text-gray-600">70명 대상 국내 최고 경품</p>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-red-600 mb-2">참가증명서</div>
-                  <p className="text-sm text-gray-600">공식 참가증명서 발급</p>
+                  <div className="font-semibold text-blue-600 mb-2">안정적 레이스</div>
+                  <p className="text-sm text-gray-600">수준별 출발 안정적 레이스</p>
                 </div>
               </div>
             </div>
