@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import LoginForm from './LoginForm'
 import MembershipForm from './MembershipForm'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMessageModal } from '@/contexts/ModalContext'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -16,6 +17,7 @@ interface AuthModalProps {
 export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuccess }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab)
   const { login } = useAuth()
+  const { showSuccess } = useMessageModal()
 
   // defaultTab이 변경되거나 모달이 열릴 때마다 activeTab 업데이트
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuc
   }
 
   const handleSignupSuccess = () => {
-    alert('회원가입이 완료되었습니다! 이제 로그인해주세요.')
+    showSuccess('회원가입이 완료되었습니다! 이제 로그인해주세요.')
     setActiveTab('login')
     if (onSuccess) {
       onSuccess()

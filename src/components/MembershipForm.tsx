@@ -5,6 +5,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { supabase } from '@/lib/supabase'
+import { ErrorHandler } from '@/lib/errorHandler'
+import { useSubmit } from '@/hooks/useAsync'
+import { useMessageModal } from '@/contexts/ModalContext'
 import { Loader2, Eye, EyeOff, CheckCircle, XCircle, Search } from 'lucide-react'
 
 // 다음 우편번호 서비스 타입 정의
@@ -69,7 +72,11 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [idCheckStatus, setIdCheckStatus] = useState<'none' | 'checking' | 'available' | 'taken'>('none')
+  const [emailCheckStatus, setEmailCheckStatus] = useState<'none' | 'checking' | 'available' | 'taken'>('none')
   const [postCodeModalOpen, setPostCodeModalOpen] = useState(false)
+  const [noRecord, setNoRecord] = useState(false)
+
+  const { showError, showSuccess } = useMessageModal()
 
   const {
     register,
@@ -89,6 +96,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   })
 
   const watchedUserId = watch('user_id')
+  const watchedEmail = watch('email')
   const watchedRecordMinutes = watch('record_minutes')
   const watchedRecordSeconds = watch('record_seconds')
   const watchedGender = watch('gender')
@@ -123,7 +131,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     }
 
     setIdCheckStatus('checking')
-    
+
     try {
       const { data, error } = await supabase
         .from('users')
@@ -139,8 +147,41 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         setIdCheckStatus('taken')
       }
     } catch (error) {
-      console.error('아이디 중복 확인 오류:', error)
+      const appError = ErrorHandler.handle(error)
+      ErrorHandler.logError(appError, 'MembershipForm.checkUserId')
       setIdCheckStatus('none')
+      ErrorHandler.showUserMessage(appError)
+    }
+  }
+
+  // 이메일 중복 확인
+  const checkEmail = async () => {
+    if (!watchedEmail || !watchedEmail.includes('@')) {
+      setEmailCheckStatus('none')
+      return
+    }
+
+    setEmailCheckStatus('checking')
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', watchedEmail)
+        .single()
+
+      if (error && error.code === 'PGRST116') {
+        // 데이터가 없음 - 사용 가능
+        setEmailCheckStatus('available')
+      } else if (data) {
+        // 데이터가 있음 - 이미 사용 중
+        setEmailCheckStatus('taken')
+      }
+    } catch (error) {
+      const appError = ErrorHandler.handle(error)
+      ErrorHandler.logError(appError, 'MembershipForm.checkEmail')
+      setEmailCheckStatus('none')
+      ErrorHandler.showUserMessage(appError)
     }
   }
 
@@ -194,8 +235,19 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
 
   const onSubmit = async (data: MembershipFormData) => {
     if (idCheckStatus !== 'available') {
-      alert('아이디 중복확인을 완료해주세요')
+      showError('아이디 중복확인을 완료해주세요')
       return
+    }
+
+    if (emailCheckStatus !== 'available') {
+      showError('이메일 중복확인을 완료해주세요')
+      return
+    }
+
+    // 기록없음 체크박스가 선택된 경우 기록 필드 값을 강제로 설정
+    if (noRecord) {
+      data.record_minutes = 100
+      data.record_seconds = 0
     }
 
     setIsLoading(true)
@@ -221,33 +273,42 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         else grade = 'turtle'                             // 70:00 이상
       }
 
-      const { error } = await supabase
+      const insertData = {
+        user_id: data.user_id,
+        password: data.password,
+        name: data.name,
+        postal_code: data.postal_code,
+        address1: data.address1,
+        address2: data.address2,
+        phone: data.phone,
+        phone_marketing_agree: !!data.phone_marketing_agree,
+        email: data.email,
+        email_marketing_agree: !!data.email_marketing_agree,
+        birth_date: data.birth_date,
+        gender: data.gender,
+        record_time: recordTime,
+        grade: grade,
+        etc: data.etc || null
+      }
+
+      console.log('전송할 데이터:', insertData)
+
+      const { data: result, error } = await supabase
         .from('users')
-        .insert([{
-          user_id: data.user_id,
-          password: data.password,
-          name: data.name,
-          postal_code: data.postal_code,
-          address1: data.address1,
-          address2: data.address2,
-          phone: data.phone,
-          phone_marketing_agree: data.phone_marketing_agree,
-          email: data.email,
-          email_marketing_agree: data.email_marketing_agree,
-          birth_date: data.birth_date,
-          gender: data.gender,
-          record_time: recordTime,
-          grade: grade,
-          etc: data.etc || null
-        }])
+        .insert([insertData])
+        .select()
+
+      console.log('Supabase 결과:', result)
+      console.log('Supabase 에러:', error)
 
       if (error) throw error
 
-      alert('회원가입이 완료되었습니다!')
+      showSuccess('회원가입이 완료되었습니다!')
       onSuccess()
     } catch (error) {
-      console.error('회원가입 오류:', error)
-      alert('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
+      const appError = ErrorHandler.handle(error)
+      ErrorHandler.logError(appError, 'MembershipForm.onSubmit')
+      ErrorHandler.showUserMessage(appError)
     } finally {
       setIsLoading(false)
     }
@@ -441,12 +502,42 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             이메일 <span className="text-red-500">*</span>
           </label>
-          <input
-            {...register('email')}
-            type="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="example@email.com"
-          />
+          <div className="flex gap-2">
+            <input
+              {...register('email')}
+              type="email"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="example@email.com"
+              onChange={(e) => {
+                register('email').onChange(e)
+                setEmailCheckStatus('none')
+              }}
+            />
+            <button
+              type="button"
+              onClick={checkEmail}
+              disabled={!watchedEmail || !watchedEmail.includes('@') || emailCheckStatus === 'checking'}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {emailCheckStatus === 'checking' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                '중복확인'
+              )}
+            </button>
+          </div>
+          {emailCheckStatus === 'available' && (
+            <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              사용 가능한 이메일입니다
+            </p>
+          )}
+          {emailCheckStatus === 'taken' && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <XCircle className="w-4 h-4" />
+              이미 사용 중인 이메일입니다
+            </p>
+          )}
           <div className="mt-2">
             <label className="flex items-center">
               <input
@@ -508,15 +599,41 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             10K 기록 <span className="text-red-500">*</span>
           </label>
+          <div className="mb-3">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={noRecord}
+                onChange={(e) => {
+                  setNoRecord(e.target.checked)
+                  if (e.target.checked) {
+                    // 체크 시 화면에는 보이지 않지만 내부적으로는 100분 0초로 설정
+                    setValue('record_minutes', 100)
+                    setValue('record_seconds', 0)
+                  } else {
+                    // 체크 해제 시 필드 초기화
+                    setValue('record_minutes', undefined)
+                    setValue('record_seconds', undefined)
+                  }
+                }}
+              />
+              <span className="text-sm text-gray-600">기록없음 (터틀족으로 등록)</span>
+            </label>
+          </div>
           <div className="flex gap-2 items-center">
             <div className="flex-1">
               <input
                 type="number"
                 {...register('record_minutes', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="분"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
+                }`}
+                placeholder={noRecord ? '' : '분'}
                 min="1"
                 max="200"
+                disabled={noRecord}
+                style={noRecord ? { color: 'transparent' } : {}}
               />
               {errors.record_minutes && <p className="text-red-500 text-xs mt-1">{errors.record_minutes.message}</p>}
             </div>
@@ -525,23 +642,40 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
               <input
                 type="number"
                 {...register('record_seconds', { valueAsNumber: true })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="초"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
+                }`}
+                placeholder={noRecord ? '' : '초'}
                 min="0"
                 max="59"
+                disabled={noRecord}
+                style={noRecord ? { color: 'transparent' } : {}}
               />
               {errors.record_seconds && <p className="text-red-500 text-xs mt-1">{errors.record_seconds.message}</p>}
             </div>
             <span className="text-gray-500">초</span>
           </div>
-          {watchedRecordMinutes && (
-            <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).color}`}>
+          {(watchedRecordMinutes || noRecord) && (
+            <div className={`flex items-center gap-2 text-sm mt-2 ${
+              noRecord
+                ? 'text-gray-600'
+                : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).color
+            }`}>
               <img
-                src={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).icon}
-                alt={getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).display}
+                src={noRecord
+                  ? '/images/grades/turtle.png'
+                  : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).icon
+                }
+                alt={noRecord
+                  ? '터틀족'
+                  : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).display
+                }
                 className="w-5 h-5"
               />
-              → {getGradeDisplay(watchedRecordMinutes, watchedRecordSeconds || 0, watchedGender).display}
+              → {noRecord
+                ? '터틀족'
+                : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).display
+              }
             </div>
           )}
         </div>

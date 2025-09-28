@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { Calendar, Users, Trophy, MapPin, Clock, Star, Zap, Target, Award } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
+import { ErrorHandler } from '@/lib/errorHandler'
+import { SectionLoading } from '@/components/LoadingSpinner'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useState, useEffect } from 'react'
@@ -24,20 +26,22 @@ export default function Home() {
       const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString()
       const { data, error } = await supabase
         .from('competitions')
-        .select('*')
+        .select('id, title, description, date, location, registration_end, image_url, entry_fee')
         .eq('status', 'published')
         .gte('registration_end', localNow) // 신청 마감일이 현재 시점보다 나중인 것
         .order('registration_end', { ascending: true }) // 마감일이 가까운 순서로 정렬
         .limit(1) // 하나의 대회만 가져오기
 
       if (error) {
-        console.error('Error fetching competitions:', error)
+        const appError = ErrorHandler.handle(error)
+        ErrorHandler.logError(appError, 'Home.fetchUpcomingCompetitions')
         setUpcomingCompetitions([])
       } else {
         setUpcomingCompetitions(data || [])
       }
     } catch (error) {
-      console.error('Error:', error)
+      const appError = ErrorHandler.handle(error)
+      ErrorHandler.logError(appError, 'Home.fetchUpcomingCompetitions')
       setUpcomingCompetitions([])
     } finally {
       setLoading(false)
@@ -59,33 +63,29 @@ export default function Home() {
           <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
-        {/* 텍스트 오버레이 - 텍스트1(오른쪽 상단), 텍스트2(왼쪽 하단) */}
+        {/* 텍스트 오버레이 - 텍스트2(왼쪽 상단), 텍스트1(오른쪽 하단) */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full">
-          {/* 텍스트1 - 기존 오른쪽 상단 텍스트 */}
-          <div className="flex justify-end absolute top-8 right-4 lg:right-8">
+          {/* 텍스트2 - 왼쪽 상단 텍스트 */}
+          <div className="absolute top-16 left-4 lg:left-8">
+            <div className="text-left text-white">
+              <div className="space-y-2 text-lg md:text-2xl font-medium leading-relaxed">
+                <p className="opacity-90">전국 러닝 협회가 인증하는</p>
+                <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 텍스트1 - 오른쪽 하단 텍스트 */}
+          <div className="flex justify-end absolute bottom-16 lg:bottom-20 right-4 lg:right-8">
             <div className="text-right text-white">
               <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-4 sm:mb-6 tracking-tight">
                 <span className="block">we are</span>
                 <span className="block text-red-500">RUN10</span>
               </h1>
-              <div className="space-y-1 text-base sm:text-lg md:text-xl font-light">
-                <p className="opacity-90">we can RUN10</p>
+              <div className="space-y-1 text-base sm:text-lg md:text-xl font-light tracking-wider">
+                <p className="opacity-90">we&ensp; can RUN10</p>
                 <p className="opacity-90">we must RUN10</p>
-                <p className="opacity-90">we like RUN10</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 텍스트2 - 새로운 왼쪽 하단 텍스트 */}
-          <div className="absolute bottom-16 lg:bottom-20 left-4 lg:left-8">
-            <div className="text-left text-white">
-              <div className="space-y-2 text-lg md:text-xl font-medium leading-relaxed">
-                <p className="opacity-90">전국 러닝 협회가 인증하는</p>
-                <p className="opacity-90">10km 러너들의 공식 플랫폼,</p>
-                <div className="my-3">
-                  <div className="border-l-2 border-white opacity-60 h-8"></div>
-                </div>
-                <p className="text-2xl md:text-3xl font-black text-white">런텐(RUN10)</p>
+                <p className="opacity-90">we&ensp; like RUN10</p>
               </div>
             </div>
           </div>
@@ -109,9 +109,7 @@ export default function Home() {
       <section className="py-12 sm:py-16 lg:py-20 bg-black text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="flex justify-center py-12 sm:py-20">
-              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-2 border-white"></div>
-            </div>
+            <SectionLoading height="h-80" text="대회 정보를 불러오는 중..." />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* 대회 이미지 */}
@@ -125,7 +123,7 @@ export default function Home() {
                   }}
                 >
                   {/* 배경 오버레이 */}
-                  <div className="absolute inset-0 rounded-lg" style={{backgroundColor: '#00000070'}}></div>
+                  <div className="absolute inset-0 rounded-lg" style={{backgroundColor: '#00000090'}}></div>
 
                   {/* 대회 특장점 텍스트 */}
                   <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 sm:p-6">
