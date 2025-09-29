@@ -72,6 +72,8 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        {/* 네이버 웹마스터 도구 사이트 확인 메타태그 */}
+        <meta name="naver-site-verification" content="bfb49d12d1b9336b386b36b0082e9cf7bcecc0e5" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

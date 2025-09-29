@@ -597,30 +597,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         {/* 기록 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            10K 기록 <span className="text-red-500">*</span>
+            10K 기록 (마이페이지에서 수정가능) <span className="text-red-500">*</span>
           </label>
-          <div className="mb-3">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={noRecord}
-                onChange={(e) => {
-                  setNoRecord(e.target.checked)
-                  if (e.target.checked) {
-                    // 체크 시 화면에는 보이지 않지만 내부적으로는 100분 0초로 설정
-                    setValue('record_minutes', 100)
-                    setValue('record_seconds', 0)
-                  } else {
-                    // 체크 해제 시 필드 초기화
-                    setValue('record_minutes', undefined)
-                    setValue('record_seconds', undefined)
-                  }
-                }}
-              />
-              <span className="text-sm text-gray-600">기록없음 (터틀족으로 등록)</span>
-            </label>
-          </div>
           <div className="flex gap-2 items-center">
             <div className="flex-1">
               <input
@@ -654,6 +632,28 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
               {errors.record_seconds && <p className="text-red-500 text-xs mt-1">{errors.record_seconds.message}</p>}
             </div>
             <span className="text-gray-500">초</span>
+          </div>
+          <div className="mt-3">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={noRecord}
+                onChange={(e) => {
+                  setNoRecord(e.target.checked)
+                  if (e.target.checked) {
+                    // 체크 시 화면에는 보이지 않지만 내부적으로는 100분 0초로 설정
+                    setValue('record_minutes', 100)
+                    setValue('record_seconds', 0)
+                  } else {
+                    // 체크 해제 시 필드 초기화
+                    setValue('record_minutes', undefined)
+                    setValue('record_seconds', undefined)
+                  }
+                }}
+              />
+              <span className="text-sm text-gray-600">기록없음 (터틀족으로 등록)</span>
+            </label>
           </div>
           {(watchedRecordMinutes || noRecord) && (
             <div className={`flex items-center gap-2 text-sm mt-2 ${

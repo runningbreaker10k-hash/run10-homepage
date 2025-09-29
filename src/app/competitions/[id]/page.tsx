@@ -99,6 +99,72 @@ export default function CompetitionDetailPage() {
     }
   }, [activeTab, currentPage, searchKeyword])
 
+  // SEO용 Event 스키마를 head에 동적으로 추가
+  useEffect(() => {
+    if (!competition) return
+
+    const eventSchema = {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      "name": competition.title,
+      "description": competition.description,
+      "startDate": competition.date,
+      "location": {
+        "@type": "Place",
+        "name": competition.location,
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": competition.location,
+          "addressCountry": "KR"
+        }
+      },
+      "organizer": {
+        "@type": "Organization",
+        "name": competition.organizer || "RUN10",
+        "url": "https://runten.co.kr"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": competition.entry_fee,
+        "priceCurrency": "KRW",
+        "availability": isRegistrationOpen(competition) ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+        "validFrom": competition.registration_start,
+        "validThrough": competition.registration_end
+      },
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "eventStatus": competition.status === 'published' ? "https://schema.org/EventScheduled" : "https://schema.org/EventCancelled",
+      "maximumAttendeeCapacity": competition.max_participants,
+      "typicalAgeRange": "18-99",
+      "sport": "러닝",
+      "performer": {
+        "@type": "SportsTeam",
+        "name": "참가자들"
+      },
+      "image": competition.image_url || "https://runten.co.kr/images/og-image.jpg"
+    }
+
+    // 기존 스키마가 있으면 제거
+    const existingScript = document.querySelector('script[data-schema="event"]')
+    if (existingScript) {
+      existingScript.remove()
+    }
+
+    // 새 스키마 스크립트 추가
+    const script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.setAttribute('data-schema', 'event')
+    script.textContent = JSON.stringify(eventSchema)
+    document.head.appendChild(script)
+
+    // 컴포넌트 언마운트 시 스크립트 제거
+    return () => {
+      const scriptToRemove = document.querySelector('script[data-schema="event"]')
+      if (scriptToRemove) {
+        scriptToRemove.remove()
+      }
+    }
+  }, [competition])
+
 
   // 사용자의 신청 상태 확인
   const checkUserRegistration = async () => {
@@ -1189,7 +1255,7 @@ export default function CompetitionDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+        {/* Hero Section */}
       <div className="relative">
         <div className="relative w-full h-64 md:h-80 overflow-hidden">
           {competition.image_url ? (

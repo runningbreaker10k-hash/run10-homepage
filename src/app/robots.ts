@@ -13,13 +13,52 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/_next/',
           '/private/',
+          '/mypage',
+          '/login',
+          '/signup',
         ],
       },
       {
-        userAgent: 'Yeti',
+        userAgent: 'Googlebot',
         allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/_next/',
+          '/private/',
+          '/mypage',
+          '/login',
+          '/signup',
+        ],
+      },
+      {
+        userAgent: 'Yeti', // 네이버봇
+        allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/_next/',
+          '/private/',
+          '/mypage',
+          '/login',
+          '/signup',
+        ],
+      },
+      {
+        userAgent: 'Bingbot',
+        allow: '/',
+        disallow: [
+          '/admin/',
+          '/api/',
+          '/_next/',
+          '/private/',
+          '/mypage',
+          '/login',
+          '/signup',
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   }
 }
