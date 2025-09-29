@@ -80,6 +80,12 @@ export default function MemberRegistrationForm({
     }
   }, [user])
 
+  // 사용자 정보 로드 후 입금자명 자동 설정
+  useEffect(() => {
+    if (userDetails?.name) {
+      setValue('depositor_name', userDetails.name)
+    }
+  }, [userDetails, setValue])
 
   const loadUserDetails = async () => {
     if (!user) return
@@ -426,7 +432,7 @@ export default function MemberRegistrationForm({
                   value={size}
                   className="sr-only peer"
                 />
-                <div className="w-full py-2 px-3 text-center text-sm font-medium border rounded-md cursor-pointer hover:bg-gray-50 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
+                <div className="w-full py-2 px-3 text-center text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
                   {size}
                 </div>
               </label>
@@ -447,13 +453,13 @@ export default function MemberRegistrationForm({
             {...register('depositor_name')}
             type="text"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="입금하실 분의 성명을 입력하세요"
+            placeholder={userDetails?.name ? `기본값: ${userDetails.name}` : "입금하실 분의 성명을 입력하세요"}
           />
           {errors.depositor_name && (
             <p className="text-red-500 text-sm mt-1">{errors.depositor_name.message}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            💳 입금자명을 반드시 정확히 입력해주세요.
+            💳 입금자명을 반드시 확인해 주세요.
           </p>
         </div>
 

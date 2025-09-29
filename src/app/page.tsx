@@ -12,7 +12,18 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 
 export default function Home() {
-  const [upcomingCompetitions, setUpcomingCompetitions] = useState<Competition[]>([])
+  type UpcomingCompetition = {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+    registration_end: string;
+    image_url?: string;
+    entry_fee: number;
+  }
+
+  const [upcomingCompetitions, setUpcomingCompetitions] = useState<UpcomingCompetition[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -93,7 +104,7 @@ export default function Home() {
       </section>
 
       {/* 런텐프로젝트 슬로건 Section */}
-      <section className="py-8 sm:py-12 bg-red-600">
+      <section className="py-8 sm:py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-xs sm:max-w-lg md:max-w-3xl mx-auto">
             <img
@@ -129,7 +140,7 @@ export default function Home() {
                   <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 sm:p-6">
                     <div className="text-center space-y-4">
                       <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">
-                        JUST RUN 10 대회 특장점
+                        JUST RUN10 대회 특장점
                       </h3>
                       <div className="space-y-2 text-sm sm:text-base lg:text-lg">
                         <p>1. 평지코스 정확한 기록 인증</p>
@@ -158,7 +169,7 @@ export default function Home() {
                   <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white">
                     {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
                       ? upcomingCompetitions[0].title
-                      : 'JUST RUN 10'
+                      : 'JUST RUN10'
                     }
                   </h2>
 

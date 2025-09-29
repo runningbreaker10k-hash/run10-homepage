@@ -26,7 +26,7 @@ export default function Footer() {
               </div>
               <div className="text-xs text-gray-400 pt-2">
                 <p>사업자등록번호: 160111-0649785</p>
-                <p>사업자 대표: 윤 세 준</p>
+                <p>대표: 윤 세 준</p>
                 {/* 통신판매업신고번호: 2024-서울강남-1234 */}
               </div>
             </div>

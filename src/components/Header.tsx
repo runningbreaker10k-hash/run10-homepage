@@ -46,7 +46,7 @@ export default function Header() {
                   }}
                 >
                 </div>
-                <span className="text-xl font-bold text-white">런텐 RUN 10</span>
+                <span className="text-xl font-bold text-white">런텐 RUN10</span>
               </div>
             </Link>
 
