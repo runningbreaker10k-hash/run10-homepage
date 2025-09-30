@@ -344,22 +344,22 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
   const getPaymentStatusBadge = (status: string) => {
     if (status === 'confirmed') {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-          <CheckCircle className="h-4 w-4 mr-1" />
+        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
+          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
           입금 확인
         </span>
       )
     } else if (status === 'cancelled') {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-          <XCircle className="h-4 w-4 mr-1" />
+        <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-red-100 text-red-800">
+          <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
           취소
         </span>
       )
     }
     return (
-      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-        <Clock className="h-4 w-4 mr-1" />
+      <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-yellow-100 text-yellow-800">
+        <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
         입금 대기
       </span>
     )
@@ -368,92 +368,92 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
   if (!registration) {
     return (
-      <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="text-center mb-6">
-            <Search className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">신청 조회</h3>
+      <div className="max-w-md mx-auto px-3 sm:px-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+          <div className="text-center mb-4 sm:mb-6">
+            <Search className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600 mx-auto mb-3 sm:mb-4 flex-shrink-0" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">신청 조회</h3>
             {user ? (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-blue-800 text-sm">
-                  <CheckCircle className="inline h-4 w-4 mr-1" />
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3 sm:mb-4">
+                <p className="text-blue-800 text-xs sm:text-sm break-words">
+                  <CheckCircle className="inline h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
                   {user.name}님으로 로그인 중 - 회원 신청 내역을 자동 조회했습니다
                 </p>
               </div>
             ) : (
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-xs sm:text-sm break-words">
                 신청시 입력한 정보로 조회할 수 있습니다
               </p>
             )}
           </div>
 
-          <form onSubmit={handleSubmitLookup(onLookupSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmitLookup(onLookupSubmit)} className="space-y-3 sm:space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 이름 *
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
                 <input
                   {...registerLookup('name')}
                   type="text"
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                  className="w-full pl-10 sm:pl-11 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white text-sm sm:text-base"
                   placeholder="홍길동"
                 />
               </div>
               {lookupErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{lookupErrors.name.message}</p>
+                <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{lookupErrors.name.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="birth_date" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 생년월일 (6자리) *
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
                 <input
                   {...registerLookup('birth_date')}
                   type="text"
                   maxLength={6}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                  className="w-full pl-10 sm:pl-11 pr-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white text-sm sm:text-base"
                   placeholder="901234"
                 />
               </div>
               {lookupErrors.birth_date && (
-                <p className="mt-1 text-sm text-red-600">{lookupErrors.birth_date.message}</p>
+                <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{lookupErrors.birth_date.message}</p>
               )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 비밀번호 *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
                 <input
                   {...registerLookup('password')}
                   type={showPassword ? "text" : "password"}
-                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                  className="w-full pl-10 sm:pl-11 pr-10 sm:pr-11 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white text-sm sm:text-base"
                   placeholder="신청시 설정한 비밀번호"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 touch-manipulation"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />}
                 </button>
               </div>
               {lookupErrors.password && (
-                <p className="mt-1 text-sm text-red-600">{lookupErrors.password.message}</p>
+                <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{lookupErrors.password.message}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={isLooking}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-blue-600 text-white py-2 sm:py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base touch-manipulation"
             >
               {isLooking ? '조회 중...' : '신청 조회'}
             </button>
@@ -464,26 +464,26 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 space-y-4 sm:space-y-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
       {/* 신청 상태 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">신청 현황</h3>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">신청 현황</h3>
           <button
             onClick={handleReset}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 self-start sm:self-auto touch-manipulation"
           >
             다시 조회하기
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-gray-600">참가 신청</p>
-            <p className="text-lg font-semibold text-blue-600">완료</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
+            <p className="text-xs sm:text-sm text-gray-600">참가 신청</p>
+            <p className="text-base sm:text-lg font-semibold text-blue-600">완료</p>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600">입금 상태</p>
+          <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+            <p className="text-xs sm:text-sm text-gray-600">입금 상태</p>
             <div className="mt-1">
               {getPaymentStatusBadge(registration.payment_status)}
             </div>
@@ -491,17 +491,17 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         </div>
 
         {registration.payment_status === 'pending' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-start">
-              <AlertCircle className="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
-                <div className="text-sm text-yellow-700 space-y-1">
-                  <p>은행: 하나은행</p>
-                  <p>계좌: 734-910008-72504</p>
-                  <p>예금주: (주)러닝브레이커</p>
-                  <p>입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
-                  <p className="font-medium">입금자명: {registration.depositor_name}</p>
+                <h4 className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
+                <div className="text-xs sm:text-sm text-yellow-700 space-y-1">
+                  <p className="break-words">은행: 하나은행</p>
+                  <p className="break-all">계좌: 734-910008-72504</p>
+                  <p className="break-words">예금주: (주)러닝브레이커</p>
+                  <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
+                  <p className="font-medium break-words">입금자명: {registration.depositor_name}</p>
                 </div>
               </div>
             </div>
@@ -511,21 +511,21 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       {/* 신청 정보 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">신청 정보</h3>
-            <div className="flex items-center space-x-2">
+        <div className="p-3 sm:p-4 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">신청 정보</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="flex items-center px-3 py-1 text-sm text-blue-600 hover:text-blue-800"
+                className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 touch-manipulation"
               >
-                <Edit className="h-4 w-4 mr-1" />
+                <Edit className="h-4 w-4 sm:h-5 sm:w-5 mr-1 flex-shrink-0" />
                 {isEditing ? '취소' : '수정'}
               </button>
               {onCancelRequest && (
                 <button
                   onClick={onCancelRequest}
-                  className="flex items-center px-3 py-1 text-sm text-red-600 hover:text-red-800"
+                  className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 touch-manipulation"
                 >
                   취소신청
                 </button>
@@ -534,60 +534,60 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-3 sm:p-4">
           {!isEditing ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center">
-                  <User className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">이름</p>
-                    <p className="font-medium">{registration.name}</p>
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">이름</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">생년월일 / 나이</p>
-                    <p className="font-medium">{registration.birth_date} / {registration.age}세</p>
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">생년월일 / 나이</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.birth_date} / {registration.age}세</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <User className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">성별</p>
-                    <p className="font-medium">{registration.gender === 'male' ? '남성' : '여성'}</p>
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">성별</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.gender === 'male' ? '남성' : '여성'}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">연락처</p>
-                    <p className="font-medium">{registration.phone}</p>
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">연락처</p>
+                    <p className="font-medium text-sm sm:text-base break-all">{registration.phone}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">이메일</p>
-                    <p className="font-medium">{registration.email}</p>
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">이메일</p>
+                    <p className="font-medium text-sm sm:text-base break-all">{registration.email}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-start">
-                  <MapPin className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-gray-500">주소</p>
-                    <p className="font-medium">{registration.address}</p>
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">주소</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.address}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <User className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">참가 종목</p>
-                    <p className="font-medium">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">참가 종목</p>
+                    <p className="font-medium text-sm sm:text-base break-words">
                       {registration.participation_groups?.name || registration.distance || '미설정'}
                       {registration.participation_groups?.distance && (
                         <span className="text-gray-500 ml-2">({registration.participation_groups.distance})</span>
@@ -596,41 +596,41 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <CreditCard className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">참가비</p>
-                    <p className="font-medium">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">참가비</p>
+                    <p className="font-medium text-sm sm:text-base break-words">
                       ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <Shirt className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">티셔츠 사이즈</p>
-                    <p className="font-medium">{registration.shirt_size}</p>
+                  <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">티셔츠 사이즈</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.shirt_size}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <CreditCard className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm text-gray-500">입금자명</p>
-                    <p className="font-medium">{registration.depositor_name}</p>
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">입금자명</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.depositor_name}</p>
                   </div>
                 </div>
                 {registration.notes && (
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">특이사항</p>
-                    <p className="font-medium text-sm bg-gray-50 p-3 rounded">{registration.notes}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-1">특이사항</p>
+                    <p className="font-medium text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded break-words">{registration.notes}</p>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmitUpdate(onUpdateSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmitUpdate(onUpdateSubmit)} className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     참가 종목 *
                   </label>
                   <select
@@ -639,7 +639,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                       const group = participationGroups.find(g => g.id === e.target.value)
                       setSelectedGroup(group)
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
                     <option value="">참가 종목을 선택하세요</option>
                     {participationGroups.map((group) => (
@@ -649,18 +649,18 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     ))}
                   </select>
                   {updateErrors.participation_group_id && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.participation_group_id.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.participation_group_id.message}</p>
                   )}
                   {selectedGroup && (
-                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                    <div className="mt-2 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-xs sm:text-sm text-blue-800 break-words">
                         <strong>선택된 종목:</strong> {selectedGroup.name} ({selectedGroup.distance})
                       </p>
-                      <p className="text-sm text-blue-800">
+                      <p className="text-xs sm:text-sm text-blue-800 break-words">
                         <strong>참가비:</strong> ₩{selectedGroup.entry_fee.toLocaleString()}
                       </p>
                       {registration.participation_groups?.entry_fee !== selectedGroup.entry_fee && (
-                        <p className="text-sm text-amber-700 mt-1">
+                        <p className="text-xs sm:text-sm text-amber-700 mt-1 break-words">
                           ⚠️ 참가비가 변경됩니다. 차액에 대한 추가 입금 또는 환불 문의는 대회 주최측에 연락하세요.
                         </p>
                       )}
@@ -669,54 +669,54 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     연락처 *
                   </label>
                   <input
                     {...registerUpdate('phone')}
                     type="tel"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                   {updateErrors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.phone.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.phone.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     이메일 *
                   </label>
                   <input
                     {...registerUpdate('email')}
                     type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                   {updateErrors.email && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.email.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.email.message}</p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     주소 *
                   </label>
                   <textarea
                     {...registerUpdate('address')}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                   {updateErrors.address && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.address.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.address.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     티셔츠 사이즈 *
                   </label>
                   <select
                     {...registerUpdate('shirt_size')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
                     <option value="XS">XS</option>
                     <option value="S">S</option>
@@ -726,48 +726,48 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     <option value="XXL">XXL</option>
                   </select>
                   {updateErrors.shirt_size && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.shirt_size.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.shirt_size.message}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     입금자명 *
                   </label>
                   <input
                     {...registerUpdate('depositor_name')}
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                   {updateErrors.depositor_name && (
-                    <p className="mt-1 text-sm text-red-600">{updateErrors.depositor_name.message}</p>
+                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.depositor_name.message}</p>
                   )}
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     특이사항 (선택)
                   </label>
                   <textarea
                     {...registerUpdate('notes')}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-4">
+              <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                  className="w-full sm:w-auto px-4 py-2 sm:py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 text-sm sm:text-base touch-manipulation"
                 >
                   취소
                 </button>
                 <button
                   type="submit"
                   disabled={isUpdating}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-manipulation"
                 >
                   {isUpdating ? '수정 중...' : '수정 완료'}
                 </button>

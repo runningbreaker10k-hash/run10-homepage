@@ -227,44 +227,44 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
   const isAdmin = user?.role === 'admin'
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">게시글 작성</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="bg-white rounded-lg p-3 sm:p-6 w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-lg sm:text-xl font-bold">게시글 작성</h2>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="text-gray-400 hover:text-gray-600 disabled:opacity-50 p-1 touch-manipulation"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </div>
 
         {user && (
-          <div className="flex items-center mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center mb-3 sm:mb-4 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
             {gradeInfo && (
               <img
                 src={gradeInfo.icon}
                 alt={gradeInfo.display}
-                className="w-6 h-6 mr-2"
+                className="w-5 h-5 sm:w-6 sm:h-6 mr-2 flex-shrink-0"
               />
             )}
-            <span className="font-medium text-blue-900">{user.name}</span>
-            <span className="text-blue-700 ml-2">({gradeInfo?.display})</span>
+            <span className="font-medium text-blue-900 text-sm sm:text-base break-words">{user.name}</span>
+            <span className="text-blue-700 ml-2 text-xs sm:text-sm">({gradeInfo?.display})</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
           {/* 관리자 공지글 옵션 */}
           {isAdmin && (
-            <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center space-x-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <input
                 {...register('is_notice')}
                 type="checkbox"
                 id="is_notice"
-                className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded touch-manipulation"
               />
-              <label htmlFor="is_notice" className="text-sm font-medium text-amber-900">
+              <label htmlFor="is_notice" className="text-xs sm:text-sm font-medium text-amber-900 cursor-pointer">
                 📢 공지글로 작성
               </label>
             </div>
@@ -273,34 +273,34 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
           {/* 제목 */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              제목 *
+              제목 <span className="text-red-500">*</span>
             </label>
             <input
               {...register('title')}
               type="text"
               id="title"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="제목을 입력하세요"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{errors.title.message}</p>
             )}
           </div>
 
           {/* 내용 */}
           <div>
             <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-              내용 *
+              내용 <span className="text-red-500">*</span>
             </label>
             <textarea
               {...register('content')}
               id="content"
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={6}
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               placeholder="내용을 입력하세요"
             />
             {errors.content && (
-              <p className="mt-1 text-sm text-red-600">{errors.content.message}</p>
+              <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{errors.content.message}</p>
             )}
           </div>
 
@@ -309,25 +309,25 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
             <label className="block text-sm font-medium text-gray-700 mb-2">
               이미지 첨부 (선택)
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 sm:p-4 text-center">
               {imagePreview ? (
                 <div className="relative">
                   <img
                     src={imagePreview}
                     alt="미리보기"
-                    className="max-w-full h-40 object-cover mx-auto rounded-lg"
+                    className="max-w-full h-32 sm:h-40 object-cover mx-auto rounded-lg"
                   />
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 touch-manipulation"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3 sm:h-4 sm:w-4" />
                   </button>
                 </div>
               ) : (
                 <div>
-                  <Image className="mx-auto h-12 w-12 text-gray-400" />
+                  <Image className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                   <div className="mt-2">
                     <input
                       type="file"
@@ -338,7 +338,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
                     />
                     <label
                       htmlFor="image-input"
-                      className="cursor-pointer text-blue-600 hover:text-blue-500"
+                      className="cursor-pointer text-blue-600 hover:text-blue-500 text-sm sm:text-base touch-manipulation"
                     >
                       클릭하여 이미지 선택
                     </label>
@@ -363,24 +363,24 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
           </div>
 
           {/* 버튼 */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-3 sm:pt-4">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+              className="px-4 py-2 sm:py-3 text-gray-700 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-sm sm:text-base font-medium touch-manipulation order-2 sm:order-1"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              className="px-4 py-2 sm:py-3 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center text-sm sm:text-base font-medium touch-manipulation order-1 sm:order-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                  작성 중...
+                  <Loader2 className="animate-spin h-4 w-4 mr-2 flex-shrink-0" />
+                  <span>작성 중...</span>
                 </>
               ) : (
                 '작성하기'

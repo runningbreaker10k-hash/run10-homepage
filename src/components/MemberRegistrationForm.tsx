@@ -256,46 +256,46 @@ export default function MemberRegistrationForm({
     const selectedGroup = participationGroups.find(group => group.id === formData.participation_group_id)
 
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+      <div className="max-w-2xl mx-auto px-4 sm:px-0">
+        <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
             신청 내용 확인
           </h3>
 
           {/* 신청자 정보 */}
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2 mb-3">
               <img
                 src={gradeInfo.icon}
                 alt={gradeInfo.display}
-                className="w-6 h-6"
+                className="w-5 h-5 sm:w-6 sm:h-6"
               />
-              <h4 className="text-lg font-medium text-blue-900">신청자 정보</h4>
+              <h4 className="text-base sm:text-lg font-medium text-blue-900">신청자 정보</h4>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
+            <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 text-sm">
+              <div className="break-words">
                 <span className="text-blue-700 font-medium">성명:</span> {userDetails.name}
               </div>
               <div>
                 <span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}
               </div>
-              <div>
+              <div className="break-all">
                 <span className="text-blue-700 font-medium">연락처:</span> {userDetails.phone}
               </div>
-              <div>
+              <div className="break-all">
                 <span className="text-blue-700 font-medium">이메일:</span> {userDetails.email}
               </div>
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2 break-words">
                 <span className="text-blue-700 font-medium">주소:</span> {userDetails.address1} {userDetails.address2}
               </div>
             </div>
           </div>
 
           {/* 참가 정보 */}
-          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <h4 className="text-lg font-medium text-gray-900 mb-3">참가 정보</h4>
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-3">참가 정보</h4>
             <div className="space-y-3 text-sm">
-              <div>
+              <div className="break-words">
                 <span className="text-gray-700 font-medium">참가 종목 및 거리:</span> {getDistanceLabel(selectedGroup?.distance || '')}
               </div>
               <div>
@@ -304,14 +304,17 @@ export default function MemberRegistrationForm({
               <div>
                 <span className="text-gray-700 font-medium">티셔츠 사이즈:</span> {formData.shirt_size}
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-700 font-medium">입금자명:</span> {formData.depositor_name}
               </div>
-              <div>
-                <span className="text-gray-700 font-medium">계좌번호:</span> 하나은행 734-910008-72504 (예금주: (주)러닝브레이커)
-              </div>              
+              <div className="break-all">
+                <span className="text-gray-700 font-medium">계좌번호:</span> 하나은행 734-910008-72504
+              </div>
+              <div className="break-words">
+                <span className="text-gray-700 font-medium">예금주:</span> (주)러닝브레이커
+              </div>
               {formData.notes && (
-                <div>
+                <div className="break-words">
                   <span className="text-gray-700 font-medium">기타사항:</span> {formData.notes}
                 </div>
               )}
@@ -319,12 +322,12 @@ export default function MemberRegistrationForm({
           </div>
 
           {/* 확인 버튼들 */}
-          <div className="flex space-x-4">
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
             <button
               type="button"
               onClick={() => setShowConfirmation(false)}
               disabled={isSubmitting}
-              className="flex-1 py-3 px-4 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              className="flex-1 py-3 px-4 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors text-center touch-manipulation"
             >
               수정하기
             </button>
@@ -332,17 +335,17 @@ export default function MemberRegistrationForm({
               type="button"
               onClick={handleFinalSubmit}
               disabled={isSubmitting}
-              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors font-semibold"
+              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors font-semibold touch-manipulation"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  신청 중...
+                  <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+                  <span>신청 중...</span>
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  최종 신청
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                  <span>최종 신청</span>
                 </>
               )}
             </button>
@@ -353,31 +356,31 @@ export default function MemberRegistrationForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto px-4 sm:px-0">
       {/* 회원 정보 확인 */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-center space-x-2 mb-3">
           <img
             src={gradeInfo.icon}
             alt={gradeInfo.display}
-            className="w-6 h-6"
+            className="w-5 h-5 sm:w-6 sm:h-6"
           />
-          <h3 className="text-lg font-medium text-blue-900">신청자 정보</h3>
+          <h3 className="text-base sm:text-lg font-medium text-blue-900">신청자 정보</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
+        <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 text-sm">
+          <div className="break-words">
             <span className="text-blue-700 font-medium">성명:</span> {userDetails.name}
           </div>
           <div>
             <span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}
           </div>
-          <div>
+          <div className="break-all">
             <span className="text-blue-700 font-medium">연락처:</span> {userDetails.phone}
           </div>
-          <div>
+          <div className="break-all">
             <span className="text-blue-700 font-medium">이메일:</span> {userDetails.email}
           </div>
-          <div className="md:col-span-2">
+          <div className="sm:col-span-2 break-words">
             <span className="text-blue-700 font-medium">주소:</span> {userDetails.address1} {userDetails.address2}
           </div>
         </div>
@@ -389,12 +392,12 @@ export default function MemberRegistrationForm({
       {/* 참가 신청 폼 */}
       <form onSubmit={handleSubmit(onSubmit, (errors) => {
         console.log('폼 검증 오류:', errors)
-      })} className="space-y-6">
+      })} className="space-y-4 sm:space-y-6">
         {/* 참가 그룹 선택 */}
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <MapPin className="h-4 w-4 mr-2" />
-            참가 종목 <span className="text-red-500 ml-1">*</span>
+            <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span>참가 종목 <span className="text-red-500 ml-1">*</span></span>
           </label>
           <select
             {...register('participation_group_id')}
@@ -403,7 +406,7 @@ export default function MemberRegistrationForm({
               setSelectedGroup(group)
               setValue('participation_group_id', e.target.value)
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">참가 종목을 선택하세요</option>
             {participationGroups.map((group) => (
@@ -413,17 +416,17 @@ export default function MemberRegistrationForm({
             ))}
           </select>
           {errors.participation_group_id && (
-            <p className="text-red-500 text-sm mt-1">{errors.participation_group_id.message}</p>
+            <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.participation_group_id.message}</p>
           )}
         </div>
 
         {/* 티셔츠 사이즈 */}
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <Shirt className="h-4 w-4 mr-2" />
-            티셔츠 사이즈 <span className="text-red-500 ml-1">*</span>
+            <Shirt className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span>티셔츠 사이즈 <span className="text-red-500 ml-1">*</span></span>
           </label>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
               <label key={size} className="relative">
                 <input
@@ -432,31 +435,31 @@ export default function MemberRegistrationForm({
                   value={size}
                   className="sr-only peer"
                 />
-                <div className="w-full py-2 px-3 text-center text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
+                <div className="w-full py-2 sm:py-3 px-2 sm:px-3 text-center text-xs sm:text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
                   {size}
                 </div>
               </label>
             ))}
           </div>
           {errors.shirt_size && (
-            <p className="text-red-500 text-sm mt-1">{errors.shirt_size.message}</p>
+            <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.shirt_size.message}</p>
           )}
         </div>
 
         {/* 입금자명 */}
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <CreditCard className="h-4 w-4 mr-2" />
-            입금자명 <span className="text-red-500 ml-1">*</span>
+            <CreditCard className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span>입금자명 <span className="text-red-500 ml-1">*</span></span>
           </label>
           <input
             {...register('depositor_name')}
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder={userDetails?.name ? `기본값: ${userDetails.name}` : "입금하실 분의 성명을 입력하세요"}
           />
           {errors.depositor_name && (
-            <p className="text-red-500 text-sm mt-1">{errors.depositor_name.message}</p>
+            <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.depositor_name.message}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
             💳 입금자명을 반드시 확인해 주세요.
@@ -466,30 +469,31 @@ export default function MemberRegistrationForm({
         {/* 기타 사항 */}
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-            <FileText className="h-4 w-4 mr-2" />
-            기타 사항 (선택)
+            <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
+            <span>기타 사항 (선택)</span>
           </label>
           <textarea
             {...register('notes')}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="특이사항이나 요청사항이 있으시면 입력해주세요"
           />
         </div>
 
         {/* 참가비 정보 */}
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <h4 className="text-sm font-medium text-yellow-800 mb-2">💰 참가비 안내</h4>
-          <div className="text-sm text-yellow-700 space-y-1">
+          <div className="text-xs sm:text-sm text-yellow-700 space-y-1">
             {selectedGroup ? (
               <>
-                <p><strong>선택된 종목:</strong> {getDistanceLabel(selectedGroup.distance)}</p>
+                <p className="break-words"><strong>선택된 종목:</strong> {getDistanceLabel(selectedGroup.distance)}</p>
                 <p><strong>참가비:</strong> ₩{selectedGroup.entry_fee.toLocaleString()}</p>
               </>
             ) : (
               <p><strong>참가비:</strong> 종목 선택 후 확인 가능</p>
             )}
-            <p><strong>계좌번호:</strong> 하나은행 734-910008-72504 (예금주: (주)러닝브레이커)</p>
+            <p className="break-all"><strong>계좌번호:</strong> 하나은행 734-910008-72504</p>
+            <p className="break-words"><strong>예금주:</strong> (주)러닝브레이커</p>
             <p className="text-xs mt-2">
               ⚠️ 입금 확인 후 참가 확정됩니다.
             </p>
@@ -501,17 +505,17 @@ export default function MemberRegistrationForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-4 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors text-lg font-semibold"
+            className="w-full py-3 sm:py-4 px-4 sm:px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors text-base sm:text-lg font-semibold touch-manipulation"
           >
             {isSubmitting ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                신청 중...
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
+                <span>신청 중...</span>
               </>
             ) : (
               <>
-                <CheckCircle className="h-5 w-5 mr-2" />
-                참가 신청
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                <span>참가 신청</span>
               </>
             )}
           </button>
@@ -519,9 +523,9 @@ export default function MemberRegistrationForm({
       </form>
 
       {/* 안내사항 */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+      <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
         <h4 className="text-sm font-medium text-gray-900 mb-2">📋 신청 안내사항</h4>
-        <ul className="text-xs text-gray-600 space-y-1">
+        <ul className="text-xs text-gray-600 space-y-1 leading-relaxed">
           <li>• 회원 신청은 마이페이지에서 조회 및 관리할 수 있습니다</li>
           <li>• 신청 후 취소는 대회 게시판을 통해 요청해주세요</li>
           <li>• 참가비 입금 전까지는 신청이 확정되지 않습니다</li>

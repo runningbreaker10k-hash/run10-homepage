@@ -316,13 +316,13 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
 
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-center mb-2">회원가입</h2>
-        <p className="text-gray-600 text-center">런텐에 가입하여 다양한 러닝 대회에 참여해보세요!</p>
+    <div className="max-w-2xl mx-auto px-3 sm:px-6 py-4 sm:py-6 bg-white rounded-lg shadow-lg">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-center mb-2">회원가입</h2>
+        <p className="text-gray-600 text-sm sm:text-base text-center">런텐에 가입하여 다양한 러닝 대회에 참여해보세요!</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
         {/* 아이디 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -332,7 +332,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             <input
               {...register('user_id')}
               type="text"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="영문/숫자 4-15자"
               onChange={(e) => {
                 register('user_id').onChange(e)
@@ -343,28 +343,28 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
               type="button"
               onClick={checkUserId}
               disabled={!watchedUserId || watchedUserId.length < 4 || idCheckStatus === 'checking'}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 sm:py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
             >
               {idCheckStatus === 'checking' ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
               ) : (
                 '중복확인'
               )}
             </button>
           </div>
           {idCheckStatus === 'available' && (
-            <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+            <p className="text-green-600 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               사용 가능한 아이디입니다
             </p>
           )}
           {idCheckStatus === 'taken' && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-              <XCircle className="w-4 h-4" />
+            <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               이미 사용 중인 아이디입니다
             </p>
           )}
-          {errors.user_id && <p className="text-red-500 text-sm mt-1">{errors.user_id.message}</p>}
+          {errors.user_id && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.user_id.message}</p>}
         </div>
 
         {/* 비밀번호 */}
@@ -376,18 +376,18 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             <input
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="영문, 숫자 포함 8자 이상"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-4 h-4 flex-shrink-0" /> : <Eye className="w-4 h-4 flex-shrink-0" />}
             </button>
           </div>
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+          {errors.password && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.password.message}</p>}
         </div>
 
         {/* 비밀번호 확인 */}
@@ -399,18 +399,18 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             <input
               {...register('password_confirm')}
               type={showPasswordConfirm ? 'text' : 'password'}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="비밀번호를 다시 입력하세요"
             />
             <button
               type="button"
               onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
             >
-              {showPasswordConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPasswordConfirm ? <EyeOff className="w-4 h-4 flex-shrink-0" /> : <Eye className="w-4 h-4 flex-shrink-0" />}
             </button>
           </div>
-          {errors.password_confirm && <p className="text-red-500 text-sm mt-1">{errors.password_confirm.message}</p>}
+          {errors.password_confirm && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.password_confirm.message}</p>}
         </div>
 
         {/* 성명 */}
@@ -421,10 +421,10 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <input
             {...register('name')}
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="실명을 입력하세요"
           />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+          {errors.name && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.name.message}</p>}
         </div>
 
         {/* 주소 */}
@@ -432,41 +432,41 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             주소 <span className="text-red-500">*</span>
           </label>
-          <div className="space-y-2">
-            <div className="flex gap-2">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 {...register('postal_code')}
                 type="text"
                 readOnly
-                className="w-32 px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                className="w-full sm:w-32 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
                 placeholder="우편번호"
               />
               <button
                 type="button"
                 onClick={openPostCodeModal}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center gap-2"
+                className="px-4 py-2 sm:py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center justify-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
               >
-                <Search className="w-4 h-4" />
-                우편번호 찾기
+                <Search className="w-4 h-4 flex-shrink-0" />
+                <span>우편번호 찾기</span>
               </button>
             </div>
             <input
               {...register('address1')}
               type="text"
               readOnly
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
               placeholder="주소"
             />
             <input
               {...register('address2')}
               type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="상세주소를 입력하세요"
             />
           </div>
-          {errors.postal_code && <p className="text-red-500 text-sm mt-1">{errors.postal_code.message}</p>}
-          {errors.address1 && <p className="text-red-500 text-sm mt-1">{errors.address1.message}</p>}
-          {errors.address2 && <p className="text-red-500 text-sm mt-1">{errors.address2.message}</p>}
+          {errors.postal_code && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.postal_code.message}</p>}
+          {errors.address1 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address1.message}</p>}
+          {errors.address2 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address2.message}</p>}
         </div>
 
         {/* 연락처 */}
@@ -477,24 +477,28 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <input
             {...register('phone')}
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="010-0000-0000"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="010-1234-5678"
             onChange={(e) => {
               const formatted = formatPhoneNumber(e.target.value)
               setValue('phone', formatted)
             }}
           />
-          <div className="mt-2">
+          <div className="mt-2 sm:mt-3">
             <label className="flex items-center">
               <input
                 {...register('phone_marketing_agree')}
                 type="checkbox"
-                className="mr-2"
+                className="mr-2 touch-manipulation"
+                onChange={(e) => {
+                  setValue('phone_marketing_agree', e.target.checked)
+                  setValue('email_marketing_agree', e.target.checked)
+                }}
               />
-              <span className="text-sm text-gray-600">연락처로 마케팅 정보 수신에 동의합니다</span>
+              <span className="text-sm text-gray-600 break-words">마케팅 정보 수신에 동의합니다</span>
             </label>
           </div>
-          {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>}
+          {errors.phone && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.phone.message}</p>}
         </div>
 
         {/* 이메일 */}
@@ -506,7 +510,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             <input
               {...register('email')}
               type="email"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="example@email.com"
               onChange={(e) => {
                 register('email').onChange(e)
@@ -517,38 +521,28 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
               type="button"
               onClick={checkEmail}
               disabled={!watchedEmail || !watchedEmail.includes('@') || emailCheckStatus === 'checking'}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 sm:py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
             >
               {emailCheckStatus === 'checking' ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
               ) : (
                 '중복확인'
               )}
             </button>
           </div>
           {emailCheckStatus === 'available' && (
-            <p className="text-green-600 text-sm mt-1 flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+            <p className="text-green-600 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               사용 가능한 이메일입니다
             </p>
           )}
           {emailCheckStatus === 'taken' && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-              <XCircle className="w-4 h-4" />
+            <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
+              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
               이미 사용 중인 이메일입니다
             </p>
           )}
-          <div className="mt-2">
-            <label className="flex items-center">
-              <input
-                {...register('email_marketing_agree')}
-                type="checkbox"
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-600">이메일로 마케팅 정보 수신에 동의합니다</span>
-            </label>
-          </div>
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          {errors.email && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.email.message}</p>}
         </div>
 
         {/* 생년월일 */}
@@ -559,11 +553,11 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <input
             {...register('birth_date')}
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="YYMMDD (예: 901225)"
             maxLength={6}
           />
-          {errors.birth_date && <p className="text-red-500 text-sm mt-1">{errors.birth_date.message}</p>}
+          {errors.birth_date && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.birth_date.message}</p>}
         </div>
 
         {/* 성별 */}
@@ -571,27 +565,27 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             성별 <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <label className="flex items-center touch-manipulation">
               <input
                 {...register('gender')}
                 type="radio"
                 value="male"
-                className="mr-2"
+                className="mr-2 touch-manipulation"
               />
-              <span>남성</span>
+              <span className="text-sm sm:text-base">남성</span>
             </label>
-            <label className="flex items-center">
+            <label className="flex items-center touch-manipulation">
               <input
                 {...register('gender')}
                 type="radio"
                 value="female"
-                className="mr-2"
+                className="mr-2 touch-manipulation"
               />
-              <span>여성</span>
+              <span className="text-sm sm:text-base">여성</span>
             </label>
           </div>
-          {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}
+          {errors.gender && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender.message}</p>}
         </div>
 
         {/* 기록 */}
@@ -599,12 +593,12 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             10K 기록 (마이페이지에서 수정가능) <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-2 items-center">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <div className="flex-1">
               <input
                 type="number"
                 {...register('record_minutes', { valueAsNumber: true })}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
                 }`}
                 placeholder={noRecord ? '' : '분'}
@@ -613,14 +607,14 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
                 disabled={noRecord}
                 style={noRecord ? { color: 'transparent' } : {}}
               />
-              {errors.record_minutes && <p className="text-red-500 text-xs mt-1">{errors.record_minutes.message}</p>}
+              {errors.record_minutes && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.record_minutes.message}</p>}
             </div>
-            <span className="text-gray-500">분</span>
+            <span className="text-gray-500 text-sm sm:text-base sm:mx-1">분</span>
             <div className="flex-1">
               <input
                 type="number"
                 {...register('record_seconds', { valueAsNumber: true })}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
                 }`}
                 placeholder={noRecord ? '' : '초'}
@@ -629,15 +623,15 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
                 disabled={noRecord}
                 style={noRecord ? { color: 'transparent' } : {}}
               />
-              {errors.record_seconds && <p className="text-red-500 text-xs mt-1">{errors.record_seconds.message}</p>}
+              {errors.record_seconds && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.record_seconds.message}</p>}
             </div>
-            <span className="text-gray-500">초</span>
+            <span className="text-gray-500 text-sm sm:text-base sm:ml-1">초</span>
           </div>
-          <div className="mt-3">
-            <label className="flex items-center">
+          <div className="mt-3 sm:mt-4">
+            <label className="flex items-center touch-manipulation">
               <input
                 type="checkbox"
-                className="mr-2"
+                className="mr-2 touch-manipulation"
                 checked={noRecord}
                 onChange={(e) => {
                   setNoRecord(e.target.checked)
@@ -652,11 +646,11 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
                   }
                 }}
               />
-              <span className="text-sm text-gray-600">기록없음 (터틀족으로 등록)</span>
+              <span className="text-sm text-gray-600 break-words">기록없음</span>
             </label>
           </div>
           {(watchedRecordMinutes || noRecord) && (
-            <div className={`flex items-center gap-2 text-sm mt-2 ${
+            <div className={`flex items-center gap-2 text-sm sm:text-base mt-2 sm:mt-3 ${
               noRecord
                 ? 'text-gray-600'
                 : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).color
@@ -670,7 +664,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
                   ? '터틀족'
                   : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).display
                 }
-                className="w-5 h-5"
+                className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
               />
               → {noRecord
                 ? '터틀족'
@@ -686,56 +680,56 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <textarea
             {...register('etc')}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="추가로 전달하고 싶은 내용이 있다면 입력하세요"
           />
         </div>
 
         {/* 약관 동의 */}
-        <div className="space-y-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+        <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 border border-gray-200 rounded-md bg-gray-50">
           <div>
-            <label className="flex items-start">
+            <label className="flex items-start touch-manipulation">
               <input
                 {...register('privacy_agree')}
                 type="checkbox"
-                className="mr-2 mt-0.5"
+                className="mr-2 mt-0.5 touch-manipulation"
               />
-              <div className="text-sm">
+              <div className="text-sm sm:text-base">
                 <span className="font-medium">[필수] 개인정보 처리방침에 동의합니다</span>
-                <div className="text-gray-600 mt-1 text-xs">
+                <div className="text-gray-600 mt-1 text-xs sm:text-sm break-words">
                   수집목적: 회원 관리, 대회 참가 관리, 공지사항 전달<br />
                   수집항목: 아이디, 성명, 연락처, 이메일, 주소, 생년월일, 성별<br />
                   보유기간: 회원 탈퇴시까지
                 </div>
               </div>
             </label>
-            {errors.privacy_agree && <p className="text-red-500 text-sm mt-1">{errors.privacy_agree.message}</p>}
+            {errors.privacy_agree && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.privacy_agree.message}</p>}
           </div>
-          
+
           <div>
-            <label className="flex items-start">
+            <label className="flex items-start touch-manipulation">
               <input
                 {...register('terms_agree')}
                 type="checkbox"
-                className="mr-2 mt-0.5"
+                className="mr-2 mt-0.5 touch-manipulation"
               />
-              <div className="text-sm">
+              <div className="text-sm sm:text-base">
                 <span className="font-medium">[필수] 이용약관에 동의합니다</span>
-                <div className="text-gray-600 mt-1 text-xs">
+                <div className="text-gray-600 mt-1 text-xs sm:text-sm break-words">
                   회원은 대회 참가 시 안전수칙을 준수해야 하며, 허위정보 제공 시 회원자격이 박탈될 수 있습니다.
                 </div>
               </div>
             </label>
-            {errors.terms_agree && <p className="text-red-500 text-sm mt-1">{errors.terms_agree.message}</p>}
+            {errors.terms_agree && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.terms_agree.message}</p>}
           </div>
         </div>
 
         {/* 버튼 */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-3 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="flex-1 py-3 sm:py-4 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-sm sm:text-base font-medium touch-manipulation"
             disabled={isLoading}
           >
             취소
@@ -743,12 +737,12 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 py-3 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-3 sm:py-4 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                가입 중...
+                <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+                <span>가입 중...</span>
               </>
             ) : (
               '회원가입'

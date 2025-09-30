@@ -476,13 +476,13 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <div className="mb-6 text-center">
-        <h2 className="text-2xl font-bold mb-2">로그인</h2>
-        <p className="text-gray-600">런텐에 오신 것을 환영합니다!</p>
+    <div className="max-w-md mx-auto p-3 sm:p-6 bg-white rounded-lg shadow-lg">
+      <div className="mb-4 sm:mb-6 text-center">
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">로그인</h2>
+        <p className="text-gray-600 text-sm sm:text-base">런텐에 오신 것을 환영합니다!</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
         {/* 아이디 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -491,10 +491,10 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
           <input
             {...register('user_id')}
             type="text"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="아이디를 입력하세요"
           />
-          {errors.user_id && <p className="text-red-500 text-sm mt-1">{errors.user_id.message}</p>}
+          {errors.user_id && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.user_id.message}</p>}
         </div>
 
         {/* 비밀번호 */}
@@ -506,24 +506,24 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
             <input
               {...register('password')}
               type={showPassword ? 'text' : 'password'}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="비밀번호를 입력하세요"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 touch-manipulation"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+          {errors.password && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.password.message}</p>}
         </div>
 
         {/* 로그인 오류 메시지 */}
         {loginError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-600 text-sm">{loginError}</p>
+            <p className="text-red-600 text-xs sm:text-sm break-words">{loginError}</p>
           </div>
         )}
 
@@ -531,12 +531,12 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-3 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3 sm:py-4 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
         >
           {isLoading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              로그인 중...
+              <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+              <span>로그인 중...</span>
             </>
           ) : (
             '로그인'
@@ -545,32 +545,32 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
       </form>
 
       {/* 아이디/비밀번호 찾기 */}
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
         <button
           onClick={() => changeView('find-id')}
-          className="flex-1 py-2 px-3 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          className="flex-1 py-2 sm:py-3 px-3 text-xs sm:text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-center touch-manipulation"
         >
-          <Search className="w-4 h-4 inline mr-1" />
-          아이디 찾기
+          <Search className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 flex-shrink-0" />
+          <span>아이디 찾기</span>
         </button>
         <button
           onClick={() => changeView('find-password')}
-          className="flex-1 py-2 px-3 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          className="flex-1 py-2 sm:py-3 px-3 text-xs sm:text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors text-center touch-manipulation"
         >
-          <Key className="w-4 h-4 inline mr-1" />
-          비밀번호 찾기
+          <Key className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 flex-shrink-0" />
+          <span>비밀번호 찾기</span>
         </button>
       </div>
 
       {/* 회원가입 링크 */}
-      <div className="mt-6 text-center">
-        <p className="text-gray-600 text-sm mb-3">아직 회원이 아니신가요?</p>
+      <div className="mt-4 sm:mt-6 text-center">
+        <p className="text-gray-600 text-xs sm:text-sm mb-3">아직 회원이 아니신가요?</p>
         <button
           onClick={onShowSignup}
-          className="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center justify-center gap-2"
+          className="w-full py-2 sm:py-3 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center justify-center gap-2 text-sm font-medium touch-manipulation"
         >
-          <UserPlus className="w-4 h-4" />
-          회원가입
+          <UserPlus className="w-4 h-4 flex-shrink-0" />
+          <span>회원가입</span>
         </button>
       </div>
     </div>

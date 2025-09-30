@@ -57,14 +57,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuc
       />
       
       {/* 모달 컨텐트 */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="flex min-h-full items-start sm:items-center justify-center p-2 sm:p-4 pt-20 sm:pt-4">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[75vh] sm:max-h-[85vh] overflow-y-auto">
           {/* 헤더 */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
             <div className="flex space-x-1">
               <button
                 onClick={() => setActiveTab('login')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors touch-manipulation ${
                   activeTab === 'login'
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-500 hover:text-gray-700'
@@ -74,7 +74,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuc
               </button>
               <button
                 onClick={() => setActiveTab('signup')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-md transition-colors touch-manipulation ${
                   activeTab === 'signup'
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-500 hover:text-gray-700'
@@ -85,14 +85,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuc
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-2"
+              className="text-gray-400 hover:text-gray-600 p-2 touch-manipulation"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* 컨텐트 */}
-          <div className="p-6">
+          <div className="p-3 sm:p-6">
             {activeTab === 'login' ? (
               <LoginForm
                 onSuccess={handleLoginSuccess}
