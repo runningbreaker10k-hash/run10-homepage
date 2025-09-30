@@ -21,7 +21,8 @@ const membershipSchema = z.object({
   user_id: z.string()
     .min(4, '아이디는 최소 4자 이상이어야 합니다')
     .max(15, '아이디는 최대 15자까지 가능합니다')
-    .regex(/^[a-zA-Z0-9]+$/, '아이디는 영문과 숫자만 사용 가능합니다'),
+    .regex(/^[a-z][a-z0-9]*$/, '아이디는 영문 소문자로 시작하고, 영문 소문자와 숫자만 사용 가능합니다')
+    .transform(val => val.toLowerCase()),
   password: z.string()
     .min(8, '비밀번호는 최소 8자 이상이어야 합니다')
     .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, '비밀번호는 영문과 숫자를 포함해야 합니다'),
@@ -46,8 +47,9 @@ const membershipSchema = z.object({
   gender: z.enum(['male', 'female'], {
     required_error: '성별을 선택해주세요'
   }),
-  record_minutes: z.number().min(1, '최소 1분은 입력해주세요').max(200, '최대 200분까지 입력 가능합니다'),
-  record_seconds: z.number().min(0, '초는 0~59 사이여야 합니다').max(59, '초는 0~59 사이여야 합니다'),
+  record_range: z.enum(['30', '40', '50', '60', '70', 'none'], {
+    required_error: '기록을 선택해주세요'
+  }),
   etc: z.string().optional(),
   privacy_agree: z.boolean().refine(val => val === true, {
     message: '개인정보 처리방침에 동의해주세요'
@@ -97,29 +99,33 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
 
   const watchedUserId = watch('user_id')
   const watchedEmail = watch('email')
-  const watchedRecordMinutes = watch('record_minutes')
-  const watchedRecordSeconds = watch('record_seconds')
+  const watchedRecordRange = watch('record_range')
   const watchedGender = watch('gender')
 
-  // 기록에 따른 등급 표시 (성별별 다른 기준 적용)
-  const getGradeDisplay = (minutes: number, seconds: number = 0, gender?: string) => {
-    const totalMinutes = minutes + (seconds / 60)
+  // 기록 범위와 성별에 따른 등급 표시
+  const getGradeDisplay = (recordRange?: string, gender?: string) => {
+    if (!recordRange || !gender) {
+      return { grade: 'turtle', display: '성별과 기록을 선택하세요', icon: '/images/grades/turtle.png', color: 'text-gray-400' }
+    }
+
+    if (recordRange === 'none') {
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    }
+
+    const recordMinutes = parseInt(recordRange)
 
     if (gender === 'male') {
       // 남성 기준
-      if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-      if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-      if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
-      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
-    } else if (gender === 'female') {
-      // 여성 기준
-      if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-      if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-      if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      if (recordMinutes <= 30) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (recordMinutes <= 40) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (recordMinutes <= 50) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
       return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
     } else {
-      // 성별 미선택 시 기본 안내
-      return { grade: 'turtle', display: '성별을 선택하세요', icon: '/images/grades/turtle.png', color: 'text-gray-400' }
+      // 여성 기준
+      if (recordMinutes <= 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+      if (recordMinutes <= 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+      if (recordMinutes <= 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
     }
   }
 
@@ -133,10 +139,12 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     setIdCheckStatus('checking')
 
     try {
+      // 소문자로 변환하여 중복 확인
+      const lowerCaseUserId = watchedUserId.toLowerCase()
       const { data, error } = await supabase
         .from('users')
         .select('user_id')
-        .eq('user_id', watchedUserId)
+        .eq('user_id', lowerCaseUserId)
         .single()
 
       if (error && error.code === 'PGRST116') {
@@ -244,37 +252,23 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
       return
     }
 
-    // 기록없음 체크박스가 선택된 경우 기록 필드 값을 강제로 설정
-    if (noRecord) {
-      data.record_minutes = 100
-      data.record_seconds = 0
-    }
-
     setIsLoading(true)
 
     try {
-      // 기록 시간으로 등급 계산 (성별에 따라 다른 기준 적용)
-      const recordTime = (data.record_minutes * 60) + data.record_seconds
-      const totalMinutes = recordTime / 60
-
-      let grade = 'turtle'
-
-      if (data.gender === 'male') {
-        // 남성 기준
-        if (totalMinutes < 40) grade = 'cheetah'          // 00:00~39:59
-        else if (totalMinutes < 50) grade = 'horse'       // 40:00~49:59
-        else if (totalMinutes < 60) grade = 'wolf'        // 50:00~59:59
-        else grade = 'turtle'                             // 60:00 이상
+      // 선택한 기록 범위를 실제 기록 시간으로 변환 (분:초)
+      let recordTime = 0
+      if (data.record_range === 'none') {
+        recordTime = 100 * 60 // 100분 = 6000초
       } else {
-        // 여성 기준
-        if (totalMinutes < 50) grade = 'cheetah'          // 00:00~49:59
-        else if (totalMinutes < 60) grade = 'horse'       // 50:00~59:59
-        else if (totalMinutes < 70) grade = 'wolf'        // 60:00~69:59
-        else grade = 'turtle'                             // 70:00 이상
+        recordTime = parseInt(data.record_range) * 60 // 선택한 분 * 60초
       }
 
+      // 등급 계산
+      const gradeInfo = getGradeDisplay(data.record_range, data.gender)
+      const grade = gradeInfo.grade
+
       const insertData = {
-        user_id: data.user_id,
+        user_id: data.user_id.toLowerCase(),
         password: data.password,
         name: data.name,
         postal_code: data.postal_code,
@@ -333,8 +327,10 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
               {...register('user_id')}
               type="text"
               className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="영문/숫자 4-15자"
+              placeholder="영문+숫자 조합, 4-15자"
               onChange={(e) => {
+                // 입력값을 자동으로 소문자로 변환
+                e.target.value = e.target.value.toLowerCase()
                 register('user_id').onChange(e)
                 setIdCheckStatus('none')
               }}
@@ -591,85 +587,76 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         {/* 기록 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            10K 기록 (마이페이지에서 수정가능) <span className="text-red-500">*</span>
+            10K 기록 (마이페이지에서 정확한 기록 수정가능) <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            <div className="flex-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
               <input
-                type="number"
-                {...register('record_minutes', { valueAsNumber: true })}
-                className={`w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
-                }`}
-                placeholder={noRecord ? '' : '분'}
-                min="1"
-                max="200"
-                disabled={noRecord}
-                style={noRecord ? { color: 'transparent' } : {}}
+                {...register('record_range')}
+                type="radio"
+                value="30"
+                className="mr-2"
               />
-              {errors.record_minutes && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.record_minutes.message}</p>}
-            </div>
-            <span className="text-gray-500 text-sm sm:text-base sm:mx-1">분</span>
-            <div className="flex-1">
+              <span className="text-sm sm:text-base font-medium">30분대</span>
+            </label>
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
               <input
-                type="number"
-                {...register('record_seconds', { valueAsNumber: true })}
-                className={`w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  noRecord ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''
-                }`}
-                placeholder={noRecord ? '' : '초'}
-                min="0"
-                max="59"
-                disabled={noRecord}
-                style={noRecord ? { color: 'transparent' } : {}}
+                {...register('record_range')}
+                type="radio"
+                value="40"
+                className="mr-2"
               />
-              {errors.record_seconds && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.record_seconds.message}</p>}
-            </div>
-            <span className="text-gray-500 text-sm sm:text-base sm:ml-1">초</span>
-          </div>
-          <div className="mt-3 sm:mt-4">
-            <label className="flex items-center touch-manipulation">
+              <span className="text-sm sm:text-base font-medium">40분대</span>
+            </label>
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
               <input
-                type="checkbox"
-                className="mr-2 touch-manipulation"
-                checked={noRecord}
-                onChange={(e) => {
-                  setNoRecord(e.target.checked)
-                  if (e.target.checked) {
-                    // 체크 시 화면에는 보이지 않지만 내부적으로는 100분 0초로 설정
-                    setValue('record_minutes', 100)
-                    setValue('record_seconds', 0)
-                  } else {
-                    // 체크 해제 시 필드 초기화
-                    setValue('record_minutes', undefined)
-                    setValue('record_seconds', undefined)
-                  }
-                }}
+                {...register('record_range')}
+                type="radio"
+                value="50"
+                className="mr-2"
               />
-              <span className="text-sm text-gray-600 break-words">기록없음</span>
+              <span className="text-sm sm:text-base font-medium">50분대</span>
+            </label>
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
+              <input
+                {...register('record_range')}
+                type="radio"
+                value="60"
+                className="mr-2"
+              />
+              <span className="text-sm sm:text-base font-medium">60분대</span>
+            </label>
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
+              <input
+                {...register('record_range')}
+                type="radio"
+                value="70"
+                className="mr-2"
+              />
+              <span className="text-sm sm:text-base font-medium">70분이상</span>
+            </label>
+            <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">
+              <input
+                {...register('record_range')}
+                type="radio"
+                value="none"
+                className="mr-2"
+              />
+              <span className="text-sm sm:text-base font-medium">기록없음</span>
             </label>
           </div>
-          {(watchedRecordMinutes || noRecord) && (
-            <div className={`flex items-center gap-2 text-sm sm:text-base mt-2 sm:mt-3 ${
-              noRecord
-                ? 'text-gray-600'
-                : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).color
+          {errors.record_range && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.record_range.message}</p>}
+
+          {watchedRecordRange && watchedGender && (
+            <div className={`flex items-center gap-2 text-sm sm:text-base mt-3 ${
+              getGradeDisplay(watchedRecordRange, watchedGender).color
             }`}>
               <img
-                src={noRecord
-                  ? '/images/grades/turtle.png'
-                  : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).icon
-                }
-                alt={noRecord
-                  ? '터틀족'
-                  : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).display
-                }
+                src={getGradeDisplay(watchedRecordRange, watchedGender).icon}
+                alt={getGradeDisplay(watchedRecordRange, watchedGender).display}
                 className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"
               />
-              → {noRecord
-                ? '터틀족'
-                : getGradeDisplay(watchedRecordMinutes || 0, watchedRecordSeconds || 0, watchedGender).display
-              }
+              → {getGradeDisplay(watchedRecordRange, watchedGender).display}
             </div>
           )}
         </div>

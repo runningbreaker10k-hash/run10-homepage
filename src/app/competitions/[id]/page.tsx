@@ -222,12 +222,20 @@ export default function CompetitionDetailPage() {
         .from('participation_groups')
         .select('*')
         .eq('competition_id', competitionId)
-        .order('distance')
 
       if (groupsError) {
         console.error('Error fetching participation groups:', groupsError)
       } else {
-        setParticipationGroups(groupsData || [])
+        // 거리 값을 숫자로 변환하여 오름차순 정렬 (3km, 5km, 10km, 21km, 42km 순)
+        const sortedGroups = (groupsData || []).sort((a, b) => {
+          // "10km", "하프마라톤(21km)", "풀마라톤(42km)" 등에서 숫자 추출
+          const matchA = a.distance.match(/(\d+)km/)
+          const matchB = b.distance.match(/(\d+)km/)
+          const distanceA = matchA ? parseInt(matchA[1]) : 0
+          const distanceB = matchB ? parseInt(matchB[1]) : 0
+          return distanceA - distanceB
+        })
+        setParticipationGroups(sortedGroups)
       }
 
       // Fetch competition posts - 여기는 실제로 필요한 경우에만 사용
@@ -438,7 +446,7 @@ export default function CompetitionDetailPage() {
                               <div key={group.id} className="text-sm">
                                 <span className="font-medium">{group.name}</span>
                                 <span className="text-gray-500 ml-2">
-                                  (₩{group.entry_fee.toLocaleString()})
+                                  (₩{group.entry_fee.toLocaleString()} / {group.max_participants}명)
                                 </span>
                               </div>
                             ))}
