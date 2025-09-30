@@ -104,7 +104,7 @@ export default function Home() {
       </section>
 
       {/* 런텐프로젝트 슬로건 Section */}
-      <section className="py-8 sm:py-12 bg-black">
+      <section className="py-8 sm:py-12 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-xs sm:max-w-lg md:max-w-3xl mx-auto">
             <img

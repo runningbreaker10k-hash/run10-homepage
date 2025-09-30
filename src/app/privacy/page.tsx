@@ -110,35 +110,7 @@ export default function PrivacyPage() {
                 </ol>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제5조 (개인정보처리의 위탁)</h2>
-              <div className="text-gray-700 mb-6 leading-relaxed">
-                <p className="mb-3">회사는 원활한 개인정보 업무처리를 위하여 다음과 같이 개인정보 처리업무를 위탁하고 있습니다:</p>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border-collapse border border-gray-300">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-4 py-2 text-left">수탁업체</th>
-                        <th className="border border-gray-300 px-4 py-2 text-left">위탁업무</th>
-                        <th className="border border-gray-300 px-4 py-2 text-left">보유기간</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                      <tr>
-                        <td className="border border-gray-300 px-4 py-2">하나은행</td>
-                        <td className="border border-gray-300 px-4 py-2">무통장입금 처리</td>
-                        <td className="border border-gray-300 px-4 py-2">입금 확인 후 5년</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-gray-300 px-4 py-2">네이버클라우드</td>
-                        <td className="border border-gray-300 px-4 py-2">SMS 발송</td>
-                        <td className="border border-gray-300 px-4 py-2">발송 완료 후 즉시 삭제</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제6조 (정보주체의 권리·의무 및 행사방법)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제5조 (정보주체의 권리·의무 및 행사방법)</h2>
               <div className="text-gray-700 mb-6 leading-relaxed">
                 <p className="mb-3">정보주체는 회사에 대해 언제든지 다음 각 호의 개인정보 보호 관련 권리를 행사할 수 있습니다:</p>
                 <ol className="list-decimal list-inside space-y-2 ml-4">
@@ -150,7 +122,7 @@ export default function PrivacyPage() {
                 <p className="mt-4">위의 권리 행사는 회사에 대해 개인정보보호법 시행령 제41조제1항에 따라 서면, 전자우편, 모사전송(FAX) 등을 통하여 하실 수 있으며, 회사는 이에 대해 지체없이 조치하겠습니다.</p>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제7조 (개인정보의 안전성 확보조치)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제6조 (개인정보의 안전성 확보조치)</h2>
               <div className="text-gray-700 mb-6 leading-relaxed">
                 <p className="mb-3">회사는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고 있습니다:</p>
                 <ol className="list-decimal list-inside space-y-2 ml-4">
@@ -160,7 +132,7 @@ export default function PrivacyPage() {
                 </ol>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제8조 (개인정보 자동 수집 장치의 설치·운영 및 거부)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제7조 (개인정보 자동 수집 장치의 설치·운영 및 거부)</h2>
               <div className="text-gray-700 mb-6 leading-relaxed">
                 <ol className="list-decimal list-inside space-y-3">
                   <li>회사는 이용자에게 개별적인 맞춤서비스를 제공하기 위해 이용정보를 저장하고 수시로 불러오는 '쿠키(cookie)'를 사용합니다.</li>
@@ -169,13 +141,12 @@ export default function PrivacyPage() {
                 </ol>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제9조 (개인정보 보호책임자)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제8조 (개인정보 보호책임자)</h2>
               <div className="text-gray-700 mb-6 leading-relaxed">
                 <p className="mb-3">회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다:</p>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-semibold text-gray-900 mb-2">개인정보 보호책임자</h4>
                   <ul className="space-y-1 text-sm">
-                    <li>성명: 김러닝</li>
                     <li>직책: 개인정보보호팀장</li>
                     <li>전화번호: 042-710-2058</li>
                     <li>이메일: runningbreaker10k@gmail.com</li>
@@ -183,21 +154,12 @@ export default function PrivacyPage() {
                 </div>
               </div>
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">제10조 (개인정보 처리방침 변경)</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제9조 (개인정보 처리방침 변경)</h2>
               <div className="text-gray-700 mb-6 leading-relaxed">
                 <ol className="list-decimal list-inside space-y-3">
                   <li>이 개인정보처리방침은 시행일로부터 적용되며, 법령 및 방침에 따른 변경내용의 추가, 삭제 및 정정이 있는 경우에는 변경사항의 시행 7일 전부터 공지사항을 통하여 고지할 것입니다.</li>
                   <li>본 방침은 2024년 9월 12일부터 시행됩니다.</li>
                 </ol>
-              </div>
-
-              <div className="mt-12 p-6 bg-red-50 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">개인정보 침해 신고센터</h3>
-                <div className="text-gray-700 text-sm space-y-1">
-                  <p>개인정보 침해신고센터: privacy.go.kr (국번없이 182)</p>
-                  <p>대검찰청 사이버범죄수사단: www.spo.go.kr (국번없이 1301)</p>
-                  <p>경찰청 사이버테러대응센터: www.netan.go.kr (국번없이 182)</p>
-                </div>
               </div>
 
               <div className="mt-8 p-6 bg-gray-50 rounded-lg">

@@ -187,30 +187,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
           </div>
-
-          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-8">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">JUST RUN 10 대회 특장점</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="font-semibold text-red-600 mb-2">평지코스</div>
-                  <p className="text-sm text-gray-600">정확한 기록 인증</p>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-green-600 mb-2">쾌적한 코스</div>
-                  <p className="text-sm text-gray-600">깨끗하고 쾌적한 러닝코스</p>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-purple-600 mb-2">최고 경품</div>
-                  <p className="text-sm text-gray-600">70명 대상 국내 최고 경품</p>
-                </div>
-                <div className="text-center">
-                  <div className="font-semibold text-blue-600 mb-2">안정적 레이스</div>
-                  <p className="text-sm text-gray-600">수준별 출발 안정적 레이스</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

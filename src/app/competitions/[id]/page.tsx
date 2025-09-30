@@ -43,7 +43,7 @@ export default function CompetitionDetailPage() {
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
   const [posts, setPosts] = useState<CompetitionPost[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'course' | 'prizes' | 'register' | 'lookup' | 'board'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'register' | 'lookup' | 'board'>('overview')
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const [userRegistration, setUserRegistration] = useState<any>(null)
@@ -87,7 +87,7 @@ export default function CompetitionDetailPage() {
   // 쿼리 파라미터로 탭 설정
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['overview', 'course', 'prizes', 'register', 'lookup', 'board'].includes(tab)) {
+    if (tab && ['overview', 'register', 'lookup', 'board'].includes(tab)) {
       setActiveTab(tab as any)
     }
   }, [searchParams])
@@ -397,7 +397,10 @@ export default function CompetitionDetailPage() {
     overview: (
       <div className="space-y-8">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">대회 개요</h3>
+          <div className="flex items-center mb-4">
+            <Trophy className="h-6 w-6 text-blue-600 mr-2" />
+            <h3 className="text-xl font-semibold text-gray-900">대회 개요</h3>
+          </div>
           <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
             {competition.description}
           </p>
@@ -406,10 +409,6 @@ export default function CompetitionDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <h4 className="font-semibold text-gray-900 mb-6 flex items-center">
-                <Trophy className="h-5 w-5 text-blue-600 mr-2" />
-                대회 정보
-              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
@@ -490,7 +489,7 @@ export default function CompetitionDetailPage() {
                 <Clock className="h-5 w-5 text-blue-600 mr-2" />
                 <h4 className="font-semibold text-gray-900">신청 기간</h4>
               </div>
-              
+
               <div className="space-y-4">
                 {/* 기간 표시 */}
                 <div className="text-center">
@@ -498,7 +497,7 @@ export default function CompetitionDetailPage() {
                     {format(new Date(competition.registration_start), 'M월 d일')} - {format(new Date(competition.registration_end), 'M월 d일')}
                   </div>
                 </div>
-                
+
                 {/* 진행률 바 */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-gray-600">
@@ -506,7 +505,7 @@ export default function CompetitionDetailPage() {
                     <span>{format(new Date(competition.registration_end), 'M/d')}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{
                         width: `${(() => {
@@ -521,7 +520,7 @@ export default function CompetitionDetailPage() {
                     ></div>
                   </div>
                 </div>
-                
+
                 {/* 상태 표시 */}
                 <div className="text-center">
                   {(() => {
@@ -529,7 +528,7 @@ export default function CompetitionDetailPage() {
                     const start = new Date(competition.registration_start)
                     const end = new Date(competition.registration_end)
                     const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-                    
+
                     if (now < start) {
                       return (
                         <div className="text-orange-600 text-sm font-medium">
@@ -560,74 +559,40 @@ export default function CompetitionDetailPage() {
             </div>
           </div>
         </div>
-      </div>
-    ),
-    
-    course: (
-      <div className="space-y-6">
-        <div className="flex items-center mb-4">
-          <Route className="h-6 w-6 text-blue-600 mr-2" />
-          <h3 className="text-xl font-semibold text-gray-900">코스 안내</h3>
-        </div>
-        
+
+        {/* 코스 이미지 */}
         {competition.course_image_url && (
-          <div className="mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <Route className="h-6 w-6 text-blue-600 mr-2" />
+              <h3 className="text-xl font-semibold text-gray-900">코스 안내</h3>
+            </div>
             <div className="w-full max-w-4xl mx-auto">
               <img
                 src={competition.course_image_url}
                 alt="코스 이미지"
-                className="w-full h-auto object-contain rounded-lg cursor-pointer"
-                onClick={() => {
-                  setSelectedImage({url: competition.course_image_url!, alt: '코스 이미지'})
-                  setShowImageModal(true)
-                }}
+                className="w-full h-auto object-contain rounded-lg shadow-md"
               />
-              <p className="text-center text-sm text-gray-500 mt-2">클릭하면 확대해서 볼 수 있습니다</p>
             </div>
           </div>
         )}
-        
-        <div className="prose max-w-none">
-          <div className="bg-gray-50 rounded-lg p-6">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {competition.course_description}
-            </p>
-          </div>
-        </div>
-      </div>
-    ),
 
-    prizes: (
-      <div className="space-y-6">
-        <div className="flex items-center mb-4">
-          <Award className="h-6 w-6 text-blue-600 mr-2" />
-          <h3 className="text-xl font-semibold text-gray-900">시상 내역</h3>
-        </div>
-        
+        {/* 상금/상품 이미지 */}
         {competition.prizes_image_url && (
-          <div className="mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <Award className="h-6 w-6 text-blue-600 mr-2" />
+              <h3 className="text-xl font-semibold text-gray-900">시상 내역</h3>
+            </div>
             <div className="w-full max-w-4xl mx-auto">
               <img
                 src={competition.prizes_image_url}
                 alt="시상품 이미지"
-                className="w-full h-auto object-contain rounded-lg cursor-pointer"
-                onClick={() => {
-                  setSelectedImage({url: competition.prizes_image_url!, alt: '시상품 이미지'})
-                  setShowImageModal(true)
-                }}
+                className="w-full h-auto object-contain rounded-lg shadow-md"
               />
-              <p className="text-center text-sm text-gray-500 mt-2">클릭하면 확대해서 볼 수 있습니다</p>
             </div>
           </div>
         )}
-        
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-6">
-          <div className="prose max-w-none">
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {competition.prizes}
-            </p>
-          </div>
-        </div>
       </div>
     ),
 
@@ -847,7 +812,7 @@ export default function CompetitionDetailPage() {
     lookup: (
       <div className="space-y-6">
         <div className="flex items-center mb-4">
-          <Search className="h-6 w-6 text-blue-600 mr-2" />
+          
           <h3 className="text-xl font-semibold text-gray-900">신청 조회</h3>
         </div>
         {!user ? (
@@ -962,7 +927,6 @@ export default function CompetitionDetailPage() {
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <MessageCircle className="h-6 w-6 text-blue-600 mr-2" />
             <h3 className="text-xl font-semibold text-gray-900">대회 게시판</h3>
           </div>
           {user && (
@@ -1290,11 +1254,9 @@ export default function CompetitionDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8 overflow-x-auto">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {[
               { key: 'overview', label: '개요', icon: Trophy },
-              { key: 'course', label: '코스', icon: Route },
-              { key: 'prizes', label: '상금/상품', icon: Award },
               { key: 'register', label: '신청', icon: Users },
               { key: 'lookup', label: '조회', icon: Search },
               { key: 'board', label: '대회게시판', icon: MessageCircle }
@@ -1355,6 +1317,25 @@ export default function CompetitionDetailPage() {
               setSelectedImage(null)
             }}
           />
+        </div>
+      )}
+
+      {/* 스티키 신청 배너 */}
+      {activeTab !== 'register' && isRegistrationOpen(competition) && (
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
+          <button
+            onClick={() => {
+              setActiveTab('register')
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+            className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-full shadow-2xl hover:shadow-blue-500/50 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center space-x-2 sm:space-x-3 transform hover:scale-105"
+          >
+            <Users className="h-5 w-5 sm:h-6 sm:w-6" />
+            <div className="flex flex-col items-start">
+              <span className="text-xs sm:text-sm font-medium">참가신청</span>
+              <span className="text-xs sm:text-sm opacity-50">바로가기</span>
+            </div>
+          </button>
         </div>
       )}
     </div>

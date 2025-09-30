@@ -81,10 +81,8 @@ export default function TermsPage() {
                   <li>참가비 납부 완료 시 참가 신청이 확정됩니다.</li>
                   <li>환불 규정:
                     <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
-                      <li>대회 30일 전: 참가비 100% 환불</li>
-                      <li>대회 15일 전: 참가비 50% 환불</li>
-                      <li>대회 7일 전: 참가비 30% 환불</li>
-                      <li>대회 7일 이내: 환불 불가</li>
+                      <li>대회 접수 마감 전: 참가비 전액 환불</li>
+                      <li>대회 접수 마감 후: 환불 불가</li>
                     </ul>
                   </li>
                   <li>회사의 사정으로 대회가 취소되는 경우 참가비 전액을 환불합니다.</li>
