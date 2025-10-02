@@ -21,6 +21,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User } from '@/types'
 import { format } from 'date-fns'
+import { formatKST } from '@/lib/dateUtils'
 import PostDetailModal from '@/components/PostDetailModal'
 import AuthModal from '@/components/AuthModal'
 
@@ -960,7 +961,7 @@ export default function AdminPage() {
                               {registration.distance ? getDistanceLabel(registration.distance) : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {format(new Date(registration.created_at), 'yyyy.MM.dd HH:mm')}
+                              {formatKST(registration.created_at, 'yyyy.MM.dd HH:mm')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -1140,7 +1141,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
-                                {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                                {formatKST(post.created_at, 'yyyy.MM.dd')}
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -1277,7 +1278,7 @@ export default function AdminPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                              {formatKST(post.created_at, 'yyyy.MM.dd')}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -1484,7 +1485,7 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {format(new Date(member.created_at), 'yyyy.MM.dd')}
+                          {formatKST(member.created_at, 'yyyy.MM.dd')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-3">
@@ -1705,7 +1706,7 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">신청일시</label>
                     <p className="text-base text-gray-900">
-                      {format(new Date(selectedParticipant.created_at), 'yyyy.MM.dd HH:mm')}
+                      {formatKST(selectedParticipant.created_at, 'yyyy.MM.dd HH:mm')}
                     </p>
                   </div>
                   {selectedParticipant.shirt_size && (

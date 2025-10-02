@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Edit, Trash2, MessageSquare, Send, Eye, Pin, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { format } from 'date-fns'
+import { formatKST } from '@/lib/dateUtils'
 import { useAuth } from '@/contexts/AuthContext'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -278,7 +278,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   }
 
   const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'yyyy년 MM월 dd일 HH:mm')
+    return formatKST(dateString, 'yyyy년 MM월 dd일 HH:mm')
   }
 
   const formatContent = (content: string) => {
@@ -561,7 +561,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                                 {reply.is_admin_reply ? '👑 관리자' : reply.author}
                               </span>
                               <span className="text-xs text-gray-500">
-                                {format(new Date(reply.created_at), 'yyyy.MM.dd HH:mm')}
+                                {formatKST(reply.created_at, 'yyyy.MM.dd HH:mm')}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2">

@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { MessageCircle, Search, Plus, Eye, MessageSquare, Pin, Edit, Trash2, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { toKST } from '@/lib/dateUtils'
 import AuthModal from '@/components/AuthModal'
 
 interface Post {
@@ -118,15 +119,15 @@ export default function CommunityPage() {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const kstDate = toKST(dateString)
     const now = new Date()
-    const diff = now.getTime() - date.getTime()
+    const diff = now.getTime() - kstDate.getTime()
     const diffHours = Math.floor(diff / (1000 * 60 * 60))
 
     if (diffHours < 24) {
-      return format(date, 'HH:mm')
+      return format(kstDate, 'HH:mm')
     } else {
-      return format(date, 'MM.dd')
+      return format(kstDate, 'MM.dd')
     }
   }
 

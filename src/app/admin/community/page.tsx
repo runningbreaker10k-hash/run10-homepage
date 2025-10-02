@@ -15,6 +15,7 @@ import {
   Download
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatKST } from '@/lib/dateUtils'
 
 interface CommunityPost {
   id: string
@@ -138,7 +139,7 @@ export default function AdminCommunityPage() {
         post.is_notice ? '공지' : '일반',
         post.views,
         commentCount,
-        format(new Date(post.created_at), 'yyyy.MM.dd')
+        formatKST(post.created_at, 'yyyy.MM.dd')
       ].join(',')
     }).join('\n')
 
@@ -328,7 +329,7 @@ export default function AdminCommunityPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                          {formatKST(post.created_at, 'yyyy.MM.dd')}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

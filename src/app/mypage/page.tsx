@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { format } from 'date-fns'
+import { formatKST } from '@/lib/dateUtils'
 
 // 회원 정보 수정 스키마
 const profileSchema = z.object({
@@ -808,12 +809,12 @@ export default function MyPage() {
                           {registration.competitions.title}
                         </h3>
                         <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                          <span>📅 {format(new Date(registration.competitions.date), 'yyyy.MM.dd')}</span>
+                          <span>📅 {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
                           <span>📍 {registration.competitions.location}</span>
                           {registration.distance && <span>🏃 {registration.distance}</span>}
                         </div>
                         <div className="mt-1 text-xs text-gray-400">
-                          신청일: {format(new Date(registration.created_at), 'yyyy.MM.dd')}
+                          신청일: {formatKST(registration.created_at, 'yyyy.MM.dd')}
                         </div>
                         <div className="mt-2 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                           👆 클릭하여 상세 신청 내역 보기

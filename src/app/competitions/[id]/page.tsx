@@ -24,6 +24,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
+import { formatKST } from '@/lib/dateUtils'
 import MemberRegistrationForm from '@/components/MemberRegistrationForm'
 import RegistrationLookup from '@/components/RegistrationLookup'
 import PostWriteModal from '@/components/PostWriteModal'
@@ -1110,7 +1111,7 @@ export default function CompetitionDetailPage() {
 
                       {/* 작성일 */}
                       <div className="col-span-2 text-center text-sm text-gray-500">
-                        {format(new Date(post.created_at), 'yyyy.MM.dd')}
+                        {formatKST(post.created_at, 'yyyy.MM.dd')}
                       </div>
 
                       {/* 조회수 */}
