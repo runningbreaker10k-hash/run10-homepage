@@ -101,6 +101,7 @@ export default function MyPage() {
     // 사용자 상세 정보 로드
     loadUserDetails()
     loadRegistrations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router])
 
 
@@ -141,7 +142,7 @@ export default function MyPage() {
         console.log('폼에 설정할 데이터:', formData)
         profileForm.reset(formData)
       }
-    } catch (error) {
+    } catch {
       alert('사용자 정보 로드 중 오류가 발생했습니다.')
     } finally {
       setIsLoadingData(false)
@@ -291,6 +292,7 @@ export default function MyPage() {
       }
 
       // record_minutes, record_seconds 제거 (DB에 없는 필드)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { record_minutes, record_seconds, ...dbData } = updateData
 
       console.log('DB에 저장할 데이터:', dbData)
@@ -300,8 +302,7 @@ export default function MyPage() {
 
       // 데이터 다시 로드
       await loadUserDetails()
-    } catch (error) {
-      console.error('수정 오류:', error)
+    } catch {
       alert('회원 정보 수정 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
@@ -403,8 +404,6 @@ export default function MyPage() {
   if (!user) {
     return null
   }
-
-  const gradeInfo = getGradeInfo(user.grade)
 
   return (
     <div className="min-h-screen pt-16 bg-gray-50">

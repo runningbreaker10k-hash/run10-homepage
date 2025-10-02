@@ -330,9 +330,6 @@ export default function AdminCommunityPage() {
                         <div className="text-sm text-gray-900">
                           {format(new Date(post.created_at), 'yyyy.MM.dd')}
                         </div>
-                        {post.created_at !== post.updated_at && (
-                          <div className="text-xs text-gray-500">(수정됨)</div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button

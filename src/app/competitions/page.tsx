@@ -6,7 +6,6 @@ import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter } from 'lucide-r
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
-import { Metadata } from 'next'
 
 
 export default function CompetitionsPage() {

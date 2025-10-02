@@ -75,6 +75,7 @@ export default function CommunityPostPage() {
       loadPost()
       loadComments()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
   const loadPost = async () => {
@@ -354,12 +355,6 @@ export default function CommunityPostPage() {
                   </div>
                   <span className="hidden sm:inline">•</span>
                   <span className="break-words">{formatDate(post.created_at)}</span>
-                  {post.created_at !== post.updated_at && (
-                    <>
-                      <span className="hidden sm:inline">•</span>
-                      <span className="text-xs text-red-600">(수정됨)</span>
-                    </>
-                  )}
                 </div>
                 <div className="flex items-center space-x-1 text-gray-500">
                   <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -466,9 +461,6 @@ export default function CommunityPostPage() {
                             <span className="text-xs sm:text-sm text-gray-500 break-words">
                               {formatDate(comment.created_at)}
                             </span>
-                            {comment.created_at !== comment.updated_at && (
-                              <span className="text-xs text-red-600">(수정됨)</span>
-                            )}
                           </div>
                           <div className="text-gray-800 text-xs sm:text-sm leading-relaxed break-words">
                             {formatContent(comment.content)}

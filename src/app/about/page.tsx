@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import Image from 'next/image'
 import { Users, Target, Award, Heart } from 'lucide-react'
 import { Metadata } from 'next'

@@ -418,12 +418,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                         </div>
                         <span>•</span>
                         <span>{formatDate(post.created_at)}</span>
-                        {post.created_at !== post.updated_at && (
-                          <>
-                            <span>•</span>
-                            <span className="text-xs">수정됨</span>
-                          </>
-                        )}
                       </div>
                       <div className="flex items-center space-x-1 text-gray-500">
                         <Eye className="w-4 h-4" />
@@ -531,9 +525,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                                     <span className="text-sm text-gray-500">
                                       {formatDate(comment.created_at)}
                                     </span>
-                                    {comment.created_at !== comment.updated_at && (
-                                      <span className="text-xs text-gray-400">(수정됨)</span>
-                                    )}
                                   </div>
                                   <div className="text-gray-800 text-sm leading-relaxed">
                                     {formatContent(comment.content)}

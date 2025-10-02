@@ -61,6 +61,7 @@ export default function CommunityEditPage() {
     if (postId) {
       loadPost()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
 
   const loadPost = async () => {

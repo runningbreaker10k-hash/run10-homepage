@@ -195,6 +195,7 @@ export default function EditCompetitionPage() {
 
   useEffect(() => {
     fetchCompetition()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionId])
 
   const handleImageUploaded = (url: string) => {

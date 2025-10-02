@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Users, Trophy, MapPin, Clock, Star, Zap, Target, Award } from 'lucide-react'
+import { Calendar, Trophy, MapPin, Clock, Star, Zap, Target, Award } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { ErrorHandler } from '@/lib/errorHandler'
