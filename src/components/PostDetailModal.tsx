@@ -379,7 +379,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                         )}
                         <h1 className="text-xl font-bold text-gray-900">{post.title}</h1>
                       </div>
-                      {(isAdmin() || !post.is_admin_reply) && (
+                      {user && (user.role === 'admin' || user.id === post.user_id) && (
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={handleEdit}
