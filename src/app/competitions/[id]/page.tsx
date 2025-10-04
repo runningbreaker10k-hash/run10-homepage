@@ -447,7 +447,7 @@ export default function CompetitionDetailPage() {
                               <div key={group.id} className="text-sm">
                                 <span className="font-medium">{group.name}</span>
                                 <span className="text-gray-500 ml-2">
-                                  (₩{group.entry_fee.toLocaleString()} / {group.max_participants}명)
+                                  (₩{group.entry_fee.toLocaleString()})
                                 </span>
                               </div>
                             ))}
