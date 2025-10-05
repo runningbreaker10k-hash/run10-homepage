@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
           '/mypage',
           '/login',
           '/signup',
+          '/competitions/',
         ],
       },
       {
@@ -29,6 +30,7 @@ export default function robots(): MetadataRoute.Robots {
           '/mypage',
           '/login',
           '/signup',
+          '/competitions/',
         ],
       },
       {
@@ -42,6 +44,7 @@ export default function robots(): MetadataRoute.Robots {
           '/mypage',
           '/login',
           '/signup',
+          '/competitions/',
         ],
       },
       {
@@ -55,6 +58,7 @@ export default function robots(): MetadataRoute.Robots {
           '/mypage',
           '/login',
           '/signup',
+          '/competitions/',
         ],
       },
     ],
