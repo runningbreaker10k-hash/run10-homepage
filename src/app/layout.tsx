@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "런텐(RUN10) | 전국 러닝 협회 인증 10km Just RUN10",
+  title: "런텐(RUN10) | 전국 러닝 협회 인증",
   description: "전국 10km 러너들의 공식 플랫폼. 각종 러닝대회 개최. 10km 러너들의 커뮤니티.",
   keywords: "런닝, 마라톤, 10km, 러닝대회, 런텐, RUN10, 전국러닝협회, 저스트런텐",
   authors: [{ name: "RUN10" }],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "런텐(RUN10) | 전국 러닝 협회 인증 10km Just RUN10",
+    title: "런텐(RUN10) | 전국 러닝 협회 인증",
     description: "전국 10km 러너들의 공식 플랫폼. 각종 러닝대회 개최. 10km 러너들의 커뮤니티.",
     url: "https://runten.co.kr",
     siteName: "RUN10",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "런텐(RUN10) | 전국 러닝 협회 인증 10km Just RUN10",
+    title: "런텐(RUN10) | 전국 러닝 협회 인증",
     description: "전국 10km 러너들의 공식 플랫폼. 각종 러닝대회 개최. 10km 러너들의 커뮤니티.",
     images: ["/images/og-image.jpg"],
   },

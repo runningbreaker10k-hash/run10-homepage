@@ -49,6 +49,11 @@ export default function AdminPage() {
   const [currentRegistrationPage, setCurrentRegistrationPage] = useState(1)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const registrationsPerPage = 20
+  const [participantSearchTerm, setParticipantSearchTerm] = useState('')
+
+  // 회원 상세 정보 모달
+  const [selectedMember, setSelectedMember] = useState<User | null>(null)
+  const [showMemberModal, setShowMemberModal] = useState(false)
 
   // 게시글 관리 관련 상태
   const [posts, setPosts] = useState<CompetitionPost[]>([])
@@ -100,7 +105,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, sortBy, sortOrder, currentRegistrationPage])
+  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community') {
@@ -233,6 +238,10 @@ export default function AdminPage() {
         countQuery = countQuery.eq('distance', distanceFilter)
       }
 
+      if (participantSearchTerm) {
+        countQuery = countQuery.ilike('name', `%${participantSearchTerm}%`)
+      }
+
       const { count } = await countQuery
       setTotalRegistrations(count || 0)
 
@@ -257,6 +266,10 @@ export default function AdminPage() {
 
       if (distanceFilter !== 'all') {
         query = query.eq('distance', distanceFilter)
+      }
+
+      if (participantSearchTerm) {
+        query = query.ilike('name', `%${participantSearchTerm}%`)
       }
 
       const { data, error } = await query
@@ -463,6 +476,18 @@ export default function AdminPage() {
   const closeParticipantModal = () => {
     setSelectedParticipant(null)
     setShowParticipantModal(false)
+  }
+
+  // 회원 상세 정보 모달 열기
+  const openMemberModal = (member: User) => {
+    setSelectedMember(member)
+    setShowMemberModal(true)
+  }
+
+  // 회원 상세 정보 모달 닫기
+  const closeMemberModal = () => {
+    setSelectedMember(null)
+    setShowMemberModal(false)
   }
 
   // 회원 관리 함수들
@@ -858,8 +883,50 @@ export default function AdminPage() {
             {competitionSubTab === 'participants' && (
               <>
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">참가자 관리</h2>
+                  </div>
+                  <div className="flex flex-col space-y-3">
+                    {/* 첫 번째 줄: 검색 */}
+                    <div className="flex items-center space-x-2">
+                      <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="참가자 이름으로 검색..."
+                          value={participantSearchTerm}
+                          onChange={(e) => setParticipantSearchTerm(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              setCurrentRegistrationPage(1)
+                              fetchRegistrations()
+                            }
+                          }}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          setCurrentRegistrationPage(1)
+                          fetchRegistrations()
+                        }}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                      >
+                        검색
+                      </button>
+                      {participantSearchTerm && (
+                        <button
+                          onClick={() => {
+                            setParticipantSearchTerm('')
+                            setCurrentRegistrationPage(1)
+                          }}
+                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm"
+                        >
+                          초기화
+                        </button>
+                      )}
+                    </div>
+                    {/* 두 번째 줄: 필터 */}
                     <div className="flex items-center space-x-2 flex-wrap">
                       <select
                         value={selectedCompetitionForParticipants}
@@ -1224,7 +1291,7 @@ export default function AdminPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {posts.map((post) => {
                       const gradeInfo = post.users ? getGradeInfo(post.users.grade) : null
-                      const commentCount = post.comments ? post.comments[0]?.count || 0 : 0
+                      const commentCount = (post as any).comment_count || 0
                       return (
                         <tr key={post.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4">
@@ -1453,15 +1520,12 @@ export default function AdminPage() {
                     {members.map((member) => (
                       <tr key={member.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
+                          <button
+                            onClick={() => openMemberModal(member)}
+                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                          >
                             {member.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {member.user_id}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {member.email}
-                          </div>
+                          </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {member.phone}
@@ -1616,6 +1680,90 @@ export default function AdminPage() {
         defaultTab="login"
         onSuccess={() => setShowAuthModal(false)}
       />
+
+      {/* 회원 상세 정보 모달 */}
+      {showMemberModal && selectedMember && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">회원 상세 정보</h2>
+              <button
+                onClick={closeMemberModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* 기본 정보 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">기본 정보</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">이름</label>
+                    <p className="text-base text-gray-900">{selectedMember.name}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">아이디</label>
+                    <p className="text-base text-gray-900">{selectedMember.user_id}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
+                    <p className="text-base text-gray-900 break-all">{selectedMember.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">연락처</label>
+                    <p className="text-base text-gray-900">{selectedMember.phone}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">생년월일</label>
+                    <p className="text-base text-gray-900">{selectedMember.birth_date}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">성별</label>
+                    <p className="text-base text-gray-900">
+                      {selectedMember.gender === 'male' ? '남성' : '여성'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 주소 정보 */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">주소</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">우편번호</label>
+                    <p className="text-base text-gray-900">{selectedMember.postal_code}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">주소</label>
+                    <p className="text-base text-gray-900">{selectedMember.address1}</p>
+                    {selectedMember.address2 && (
+                      <p className="text-base text-gray-900 mt-1">{selectedMember.address2}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeMemberModal}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 참가자 상세 정보 모달 */}
       {showParticipantModal && selectedParticipant && (
