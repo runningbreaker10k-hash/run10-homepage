@@ -17,6 +17,11 @@ export default function robots(): MetadataRoute.Robots {
           '/login',
           '/signup',
           '/competitions/',
+          '/privacy',
+          '/terms',
+          '/safety',
+          '/community',
+          '/competitions'
         ],
       },
       {
@@ -31,6 +36,11 @@ export default function robots(): MetadataRoute.Robots {
           '/login',
           '/signup',
           '/competitions/',
+          '/privacy',
+          '/terms',
+          '/safety',
+          '/community',
+          '/competitions'
         ],
       },
       {
@@ -45,6 +55,11 @@ export default function robots(): MetadataRoute.Robots {
           '/login',
           '/signup',
           '/competitions/',
+          '/privacy',
+          '/terms',
+          '/safety',
+          '/community',
+          '/competitions'
         ],
       },
       {
@@ -59,6 +74,11 @@ export default function robots(): MetadataRoute.Robots {
           '/login',
           '/signup',
           '/competitions/',
+          '/privacy',
+          '/terms',
+          '/safety',
+          '/community',
+          '/competitions'
         ],
       },
     ],
