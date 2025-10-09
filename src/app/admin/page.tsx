@@ -48,7 +48,7 @@ export default function AdminPage() {
   const [showParticipantModal, setShowParticipantModal] = useState(false)
   const [currentRegistrationPage, setCurrentRegistrationPage] = useState(1)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
-  const registrationsPerPage = 20
+  const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
 
   // 회원 상세 정보 모달
@@ -105,7 +105,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm])
+  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community') {
@@ -1011,59 +1011,76 @@ export default function AdminPage() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {registrations.map((registration) => (
-                          <tr key={registration.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <button
-                                onClick={() => openParticipantModal(registration)}
-                                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
-                              >
-                                {registration.name}
-                              </button>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {registration.competitions?.title || '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {registration.distance ? getDistanceLabel(registration.distance) : '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {formatKST(registration.created_at, 'yyyy.MM.dd HH:mm')}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                registration.payment_status === 'confirmed'
-                                  ? 'bg-green-100 text-green-800'
-                                  : registration.payment_status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {registration.payment_status === 'confirmed' ? '입금확인' :
-                                 registration.payment_status === 'pending' ? '입금대기' : '취소'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center space-x-2">
-                                <select
-                                  value={registration.payment_status}
-                                  onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
-                                  className="text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                >
-                                  <option value="pending">입금대기</option>
-                                  <option value="confirmed">입금확인</option>
-                                  <option value="cancelled">취소</option>
-                                </select>
-                                <button
-                                  onClick={() => deleteRegistration(registration.id, registration.name)}
-                                  className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                  title="참가 신청 취소"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {registrations.map((registration) => {
+                          const isNameMismatch = registration.depositor_name &&
+                                                 registration.name !== registration.depositor_name
+                          return (
+                            <tr key={registration.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => openParticipantModal(registration)}
+                                    className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                                  >
+                                    {registration.name}
+                                  </button>
+                                  {isNameMismatch && (
+                                    <div className="relative group">
+                                      <span className="text-yellow-600 cursor-help">⚠️</span>
+                                      <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-max">
+                                        <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                          입금자: {registration.depositor_name}
+                                        </div>
+                                        <div className="absolute left-2 top-full w-0 h-0 border-4 border-transparent border-t-gray-900"></div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {registration.competitions?.title || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {registration.distance ? getDistanceLabel(registration.distance) : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {formatKST(registration.created_at, 'yyyy.MM.dd HH:mm')}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  registration.payment_status === 'confirmed'
+                                    ? 'bg-green-100 text-green-800'
+                                    : registration.payment_status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {registration.payment_status === 'confirmed' ? '입금확인' :
+                                   registration.payment_status === 'pending' ? '입금대기' : '취소'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex items-center space-x-2">
+                                  <select
+                                    value={registration.payment_status}
+                                    onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                  >
+                                    <option value="pending">입금대기</option>
+                                    <option value="confirmed">입금확인</option>
+                                    <option value="cancelled">취소</option>
+                                  </select>
+                                  <button
+                                    onClick={() => deleteRegistration(registration.id, registration.name)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="참가 신청 취소"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -1079,16 +1096,30 @@ export default function AdminPage() {
                 {totalRegistrations > 0 && (
                   <div className="px-6 py-4 border-t border-gray-200">
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        전체 <span className="font-medium">{totalRegistrations}</span>명 중{' '}
-                        <span className="font-medium">
-                          {(currentRegistrationPage - 1) * registrationsPerPage + 1}
-                        </span>
-                        -{' '}
-                        <span className="font-medium">
-                          {Math.min(currentRegistrationPage * registrationsPerPage, totalRegistrations)}
-                        </span>
-                        명
+                      <div className="flex items-center space-x-3">
+                        <div className="text-sm text-gray-700">
+                          전체 <span className="font-medium">{totalRegistrations}</span>명 중{' '}
+                          <span className="font-medium">
+                            {(currentRegistrationPage - 1) * registrationsPerPage + 1}
+                          </span>
+                          -{' '}
+                          <span className="font-medium">
+                            {Math.min(currentRegistrationPage * registrationsPerPage, totalRegistrations)}
+                          </span>
+                          명
+                        </div>
+                        <select
+                          value={registrationsPerPage}
+                          onChange={(e) => {
+                            setRegistrationsPerPage(Number(e.target.value))
+                            setCurrentRegistrationPage(1)
+                          }}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                        >
+                          <option value={20}>20개씩</option>
+                          <option value={50}>50개씩</option>
+                          <option value={100}>100개씩</option>
+                        </select>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
