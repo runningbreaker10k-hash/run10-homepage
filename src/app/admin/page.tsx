@@ -42,6 +42,9 @@ export default function AdminPage() {
   const [selectedCompetitionForParticipants, setSelectedCompetitionForParticipants] = useState<string>('')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
   const [distanceFilter, setDistanceFilter] = useState<string>('all')
+  const [regionFilter, setRegionFilter] = useState<string>('all')
+  const [ageFilter, setAgeFilter] = useState<string>('all')
+  const [genderFilter, setGenderFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'created_at' | 'distance'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedParticipant, setSelectedParticipant] = useState<Registration | null>(null)
@@ -50,6 +53,7 @@ export default function AdminPage() {
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
+  const [showFilters, setShowFilters] = useState(true)
 
   // 회원 상세 정보 모달
   const [selectedMember, setSelectedMember] = useState<User | null>(null)
@@ -105,7 +109,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
+  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community') {
@@ -238,6 +242,10 @@ export default function AdminPage() {
         countQuery = countQuery.eq('distance', distanceFilter)
       }
 
+      if (genderFilter !== 'all') {
+        countQuery = countQuery.eq('gender', genderFilter)
+      }
+
       if (participantSearchTerm) {
         countQuery = countQuery.ilike('name', `%${participantSearchTerm}%`)
       }
@@ -268,6 +276,10 @@ export default function AdminPage() {
         query = query.eq('distance', distanceFilter)
       }
 
+      if (genderFilter !== 'all') {
+        query = query.eq('gender', genderFilter)
+      }
+
       if (participantSearchTerm) {
         query = query.ilike('name', `%${participantSearchTerm}%`)
       }
@@ -278,17 +290,37 @@ export default function AdminPage() {
         throw error
       }
 
-      // 정렬 처리
-      const sorted = data || []
+      // 정렬 처리 및 클라이언트 필터링 (지역, 나이)
+      let filtered = data || []
+
+      // 지역 필터 (address 필드에서 검색)
+      if (regionFilter !== 'all') {
+        filtered = filtered.filter(reg => reg.address?.includes(regionFilter))
+      }
+
+      // 나이 필터
+      if (ageFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          const age = reg.age || 0
+          if (ageFilter === '20-29') return age >= 20 && age <= 29
+          if (ageFilter === '30-39') return age >= 30 && age <= 39
+          if (ageFilter === '40-49') return age >= 40 && age <= 49
+          if (ageFilter === '50-59') return age >= 50 && age <= 59
+          if (ageFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // 정렬
       if (sortBy === 'created_at') {
-        sorted.sort((a, b) => {
+        filtered.sort((a, b) => {
           const dateA = new Date(a.created_at).getTime()
           const dateB = new Date(b.created_at).getTime()
           return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
         })
       } else if (sortBy === 'distance') {
         const distanceOrder = ['3km', '5km', '10km', 'half', 'full']
-        sorted.sort((a, b) => {
+        filtered.sort((a, b) => {
           const indexA = a.distance ? distanceOrder.indexOf(a.distance) : 999
           const indexB = b.distance ? distanceOrder.indexOf(b.distance) : 999
           return sortOrder === 'asc' ? indexA - indexB : indexB - indexA
@@ -298,7 +330,8 @@ export default function AdminPage() {
       // 페이지네이션 적용
       const startIndex = (currentRegistrationPage - 1) * registrationsPerPage
       const endIndex = startIndex + registrationsPerPage
-      setRegistrations(sorted.slice(startIndex, endIndex))
+      setRegistrations(filtered.slice(startIndex, endIndex))
+      setTotalRegistrations(filtered.length)
     } catch (error) {
       console.error('참가자 로드 오류:', error)
       setRegistrations([])
@@ -885,101 +918,288 @@ export default function AdminPage() {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">참가자 관리 ({totalRegistrations})</h2>
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                    >
+                      {showFilters ? '필터 숨기기' : '필터 보기'}
+                      <svg className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
                   </div>
-                  <div className="flex flex-col space-y-3">
-                    {/* 첫 번째 줄: 검색 */}
-                    <div className="flex items-center space-x-2">
-                      <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="참가자 이름으로 검색..."
-                          value={participantSearchTerm}
-                          onChange={(e) => setParticipantSearchTerm(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              setCurrentRegistrationPage(1)
-                              fetchRegistrations()
-                            }
-                          }}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
-                        />
-                      </div>
-                      <button
-                        onClick={() => {
-                          setCurrentRegistrationPage(1)
-                          fetchRegistrations()
-                        }}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
-                      >
-                        검색
-                      </button>
-                      {participantSearchTerm && (
-                        <button
-                          onClick={() => {
-                            setParticipantSearchTerm('')
+
+                  {/* 검색 바 */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="참가자 이름으로 검색..."
+                        value={participantSearchTerm}
+                        onChange={(e) => setParticipantSearchTerm(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
                             setCurrentRegistrationPage(1)
-                          }}
-                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm"
-                        >
-                          초기화
-                        </button>
-                      )}
+                            fetchRegistrations()
+                          }
+                        }}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                      />
                     </div>
-                    {/* 두 번째 줄: 필터 */}
-                    <div className="flex items-center space-x-2 flex-wrap">
-                      <select
-                        value={selectedCompetitionForParticipants}
-                        onChange={(e) => setSelectedCompetitionForParticipants(e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-                      >
-                        <option value="">전체 대회</option>
-                        {competitions.map((competition) => (
-                          <option key={competition.id} value={competition.id}>
-                            {competition.title}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={distanceFilter}
-                        onChange={(e) => setDistanceFilter(e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-                      >
-                        <option value="all">모든 거리</option>
-                        <option value="3km">3km</option>
-                        <option value="5km">5km</option>
-                        <option value="10km">10km</option>
-                        <option value="half">하프마라톤 (21km)</option>
-                        <option value="full">풀마라톤 (42km)</option>
-                      </select>
-                      <select
-                        value={paymentStatusFilter}
-                        onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-                      >
-                        <option value="all">전체 상태</option>
-                        <option value="pending">입금대기</option>
-                        <option value="confirmed">입금확인</option>
-                        <option value="cancelled">취소</option>
-                      </select>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as 'created_at' | 'distance')}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-                      >
-                        <option value="created_at">신청일 순</option>
-                        <option value="distance">종목(거리) 순</option>
-                      </select>
-                      <select
-                        value={sortOrder}
-                        onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
-                      >
-                        <option value="desc">내림차순</option>
-                        <option value="asc">오름차순</option>
-                      </select>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setCurrentRegistrationPage(1)
+                        fetchRegistrations()
+                      }}
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm whitespace-nowrap"
+                    >
+                      검색
+                    </button>
+                    <button
+                      onClick={() => {
+                        setParticipantSearchTerm('')
+                        setSelectedCompetitionForParticipants('')
+                        setPaymentStatusFilter('all')
+                        setDistanceFilter('all')
+                        setRegionFilter('all')
+                        setAgeFilter('all')
+                        setGenderFilter('all')
+                        setSortBy('created_at')
+                        setSortOrder('desc')
+                        setCurrentRegistrationPage(1)
+                      }}
+                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm whitespace-nowrap"
+                    >
+                      전체 초기화
+                    </button>
                   </div>
+
+                  {/* 필터 섹션 */}
+                  {showFilters && (
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                      {/* 대회 선택 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">대회</label>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setSelectedCompetitionForParticipants('')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              selectedCompetitionForParticipants === ''
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            전체
+                          </button>
+                          {competitions.map((competition) => (
+                            <button
+                              key={competition.id}
+                              onClick={() => setSelectedCompetitionForParticipants(competition.id)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                selectedCompetitionForParticipants === competition.id
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {competition.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 거리 / 결제 상태 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">거리</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['all', '3km', '5km', '10km', 'half', 'full'].map((distance) => (
+                              <button
+                                key={distance}
+                                onClick={() => setDistanceFilter(distance)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  distanceFilter === distance
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {distance === 'all' ? '전체' : getDistanceLabel(distance)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">결제 상태</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { value: 'all', label: '전체' },
+                              { value: 'pending', label: '입금대기' },
+                              { value: 'confirmed', label: '입금확인' },
+                              { value: 'cancelled', label: '취소' }
+                            ].map((status) => (
+                              <button
+                                key={status.value}
+                                onClick={() => setPaymentStatusFilter(status.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  paymentStatusFilter === status.value
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {status.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 지역 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">지역</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { value: 'all', label: '전체' },
+                            { value: '서울', label: '서울' },
+                            { value: '경기', label: '경기' },
+                            { value: '인천', label: '인천' },
+                            { value: '강원', label: '강원' },
+                            { value: '충북', label: '충북' },
+                            { value: '충남', label: '충남' },
+                            { value: '대전', label: '대전' },
+                            { value: '세종', label: '세종' },
+                            { value: '전북', label: '전북' },
+                            { value: '전남', label: '전남' },
+                            { value: '광주', label: '광주' },
+                            { value: '경북', label: '경북' },
+                            { value: '경남', label: '경남' },
+                            { value: '대구', label: '대구' },
+                            { value: '울산', label: '울산' },
+                            { value: '부산', label: '부산' },
+                            { value: '제주', label: '제주' }
+                          ].map((region) => (
+                            <button
+                              key={region.value}
+                              onClick={() => setRegionFilter(region.value)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                regionFilter === region.value
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {region.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 나이 / 성별 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">나이</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { value: 'all', label: '전체' },
+                              { value: '20-29', label: '20-29세' },
+                              { value: '30-39', label: '30-39세' },
+                              { value: '40-49', label: '40-49세' },
+                              { value: '50-59', label: '50-59세' },
+                              { value: '60+', label: '60세 이상' }
+                            ].map((age) => (
+                              <button
+                                key={age.value}
+                                onClick={() => setAgeFilter(age.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  ageFilter === age.value
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {age.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { value: 'all', label: '전체' },
+                              { value: 'male', label: '남성' },
+                              { value: 'female', label: '여성' }
+                            ].map((gender) => (
+                              <button
+                                key={gender.value}
+                                onClick={() => setGenderFilter(gender.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  genderFilter === gender.value
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {gender.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 정렬 옵션 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">정렬 기준</label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setSortBy('created_at')}
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sortBy === 'created_at'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              신청일순
+                            </button>
+                            <button
+                              onClick={() => setSortBy('distance')}
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sortBy === 'distance'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              거리순
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">정렬 순서</label>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setSortOrder('desc')}
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sortOrder === 'desc'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              내림차순
+                            </button>
+                            <button
+                              onClick={() => setSortOrder('asc')}
+                              className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                sortOrder === 'asc'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              오름차순
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="overflow-x-auto">
                   {registrationsLoading ? (
