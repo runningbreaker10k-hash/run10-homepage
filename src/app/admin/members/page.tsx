@@ -136,11 +136,11 @@ export default function AdminMembersPage() {
   }
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = 
+    const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.user_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     const matchesGrade = gradeFilter === 'all' || member.grade === gradeFilter
     const matchesRole = roleFilter === 'all' || member.role === roleFilter
 
@@ -334,8 +334,8 @@ export default function AdminMembersPage() {
             <div className="text-center py-12">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
-                {searchTerm || gradeFilter !== 'all' || roleFilter !== 'all' 
-                  ? '검색 조건에 맞는 회원이 없습니다.' 
+                {searchTerm || gradeFilter !== 'all' || roleFilter !== 'all'
+                  ? '검색 조건에 맞는 회원이 없습니다.'
                   : '등록된 회원이 없습니다.'
                 }
               </p>

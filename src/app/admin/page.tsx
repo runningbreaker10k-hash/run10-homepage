@@ -76,6 +76,9 @@ export default function AdminPage() {
   const [currentMemberPage, setCurrentMemberPage] = useState(1)
   const [totalMembers, setTotalMembers] = useState(0)
   const [membersPerPage, setMembersPerPage] = useState(20)
+  const [memberRegionFilter, setMemberRegionFilter] = useState<string>('all')
+  const [memberAgeFilter, setMemberAgeFilter] = useState<string>('all')
+  const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
 
   useEffect(() => {
     if (!user) {
@@ -123,7 +126,7 @@ export default function AdminPage() {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, membersPerPage, user, activeTab])
+  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberRegionFilter, memberAgeFilter, memberGenderFilter])
 
 
   // 대회 관리 함수들
@@ -527,23 +530,56 @@ export default function AdminPage() {
   const fetchMembers = async () => {
     setMembersLoading(true)
     try {
-      const from = (currentMemberPage - 1) * membersPerPage
-      const to = from + membersPerPage - 1
-
+      // 먼저 전체 데이터를 가져온 후 클라이언트에서 필터링
       let query = supabase
         .from('users')
         .select('*', { count: 'exact' })
-        .range(from, to)
         .order('created_at', { ascending: false })
 
       if (searchTerm) {
         query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
       }
 
-      const { data, error, count } = await query
+      if (memberGenderFilter !== 'all') {
+        query = query.eq('gender', memberGenderFilter)
+      }
+
+      const { data, error } = await query
       if (error) throw error
-      setMembers(data || [])
-      setTotalMembers(count || 0)
+
+      let filtered = data || []
+
+      // 지역 필터 (클라이언트 측)
+      if (memberRegionFilter !== 'all') {
+        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+      }
+
+      // 나이 필터 (클라이언트 측)
+      if (memberAgeFilter !== 'all') {
+        filtered = filtered.filter(member => {
+          if (!member.birth_date) return false
+
+          // birth_date 형식: YYMMDD (6자리)
+          const yy = parseInt(member.birth_date.substring(0, 2))
+          // 2000년대생과 1900년대생 구분
+          const birthYear = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy
+          const currentYear = new Date().getFullYear()
+          const age = currentYear - birthYear
+
+          if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
+          if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
+          if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
+          if (memberAgeFilter === '50-59') return age >= 50 && age <= 59
+          if (memberAgeFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // 페이지네이션 적용
+      setTotalMembers(filtered.length)
+      const from = (currentMemberPage - 1) * membersPerPage
+      const to = from + membersPerPage
+      setMembers(filtered.slice(from, to))
     } catch (error) {
       console.error('회원 로드 오류:', error)
       setMembers([])
@@ -1710,34 +1746,151 @@ export default function AdminPage() {
         {activeTab === 'members' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">회원 관리 ({totalMembers})</h2>
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="이름, 아이디, 이메일로 검색..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          setCurrentMemberPage(1)
-                          fetchMembers()
-                        }
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold text-gray-900">회원 관리 ({totalMembers})</h2>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="이름, 아이디, 이메일로 검색..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            setCurrentMemberPage(1)
+                            fetchMembers()
+                          }
+                        }}
+                        className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCurrentMemberPage(1)
+                        fetchMembers()
                       }}
-                      className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
-                    />
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                    >
+                      검색
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSearchTerm('')
+                        setMemberRegionFilter('all')
+                        setMemberAgeFilter('all')
+                        setMemberGenderFilter('all')
+                        setCurrentMemberPage(1)
+                      }}
+                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm whitespace-nowrap"
+                    >
+                      전체 초기화
+                    </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setCurrentMemberPage(1)
-                      fetchMembers()
-                    }}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
-                  >
-                    검색
-                  </button>
+                </div>
+
+                {/* 필터 영역 */}
+                <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                  {/* 지역 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">지역</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: 'all', label: '전체' },
+                        { value: '서울', label: '서울' },
+                        { value: '경기', label: '경기' },
+                        { value: '인천', label: '인천' },
+                        { value: '강원', label: '강원' },
+                        { value: '충북', label: '충북' },
+                        { value: '충남', label: '충남' },
+                        { value: '대전', label: '대전' },
+                        { value: '세종', label: '세종' },
+                        { value: '전북', label: '전북' },
+                        { value: '전남', label: '전남' },
+                        { value: '광주', label: '광주' },
+                        { value: '경북', label: '경북' },
+                        { value: '경남', label: '경남' },
+                        { value: '대구', label: '대구' },
+                        { value: '울산', label: '울산' },
+                        { value: '부산', label: '부산' },
+                        { value: '제주', label: '제주' }
+                      ].map((region) => (
+                        <button
+                          key={region.value}
+                          onClick={() => {
+                            setMemberRegionFilter(region.value)
+                            setCurrentMemberPage(1)
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            memberRegionFilter === region.value
+                              ? 'bg-red-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {region.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 나이 / 성별 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">나이</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { value: 'all', label: '전체' },
+                          { value: '20-29', label: '20-29세' },
+                          { value: '30-39', label: '30-39세' },
+                          { value: '40-49', label: '40-49세' },
+                          { value: '50-59', label: '50-59세' },
+                          { value: '60+', label: '60세 이상' }
+                        ].map((age) => (
+                          <button
+                            key={age.value}
+                            onClick={() => {
+                              setMemberAgeFilter(age.value)
+                              setCurrentMemberPage(1)
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              memberAgeFilter === age.value
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {age.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { value: 'all', label: '전체' },
+                          { value: 'male', label: '남성' },
+                          { value: 'female', label: '여성' }
+                        ].map((gender) => (
+                          <button
+                            key={gender.value}
+                            onClick={() => {
+                              setMemberGenderFilter(gender.value)
+                              setCurrentMemberPage(1)
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              memberGenderFilter === gender.value
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {gender.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
