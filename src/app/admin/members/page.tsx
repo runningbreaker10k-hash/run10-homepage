@@ -180,9 +180,8 @@ export default function AdminMembersPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                 <Users className="h-8 w-8 mr-3 text-red-600" />
-                회원 관리
+                회원 관리 ({members.length})
               </h1>
-              <p className="text-gray-600 mt-2">전체 회원: {members.length}명</p>
             </div>
             <button
               onClick={exportToCSV}

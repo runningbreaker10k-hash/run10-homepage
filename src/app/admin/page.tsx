@@ -71,7 +71,7 @@ export default function AdminPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentMemberPage, setCurrentMemberPage] = useState(1)
   const [totalMembers, setTotalMembers] = useState(0)
-  const membersPerPage = 20
+  const [membersPerPage, setMembersPerPage] = useState(20)
 
   useEffect(() => {
     if (!user) {
@@ -119,7 +119,7 @@ export default function AdminPage() {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, user, activeTab])
+  }, [currentMemberPage, membersPerPage, user, activeTab])
 
 
   // 대회 관리 함수들
@@ -884,7 +884,7 @@ export default function AdminPage() {
               <>
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">참가자 관리</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">참가자 관리 ({totalRegistrations})</h2>
                   </div>
                   <div className="flex flex-col space-y-3">
                     {/* 첫 번째 줄: 검색 */}
@@ -1491,7 +1491,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">회원 관리</h2>
+                <h2 className="text-lg font-semibold text-gray-900">회원 관리 ({totalMembers})</h2>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1614,65 +1614,63 @@ export default function AdminPage() {
               )}
             </div>
 
-            {totalMembers > membersPerPage && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="flex justify-center items-center space-x-2">
-                  <button
-                    onClick={() => setCurrentMemberPage(1)}
-                    disabled={currentMemberPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    처음
-                  </button>
-                  <button
-                    onClick={() => setCurrentMemberPage(currentMemberPage - 1)}
-                    disabled={currentMemberPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    이전
-                  </button>
-
-                  {Array.from({ length: Math.min(5, Math.ceil(totalMembers / membersPerPage)) }, (_, i) => {
-                    const startPage = Math.max(1, currentMemberPage - 2)
-                    const pageNumber = startPage + i
-                    const totalPages = Math.ceil(totalMembers / membersPerPage)
-
-                    if (pageNumber <= totalPages) {
-                      return (
-                        <button
-                          key={pageNumber}
-                          onClick={() => setCurrentMemberPage(pageNumber)}
-                          className={`px-3 py-1 text-sm border rounded ${
-                            currentMemberPage === pageNumber
-                              ? 'bg-red-600 text-white border-red-600'
-                              : 'border-gray-300 hover:bg-gray-100'
-                          }`}
-                        >
-                          {pageNumber}
-                        </button>
-                      )
-                    }
-                    return null
-                  })}
-
-                  <button
-                    onClick={() => setCurrentMemberPage(currentMemberPage + 1)}
-                    disabled={currentMemberPage === Math.ceil(totalMembers / membersPerPage)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    다음
-                  </button>
-                  <button
-                    onClick={() => setCurrentMemberPage(Math.ceil(totalMembers / membersPerPage))}
-                    disabled={currentMemberPage === Math.ceil(totalMembers / membersPerPage)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    마지막
-                  </button>
-                </div>
-
-                <div className="text-center text-xs text-gray-500 mt-2">
-                  {currentMemberPage} / {Math.ceil(totalMembers / membersPerPage)} 페이지 (총 {totalMembers}명)
+            {totalMembers > 0 && (
+              <div className="px-6 py-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-sm text-gray-700">
+                      전체 <span className="font-medium">{totalMembers}</span>명 중{' '}
+                      <span className="font-medium">
+                        {(currentMemberPage - 1) * membersPerPage + 1}
+                      </span>
+                      -{' '}
+                      <span className="font-medium">
+                        {Math.min(currentMemberPage * membersPerPage, totalMembers)}
+                      </span>
+                      명
+                    </div>
+                    <select
+                      value={membersPerPage}
+                      onChange={(e) => {
+                        setMembersPerPage(Number(e.target.value))
+                        setCurrentMemberPage(1)
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white"
+                    >
+                      <option value={20}>20개씩</option>
+                      <option value={50}>50개씩</option>
+                      <option value={100}>100개씩</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentMemberPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentMemberPage === 1}
+                      className={`px-3 py-1 rounded ${
+                        currentMemberPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                      }`}
+                    >
+                      이전
+                    </button>
+                    <span className="text-sm text-gray-700">
+                      {currentMemberPage} / {Math.ceil(totalMembers / membersPerPage)}
+                    </span>
+                    <button
+                      onClick={() => setCurrentMemberPage(prev =>
+                        Math.min(Math.ceil(totalMembers / membersPerPage), prev + 1)
+                      )}
+                      disabled={currentMemberPage >= Math.ceil(totalMembers / membersPerPage)}
+                      className={`px-3 py-1 rounded ${
+                        currentMemberPage >= Math.ceil(totalMembers / membersPerPage)
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                      }`}
+                    >
+                      다음
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
