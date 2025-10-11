@@ -16,7 +16,8 @@ import {
   Plus,
   Search,
   Pin,
-  MessageSquare
+  MessageSquare,
+  Download
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User } from '@/types'
@@ -76,6 +77,7 @@ export default function AdminPage() {
   const [currentMemberPage, setCurrentMemberPage] = useState(1)
   const [totalMembers, setTotalMembers] = useState(0)
   const [membersPerPage, setMembersPerPage] = useState(20)
+  const [memberCompetitionFilter, setMemberCompetitionFilter] = useState<string>('all')
   const [memberRegionFilter, setMemberRegionFilter] = useState<string>('all')
   const [memberAgeFilter, setMemberAgeFilter] = useState<string>('all')
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
@@ -107,6 +109,8 @@ export default function AdminPage() {
         setCurrentPostPage(1)
         fetchCommunityPosts()
       } else if (activeTab === 'members') {
+        // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
+        fetchCompetitions()
         setCurrentMemberPage(1)
         fetchMembers()
       }
@@ -126,7 +130,7 @@ export default function AdminPage() {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberRegionFilter, memberAgeFilter, memberGenderFilter])
+  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter])
 
 
   // 대회 관리 함수들
@@ -575,6 +579,29 @@ export default function AdminPage() {
         })
       }
 
+      // 대회 미참가자 필터 (클라이언트 측)
+      if (memberCompetitionFilter !== 'all') {
+        // 선택된 대회의 참가자 목록 가져오기
+        const { data: registrationData, error: regError } = await supabase
+          .from('registrations')
+          .select('user_id')
+          .eq('competition_id', memberCompetitionFilter)
+
+        if (regError) {
+          console.error('참가자 조회 오류:', regError)
+        } else {
+          // 참가한 회원의 UUID(id) 배열
+          const participantIds = new Set(
+            (registrationData || [])
+              .map(reg => reg.user_id)
+              .filter(Boolean)
+          )
+
+          // 참가하지 않은 회원만 필터링 (users.id와 registrations.user_id 비교)
+          filtered = filtered.filter(member => !participantIds.has(member.id))
+        }
+      }
+
       // 페이지네이션 적용
       setTotalMembers(filtered.length)
       const from = (currentMemberPage - 1) * membersPerPage
@@ -636,6 +663,229 @@ export default function AdminPage() {
     } catch (error) {
       console.error('회원 삭제 오류:', error)
       alert('회원 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 회원 목록 CSV 내보내기
+  const exportMembersToCSV = async () => {
+    try {
+      setMembersLoading(true)
+
+      // 필터링된 전체 데이터 가져오기 (페이지네이션 없이)
+      let query = supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+      }
+
+      if (memberGenderFilter !== 'all') {
+        query = query.eq('gender', memberGenderFilter)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+
+      let filtered = data || []
+
+      // 지역 필터
+      if (memberRegionFilter !== 'all') {
+        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+      }
+
+      // 나이 필터
+      if (memberAgeFilter !== 'all') {
+        filtered = filtered.filter(member => {
+          if (!member.birth_date) return false
+          const yy = parseInt(member.birth_date.substring(0, 2))
+          const birthYear = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy
+          const currentYear = new Date().getFullYear()
+          const age = currentYear - birthYear
+
+          if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
+          if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
+          if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
+          if (memberAgeFilter === '50-59') return age >= 50 && age <= 59
+          if (memberAgeFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // 대회 미참가자 필터
+      if (memberCompetitionFilter !== 'all') {
+        // 선택된 대회의 참가자 목록 가져오기
+        const { data: registrationData, error: regError } = await supabase
+          .from('registrations')
+          .select('user_id')
+          .eq('competition_id', memberCompetitionFilter)
+
+        if (regError) {
+          console.error('참가자 조회 오류:', regError)
+        } else {
+          // 참가한 회원의 UUID(id) 배열
+          const participantIds = new Set(
+            (registrationData || [])
+              .map(reg => reg.user_id)
+              .filter(Boolean)
+          )
+
+          // 참가하지 않은 회원만 필터링 (users.id와 registrations.user_id 비교)
+          filtered = filtered.filter(member => !participantIds.has(member.id))
+        }
+      }
+
+      // CSV 생성
+      const csvHeader = '이름,아이디,이메일,전화번호,생년월일,성별,주소,우편번호,등급,기록시간(초),권한,가입일시\n'
+      const csvContent = filtered.map(member => {
+        const gradeMap: { [key: string]: string } = {
+          'cheetah': '치타족',
+          'horse': '홀스족',
+          'wolf': '울프족',
+          'turtle': '터틀족',
+          'bolt': '볼타족'
+        }
+        return [
+          member.name || '',
+          member.user_id || '',
+          member.email || '',
+          member.phone || '',
+          member.birth_date || '',
+          member.gender === 'male' ? '남성' : member.gender === 'female' ? '여성' : '',
+          `"${(member.address1 || '') + ' ' + (member.address2 || '')}"`,
+          member.postcode || '',
+          gradeMap[member.grade] || member.grade || '',
+          member.record_time === 999 ? '미기록' : member.record_time || '',
+          member.role === 'admin' ? '관리자' : '일반회원',
+          formatKST(member.created_at, 'yyyy-MM-dd HH:mm:ss')
+        ].join(',')
+      }).join('\n')
+
+      // 파일 다운로드
+      const blob = new Blob(['\uFEFF' + csvHeader + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `회원목록_${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+
+      alert(`${filtered.length}명의 회원 정보가 다운로드되었습니다.`)
+    } catch (error) {
+      console.error('CSV 내보내기 오류:', error)
+      alert('CSV 내보내기 중 오류가 발생했습니다.')
+    } finally {
+      setMembersLoading(false)
+    }
+  }
+
+  // 참가자 목록 CSV 내보내기
+  const exportParticipantsToCSV = async () => {
+    try {
+      setRegistrationsLoading(true)
+
+      // 필터링된 전체 데이터 가져오기 (페이지네이션 없이)
+      let query = supabase
+        .from('registrations')
+        .select(`
+          *,
+          competitions (
+            title,
+            date
+          )
+        `)
+
+      if (selectedCompetitionForParticipants) {
+        query = query.eq('competition_id', selectedCompetitionForParticipants)
+      }
+
+      if (paymentStatusFilter !== 'all') {
+        query = query.eq('payment_status', paymentStatusFilter)
+      }
+
+      if (distanceFilter !== 'all') {
+        query = query.eq('distance', distanceFilter)
+      }
+
+      if (genderFilter !== 'all') {
+        query = query.eq('gender', genderFilter)
+      }
+
+      if (participantSearchTerm) {
+        query = query.ilike('name', `%${participantSearchTerm}%`)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+
+      let filtered = data || []
+
+      // 지역 필터
+      if (regionFilter !== 'all') {
+        filtered = filtered.filter(reg => reg.address?.includes(regionFilter))
+      }
+
+      // 나이 필터
+      if (ageFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          const age = reg.age || 0
+          if (ageFilter === '20-29') return age >= 20 && age <= 29
+          if (ageFilter === '30-39') return age >= 30 && age <= 39
+          if (ageFilter === '40-49') return age >= 40 && age <= 49
+          if (ageFilter === '50-59') return age >= 50 && age <= 59
+          if (ageFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // CSV 생성
+      const csvHeader = '대회명,대회일자,이름,생년월일,나이,성별,전화번호,이메일,주소,신청거리,티셔츠사이즈,결제상태,입금자명,신청일시\n'
+      const csvContent = filtered.map(reg => {
+        const distanceMap: { [key: string]: string } = {
+          '3km': '3km',
+          '5km': '5km',
+          '10km': '10km',
+          'half': '하프',
+          'full': '풀코스'
+        }
+        const paymentMap: { [key: string]: string } = {
+          'pending': '대기',
+          'confirmed': '확인',
+          'cancelled': '취소'
+        }
+        return [
+          `"${reg.competitions?.title || ''}"`,
+          reg.competitions?.date || '',
+          reg.name || '',
+          reg.birth_date || '',
+          reg.age || '',
+          reg.gender === 'male' ? '남성' : reg.gender === 'female' ? '여성' : '',
+          reg.phone || '',
+          reg.email || '',
+          `"${reg.address || ''}"`,
+          distanceMap[reg.distance] || reg.distance || '',
+          reg.tshirt_size || '',
+          paymentMap[reg.payment_status] || reg.payment_status || '',
+          reg.depositor_name || '',
+          formatKST(reg.created_at, 'yyyy-MM-dd HH:mm:ss')
+        ].join(',')
+      }).join('\n')
+
+      // 파일 다운로드
+      const blob = new Blob(['\uFEFF' + csvHeader + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      const competitionTitle = selectedCompetitionForParticipants
+        ? competitions.find(c => c.id === selectedCompetitionForParticipants)?.title || '전체대회'
+        : '전체대회'
+      link.download = `참가자목록_${competitionTitle}_${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+
+      alert(`${filtered.length}명의 참가자 정보가 다운로드되었습니다.`)
+    } catch (error) {
+      console.error('CSV 내보내기 오류:', error)
+      alert('CSV 내보내기 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationsLoading(false)
     }
   }
 
@@ -954,15 +1204,25 @@ export default function AdminPage() {
                 <div className="px-6 py-4 border-b border-gray-200">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">참가자 관리 ({totalRegistrations})</h2>
-                    <button
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
-                    >
-                      {showFilters ? '필터 숨기기' : '필터 보기'}
-                      <svg className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={exportParticipantsToCSV}
+                        disabled={registrationsLoading || totalRegistrations === 0}
+                        className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>CSV 내보내기</span>
+                      </button>
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                      >
+                        {showFilters ? '필터 숨기기' : '필터 보기'}
+                        <svg className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* 검색 바 */}
@@ -1778,6 +2038,7 @@ export default function AdminPage() {
                     <button
                       onClick={() => {
                         setSearchTerm('')
+                        setMemberCompetitionFilter('all')
                         setMemberRegionFilter('all')
                         setMemberAgeFilter('all')
                         setMemberGenderFilter('all')
@@ -1787,11 +2048,57 @@ export default function AdminPage() {
                     >
                       전체 초기화
                     </button>
+                    <button
+                      onClick={exportMembersToCSV}
+                      disabled={membersLoading || totalMembers === 0}
+                      className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>CSV 내보내기</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* 필터 영역 */}
                 <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                  {/* 대회 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      대회 (미참가자 필터)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setMemberCompetitionFilter('all')
+                          setCurrentMemberPage(1)
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                          memberCompetitionFilter === 'all'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        전체
+                      </button>
+                      {competitions.map((competition) => (
+                        <button
+                          key={competition.id}
+                          onClick={() => {
+                            setMemberCompetitionFilter(competition.id)
+                            setCurrentMemberPage(1)
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            memberCompetitionFilter === competition.id
+                              ? 'bg-red-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {competition.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* 지역 */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">지역</label>
