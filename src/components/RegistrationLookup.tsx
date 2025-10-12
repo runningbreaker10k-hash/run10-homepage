@@ -527,7 +527,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   onClick={onCancelRequest}
                   className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 touch-manipulation"
                 >
-                  취소신청
+                  {/* 취소신청 */}
                 </button>
               )}
             </div>

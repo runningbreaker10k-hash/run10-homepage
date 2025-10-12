@@ -23,7 +23,7 @@ const getDistanceLabel = (distance: string) => {
 const memberRegistrationSchema = z.object({
   participation_group_id: z.string().min(1, '참가 그룹을 선택해주세요'),
   depositor_name: z.string().min(2, '입금자명을 입력해주세요'),
-  shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL'], { message: '티셔츠 사이즈를 선택해주세요' }),
+  shirt_size: z.enum(['S', 'M', 'L', 'XL', 'XXL'], { message: '티셔츠 사이즈를 선택해주세요' }),
   notes: z.string().optional()
 })
 
@@ -426,8 +426,8 @@ export default function MemberRegistrationForm({
             <Shirt className="h-4 w-4 mr-2 flex-shrink-0" />
             <span>티셔츠 사이즈 <span className="text-red-500 ml-1">*</span></span>
           </label>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
               <label key={size} className="relative">
                 <input
                   {...register('shirt_size')}
