@@ -209,15 +209,25 @@ export default function MemberRegistrationForm({
         return
       }
 
-      // 참가자 수 업데이트
-      const { error: updateError } = await supabase
+      // 대회 전체 참가자 수 업데이트
+      const { error: updateCompError } = await supabase
         .from('competitions')
         .update({
           current_participants: competition.current_participants + 1
         })
         .eq('id', competition.id)
 
-      if (updateError) throw updateError
+      if (updateCompError) throw updateCompError
+
+      // 선택한 그룹의 참가자 수 업데이트
+      const { error: updateGroupError } = await supabase
+        .from('participation_groups')
+        .update({
+          current_participants: selectedGroup.current_participants + 1
+        })
+        .eq('id', selectedGroup.id)
+
+      if (updateGroupError) throw updateGroupError
 
       reset()
       onSuccess()

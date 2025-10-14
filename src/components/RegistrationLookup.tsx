@@ -718,7 +718,6 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     {...registerUpdate('shirt_size')}
                     className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
-                    <option value="XS">XS</option>
                     <option value="S">S</option>
                     <option value="M">M</option>
                     <option value="L">L</option>

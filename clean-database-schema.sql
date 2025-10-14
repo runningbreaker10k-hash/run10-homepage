@@ -225,28 +225,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 대회 참가자 수 업데이트 함수
+-- 입금 상태 변경 시 카운팅하지 않음 (코드에서 신청 시에만 카운팅)
 CREATE OR REPLACE FUNCTION update_competition_participants()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF TG_OP = 'INSERT' AND NEW.payment_status = 'confirmed' THEN
-    UPDATE competitions
-    SET current_participants = current_participants + 1
-    WHERE id = NEW.competition_id;
-  ELSIF TG_OP = 'UPDATE' THEN
-    IF OLD.payment_status != 'confirmed' AND NEW.payment_status = 'confirmed' THEN
-      UPDATE competitions
-      SET current_participants = current_participants + 1
-      WHERE id = NEW.competition_id;
-    ELSIF OLD.payment_status = 'confirmed' AND NEW.payment_status != 'confirmed' THEN
-      UPDATE competitions
-      SET current_participants = current_participants - 1
-      WHERE id = NEW.competition_id;
-    END IF;
-  ELSIF TG_OP = 'DELETE' AND OLD.payment_status = 'confirmed' THEN
-    UPDATE competitions
-    SET current_participants = current_participants - 1
-    WHERE id = OLD.competition_id;
-  END IF;
+  -- INSERT와 UPDATE 시에는 카운팅하지 않음 (코드에서 처리)
+  -- DELETE 시에만 처리하지 않음 (코드에서 처리)
 
   IF TG_OP = 'DELETE' THEN
     RETURN OLD;

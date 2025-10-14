@@ -36,6 +36,9 @@ export default function AdminPage() {
   // 대회 관리 관련 상태
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [competitionsLoading, setCompetitionsLoading] = useState(false)
+  const [selectedCompetitionForGroups, setSelectedCompetitionForGroups] = useState<Competition | null>(null)
+  const [showGroupsModal, setShowGroupsModal] = useState(false)
+  const [participationGroups, setParticipationGroups] = useState<any[]>([])
 
   // 참가자 관리 관련 상태
   const [registrations, setRegistrations] = useState<Registration[]>([])
@@ -50,6 +53,8 @@ export default function AdminPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedParticipant, setSelectedParticipant] = useState<Registration | null>(null)
   const [showParticipantModal, setShowParticipantModal] = useState(false)
+  const [isEditingParticipant, setIsEditingParticipant] = useState(false)
+  const [editedParticipant, setEditedParticipant] = useState<Registration | null>(null)
   const [currentRegistrationPage, setCurrentRegistrationPage] = useState(1)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
@@ -59,6 +64,8 @@ export default function AdminPage() {
   // 회원 상세 정보 모달
   const [selectedMember, setSelectedMember] = useState<User | null>(null)
   const [showMemberModal, setShowMemberModal] = useState(false)
+  const [isEditingMember, setIsEditingMember] = useState(false)
+  const [editedMember, setEditedMember] = useState<User | null>(null)
 
   // 게시글 관리 관련 상태
   const [posts, setPosts] = useState<CompetitionPost[]>([])
@@ -216,6 +223,73 @@ export default function AdminPage() {
     }
   }
 
+  // 종목별 참가자 수 조회
+  const showParticipationGroups = async (competition: Competition) => {
+    try {
+      // 참가 그룹 정보 가져오기
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('participation_groups')
+        .select('*')
+        .eq('competition_id', competition.id)
+        .order('distance', { ascending: true })
+
+      if (groupsError) throw groupsError
+
+      // 각 그룹별 실제 DB 참가자 수 계산
+      const groupsWithCount = await Promise.all(
+        (groupsData || []).map(async (group) => {
+          const { count, error: countError } = await supabase
+            .from('registrations')
+            .select('id', { count: 'exact', head: true })
+            .eq('competition_id', competition.id)
+            .eq('participation_group_id', group.id)
+            .neq('payment_status', 'cancelled')
+
+          if (countError) {
+            console.error(`그룹 ${group.id} 참가자 수 계산 오류:`, countError)
+            return { ...group, actual_participants: 0 }
+          }
+
+          return { ...group, actual_participants: count || 0 }
+        })
+      )
+
+      // participation_group_id가 NULL인 레코드 확인
+      const { count: nullGroupCount, error: nullCountError } = await supabase
+        .from('registrations')
+        .select('id', { count: 'exact', head: true })
+        .eq('competition_id', competition.id)
+        .is('participation_group_id', null)
+        .neq('payment_status', 'cancelled')
+
+      if (nullCountError) {
+        console.error('NULL 그룹 참가자 수 계산 오류:', nullCountError)
+      }
+
+      // NULL 그룹이 있으면 목록에 추가
+      const finalGroups = [...groupsWithCount]
+      if (nullGroupCount && nullGroupCount > 0) {
+        finalGroups.push({
+          id: 'null-group',
+          name: '미분류 (그룹 미지정)',
+          distance: '-',
+          entry_fee: 0,
+          max_participants: 0,
+          current_participants: 0,
+          actual_participants: nullGroupCount,
+          competition_id: competition.id
+        })
+      }
+
+      setParticipationGroups(finalGroups)
+      setSelectedCompetitionForGroups(competition)
+      setShowGroupsModal(true)
+    } catch (error) {
+      console.error('종목별 참가자 수 조회 오류:', error)
+      alert('종목별 참가자 수 조회 중 오류가 발생했습니다.')
+    }
+  }
+
   // 거리 라벨 매핑
   const getDistanceLabel = (distance: string) => {
     const labels: { [key: string]: string } = {
@@ -254,7 +328,7 @@ export default function AdminPage() {
       }
 
       if (participantSearchTerm) {
-        countQuery = countQuery.ilike('name', `%${participantSearchTerm}%`)
+        countQuery = countQuery.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
       }
 
       const { count } = await countQuery
@@ -288,7 +362,7 @@ export default function AdminPage() {
       }
 
       if (participantSearchTerm) {
-        query = query.ilike('name', `%${participantSearchTerm}%`)
+        query = query.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
       }
 
       const { data, error } = await query
@@ -309,6 +383,7 @@ export default function AdminPage() {
       if (ageFilter !== 'all') {
         filtered = filtered.filter(reg => {
           const age = reg.age || 0
+          if (ageFilter === '0-19') return age <= 19
           if (ageFilter === '20-29') return age >= 20 && age <= 29
           if (ageFilter === '30-39') return age >= 30 && age <= 39
           if (ageFilter === '40-49') return age >= 40 && age <= 49
@@ -485,12 +560,67 @@ export default function AdminPage() {
     if (!confirm(`'${registrationName}' 님의 참가 신청을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return
 
     try {
-      const { error } = await supabase
+      // 삭제 전 competition_id, participation_group_id, payment_status 가져오기
+      const { data: registration, error: fetchError } = await supabase
+        .from('registrations')
+        .select('competition_id, participation_group_id, payment_status')
+        .eq('id', registrationId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // 참가 신청 삭제
+      const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
         .eq('id', registrationId)
 
-      if (error) throw error
+      if (deleteError) throw deleteError
+
+      // current_participants 자동 감소 (취소된 신청이 아닌 경우만)
+      if (registration?.competition_id && registration?.payment_status !== 'cancelled') {
+        // 대회 전체 참가자 수 감소
+        const { data: competition, error: fetchCompError } = await supabase
+          .from('competitions')
+          .select('current_participants')
+          .eq('id', registration.competition_id)
+          .single()
+
+        if (!fetchCompError && competition) {
+          const newCount = Math.max(0, competition.current_participants - 1)
+
+          const { error: updateError } = await supabase
+            .from('competitions')
+            .update({ current_participants: newCount })
+            .eq('id', registration.competition_id)
+
+          if (updateError) {
+            console.error('대회 참가자 수 업데이트 오류:', updateError)
+          }
+        }
+
+        // 참가 그룹 참가자 수 감소
+        if (registration?.participation_group_id) {
+          const { data: group, error: fetchGroupError } = await supabase
+            .from('participation_groups')
+            .select('current_participants')
+            .eq('id', registration.participation_group_id)
+            .single()
+
+          if (!fetchGroupError && group) {
+            const newGroupCount = Math.max(0, group.current_participants - 1)
+
+            const { error: updateGroupError } = await supabase
+              .from('participation_groups')
+              .update({ current_participants: newGroupCount })
+              .eq('id', registration.participation_group_id)
+
+            if (updateGroupError) {
+              console.error('그룹 참가자 수 업데이트 오류:', updateGroupError)
+            }
+          }
+        }
+      }
 
       // 페이지에 데이터가 없으면 이전 페이지로
       if (registrations.length === 1 && currentRegistrationPage > 1) {
@@ -516,6 +646,51 @@ export default function AdminPage() {
   const closeParticipantModal = () => {
     setSelectedParticipant(null)
     setShowParticipantModal(false)
+    setIsEditingParticipant(false)
+    setEditedParticipant(null)
+  }
+
+  // 참가자 정보 수정 시작
+  const startEditingParticipant = () => {
+    setIsEditingParticipant(true)
+    setEditedParticipant(selectedParticipant)
+  }
+
+  // 참가자 정보 수정 취소
+  const cancelEditingParticipant = () => {
+    setIsEditingParticipant(false)
+    setEditedParticipant(null)
+  }
+
+  // 참가자 정보 저장
+  const saveParticipantChanges = async () => {
+    if (!editedParticipant) return
+
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .update({
+          email: editedParticipant.email,
+          phone: editedParticipant.phone,
+          birth_date: editedParticipant.birth_date,
+          gender: editedParticipant.gender,
+          address: editedParticipant.address,
+          shirt_size: editedParticipant.shirt_size,
+          depositor_name: editedParticipant.depositor_name,
+          notes: editedParticipant.notes,
+        })
+        .eq('id', editedParticipant.id)
+
+      if (error) throw error
+
+      alert('참가자 정보가 수정되었습니다.')
+      setSelectedParticipant(editedParticipant)
+      setIsEditingParticipant(false)
+      fetchRegistrations() // 목록 새로고침
+    } catch (error) {
+      console.error('Error updating participant:', error)
+      alert('참가자 정보 수정 중 오류가 발생했습니다.')
+    }
   }
 
   // 회원 상세 정보 모달 열기
@@ -528,6 +703,50 @@ export default function AdminPage() {
   const closeMemberModal = () => {
     setSelectedMember(null)
     setShowMemberModal(false)
+    setIsEditingMember(false)
+    setEditedMember(null)
+  }
+
+  // 회원 정보 수정 시작
+  const startEditingMember = () => {
+    setIsEditingMember(true)
+    setEditedMember(selectedMember)
+  }
+
+  // 회원 정보 수정 취소
+  const cancelEditingMember = () => {
+    setIsEditingMember(false)
+    setEditedMember(null)
+  }
+
+  // 회원 정보 저장
+  const saveMemberChanges = async () => {
+    if (!editedMember) return
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          email: editedMember.email,
+          phone: editedMember.phone,
+          birth_date: editedMember.birth_date,
+          gender: editedMember.gender,
+          postal_code: editedMember.postal_code,
+          address1: editedMember.address1,
+          address2: editedMember.address2,
+        })
+        .eq('id', editedMember.id)
+
+      if (error) throw error
+
+      alert('회원 정보가 수정되었습니다.')
+      setSelectedMember(editedMember)
+      setIsEditingMember(false)
+      fetchMembers() // 목록 새로고침
+    } catch (error) {
+      console.error('Error updating member:', error)
+      alert('회원 정보 수정 중 오류가 발생했습니다.')
+    }
   }
 
   // 회원 관리 함수들
@@ -541,7 +760,7 @@ export default function AdminPage() {
         .order('created_at', { ascending: false })
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
       }
 
       if (memberGenderFilter !== 'all') {
@@ -570,6 +789,7 @@ export default function AdminPage() {
           const currentYear = new Date().getFullYear()
           const age = currentYear - birthYear
 
+          if (memberAgeFilter === '0-19') return age <= 19
           if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
           if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
           if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
@@ -678,7 +898,7 @@ export default function AdminPage() {
         .order('created_at', { ascending: false })
 
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`)
+        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
       }
 
       if (memberGenderFilter !== 'all') {
@@ -704,6 +924,7 @@ export default function AdminPage() {
           const currentYear = new Date().getFullYear()
           const age = currentYear - birthYear
 
+          if (memberAgeFilter === '0-19') return age <= 19
           if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
           if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
           if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
@@ -811,7 +1032,7 @@ export default function AdminPage() {
       }
 
       if (participantSearchTerm) {
-        query = query.ilike('name', `%${participantSearchTerm}%`)
+        query = query.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
       }
 
       const { data, error } = await query
@@ -828,6 +1049,7 @@ export default function AdminPage() {
       if (ageFilter !== 'all') {
         filtered = filtered.filter(reg => {
           const age = reg.age || 0
+          if (ageFilter === '0-19') return age <= 19
           if (ageFilter === '20-29') return age >= 20 && age <= 29
           if (ageFilter === '30-39') return age >= 30 && age <= 39
           if (ageFilter === '40-49') return age >= 40 && age <= 49
@@ -1136,9 +1358,12 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex flex-col">
-                                <span className="font-medium">
+                                <button
+                                  onClick={() => showParticipationGroups(competition)}
+                                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                                >
                                   {(competition as any).actual_participants || 0} / {competition.max_participants}
-                                </span>
+                                </button>
                                 {(competition as any).actual_participants !== competition.current_participants && (
                                   <span className="text-xs text-red-500">
                                     (DB: {(competition as any).actual_participants}, 설정: {competition.current_participants})
@@ -1231,7 +1456,7 @@ export default function AdminPage() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="참가자 이름으로 검색..."
+                        placeholder="참가자 이름, 이메일, 연락처로 검색..."
                         value={participantSearchTerm}
                         onChange={(e) => setParticipantSearchTerm(e.target.value)}
                         onKeyPress={(e) => {
@@ -1396,6 +1621,7 @@ export default function AdminPage() {
                           <div className="flex flex-wrap gap-2">
                             {[
                               { value: 'all', label: '전체' },
+                              { value: '0-19', label: '19세 이하' },
                               { value: '20-29', label: '20-29세' },
                               { value: '30-39', label: '30-39세' },
                               { value: '40-49', label: '40-49세' },
@@ -2014,7 +2240,7 @@ export default function AdminPage() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="이름, 아이디, 이메일로 검색..."
+                        placeholder="이름, 아이디, 이메일, 연락처로 검색..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         onKeyPress={(e) => {
@@ -2148,6 +2374,7 @@ export default function AdminPage() {
                       <div className="flex flex-wrap gap-2">
                         {[
                           { value: 'all', label: '전체' },
+                          { value: '0-19', label: '19세 이하' },
                           { value: '20-29', label: '20-29세' },
                           { value: '30-39', label: '30-39세' },
                           { value: '40-49', label: '40-49세' },
@@ -2423,21 +2650,61 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
-                    <p className="text-base text-gray-900 break-all">{selectedMember.email}</p>
+                    {isEditingMember && editedMember ? (
+                      <input
+                        type="email"
+                        value={editedMember.email}
+                        onChange={(e) => setEditedMember({...editedMember, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900 break-all">{selectedMember.email}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">연락처</label>
-                    <p className="text-base text-gray-900">{selectedMember.phone}</p>
+                    {isEditingMember && editedMember ? (
+                      <input
+                        type="tel"
+                        value={editedMember.phone}
+                        onChange={(e) => setEditedMember({...editedMember, phone: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedMember.phone}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">생년월일</label>
-                    <p className="text-base text-gray-900">{selectedMember.birth_date}</p>
+                    {isEditingMember && editedMember ? (
+                      <input
+                        type="text"
+                        value={editedMember.birth_date}
+                        onChange={(e) => setEditedMember({...editedMember, birth_date: e.target.value})}
+                        placeholder="YYYYMMDD"
+                        maxLength={8}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedMember.birth_date}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">성별</label>
-                    <p className="text-base text-gray-900">
-                      {selectedMember.gender === 'male' ? '남성' : '여성'}
-                    </p>
+                    {isEditingMember && editedMember ? (
+                      <select
+                        value={editedMember.gender}
+                        onChange={(e) => setEditedMember({...editedMember, gender: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      >
+                        <option value="male">남성</option>
+                        <option value="female">여성</option>
+                      </select>
+                    ) : (
+                      <p className="text-base text-gray-900">
+                        {selectedMember.gender === 'male' ? '남성' : '여성'}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2448,13 +2715,43 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">우편번호</label>
-                    <p className="text-base text-gray-900">{selectedMember.postal_code}</p>
+                    {isEditingMember && editedMember ? (
+                      <input
+                        type="text"
+                        value={editedMember.postal_code}
+                        onChange={(e) => setEditedMember({...editedMember, postal_code: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedMember.postal_code}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">주소</label>
-                    <p className="text-base text-gray-900">{selectedMember.address1}</p>
-                    {selectedMember.address2 && (
-                      <p className="text-base text-gray-900 mt-1">{selectedMember.address2}</p>
+                    {isEditingMember && editedMember ? (
+                      <>
+                        <input
+                          type="text"
+                          value={editedMember.address1}
+                          onChange={(e) => setEditedMember({...editedMember, address1: e.target.value})}
+                          placeholder="기본 주소"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white mb-2"
+                        />
+                        <input
+                          type="text"
+                          value={editedMember.address2 || ''}
+                          onChange={(e) => setEditedMember({...editedMember, address2: e.target.value})}
+                          placeholder="상세 주소 (선택)"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-base text-gray-900">{selectedMember.address1}</p>
+                        {selectedMember.address2 && (
+                          <p className="text-base text-gray-900 mt-1">{selectedMember.address2}</p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -2463,12 +2760,37 @@ export default function AdminPage() {
 
             {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={closeMemberModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-              >
-                닫기
-              </button>
+              {isEditingMember ? (
+                <>
+                  <button
+                    onClick={cancelEditingMember}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={saveMemberChanges}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    저장
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={startEditingMember}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={closeMemberModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    닫기
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -2503,15 +2825,44 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
-                    <p className="text-base text-gray-900 break-all">{selectedParticipant.email}</p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <input
+                        type="email"
+                        value={editedParticipant.email}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900 break-all">{selectedParticipant.email}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">연락처</label>
-                    <p className="text-base text-gray-900">{selectedParticipant.phone}</p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <input
+                        type="tel"
+                        value={editedParticipant.phone}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, phone: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedParticipant.phone}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">생년월일</label>
-                    <p className="text-base text-gray-900">{selectedParticipant.birth_date || '-'}</p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <input
+                        type="text"
+                        value={editedParticipant.birth_date || ''}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, birth_date: e.target.value})}
+                        placeholder="YYYYMMDD"
+                        maxLength={8}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedParticipant.birth_date || '-'}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">나이</label>
@@ -2519,22 +2870,41 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">성별</label>
-                    <p className="text-base text-gray-900">
-                      {selectedParticipant.gender === 'male' ? '남성' : '여성'}
-                    </p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <select
+                        value={editedParticipant.gender}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, gender: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      >
+                        <option value="male">남성</option>
+                        <option value="female">여성</option>
+                      </select>
+                    ) : (
+                      <p className="text-base text-gray-900">
+                        {selectedParticipant.gender === 'male' ? '남성' : '여성'}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* 주소 정보 */}
-              {selectedParticipant.address && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">주소</h3>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">주소</h3>
-                  <div>
-                    <p className="text-base text-gray-900">{selectedParticipant.address}</p>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">주소</label>
+                  {isEditingParticipant && editedParticipant ? (
+                    <textarea
+                      value={editedParticipant.address || ''}
+                      onChange={(e) => setEditedParticipant({...editedParticipant, address: e.target.value})}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                    />
+                  ) : (
+                    <p className="text-base text-gray-900">{selectedParticipant.address || '-'}</p>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* 대회 정보 */}
               <div>
@@ -2566,15 +2936,39 @@ export default function AdminPage() {
                       {formatKST(selectedParticipant.created_at, 'yyyy.MM.dd HH:mm')}
                     </p>
                   </div>
-                  {selectedParticipant.shirt_size && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">티셔츠 사이즈</label>
-                      <p className="text-base text-gray-900">{selectedParticipant.shirt_size}</p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">티셔츠 사이즈</label>
+                    {isEditingParticipant && editedParticipant ? (
+                      <select
+                        value={editedParticipant.shirt_size || ''}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, shirt_size: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      >
+                        <option value="">선택 안함</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="2XL">2XL</option>
+                        <option value="3XL">3XL</option>
+                      </select>
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedParticipant.shirt_size || '-'}</p>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">입금자명</label>
-                    <p className="text-base text-gray-900">{selectedParticipant.depositor_name || '-'}</p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <input
+                        type="text"
+                        value={editedParticipant.depositor_name || ''}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, depositor_name: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedParticipant.depositor_name || '-'}</p>
+                    )}
                   </div>
                   {selectedParticipant.entry_fee && (
                     <div>
@@ -2603,26 +2997,179 @@ export default function AdminPage() {
               </div>
 
               {/* 기타 정보 */}
-              {selectedParticipant.notes && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">기타 내용</h3>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">기타 내용</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-base text-gray-900 whitespace-pre-wrap">
-                      {selectedParticipant.notes}
-                    </p>
-                  </div>
+                  {isEditingParticipant && editedParticipant ? (
+                    <textarea
+                      value={editedParticipant.notes || ''}
+                      onChange={(e) => setEditedParticipant({...editedParticipant, notes: e.target.value})}
+                      rows={4}
+                      placeholder="기타 내용 입력..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                    />
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-base text-gray-900 whitespace-pre-wrap">
+                        {selectedParticipant.notes || '-'}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={closeParticipantModal}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-              >
-                닫기
-              </button>
+              {isEditingParticipant ? (
+                <>
+                  <button
+                    onClick={cancelEditingParticipant}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={saveParticipantChanges}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    저장
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={startEditingParticipant}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={closeParticipantModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    닫기
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 종목별 참가자 수 모달 */}
+      {showGroupsModal && selectedCompetitionForGroups && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {selectedCompetitionForGroups.title} - 종목별 참가자 현황
+              </h3>
+
+              <div className="space-y-4">
+                {participationGroups.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    등록된 참가 그룹이 없습니다.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            종목/거리
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            참가비
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            참가자
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            최대 인원
+                          </th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            진행률
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {participationGroups.map((group) => {
+                          const progress = group.max_participants > 0
+                            ? ((group.actual_participants / group.max_participants) * 100).toFixed(1)
+                            : 0
+
+                          return (
+                            <tr key={group.id}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {group.name || group.distance}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                ₩{group.entry_fee.toLocaleString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-blue-600">
+                                {group.actual_participants}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                {group.max_participants}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                <div className="flex items-center justify-center space-x-2">
+                                  <div className="w-24 bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className={`h-2 rounded-full ${
+                                        Number(progress) >= 100 ? 'bg-red-500' :
+                                        Number(progress) >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                                      }`}
+                                      style={{ width: `${Math.min(Number(progress), 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-medium">{progress}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr className="font-semibold">
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            전체 합계
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            -
+                          </td>
+                          <td className="px-6 py-4 text-center text-sm text-blue-600 font-bold">
+                            {participationGroups.reduce((sum, g) => sum + (g.actual_participants || 0), 0)}
+                          </td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-900 font-bold">
+                            {participationGroups.reduce((sum, g) => sum + (g.max_participants || 0), 0)}
+                          </td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-900">
+                            {participationGroups.reduce((sum, g) => sum + (g.max_participants || 0), 0) > 0
+                              ? ((participationGroups.reduce((sum, g) => sum + (g.actual_participants || 0), 0) /
+                                  participationGroups.reduce((sum, g) => sum + (g.max_participants || 0), 0)) * 100).toFixed(1)
+                              : 0}%
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowGroupsModal(false)
+                    setSelectedCompetitionForGroups(null)
+                    setParticipationGroups([])
+                  }}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  닫기
+                </button>
+              </div>
             </div>
           </div>
         </div>
