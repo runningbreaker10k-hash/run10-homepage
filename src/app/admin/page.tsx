@@ -662,9 +662,87 @@ export default function AdminPage() {
     setEditedParticipant(null)
   }
 
+  // 나이 계산 함수 (YYMMDD 또는 YYYYMMDD 형식 지원)
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return 0
+
+    // 공백 제거
+    birthDate = birthDate.trim()
+
+    let year: number, month: number, day: number
+
+    // 8자리 (YYYYMMDD) 형식인 경우
+    if (birthDate.length === 8) {
+      year = parseInt(birthDate.substring(0, 4))
+      month = parseInt(birthDate.substring(4, 6))
+      day = parseInt(birthDate.substring(6, 8))
+    }
+    // 6자리 (YYMMDD) 형식인 경우
+    else if (birthDate.length === 6) {
+      const yy = parseInt(birthDate.substring(0, 2))
+      month = parseInt(birthDate.substring(2, 4))
+      day = parseInt(birthDate.substring(4, 6))
+
+      // 2000년대/1900년대 구분 (현재 연도 기준)
+      const currentYear = new Date().getFullYear()
+      const century = yy <= (currentYear % 100) ? 2000 : 1900
+      year = century + yy
+    } else {
+      return 0
+    }
+
+    const today = new Date()
+    const birthDateObj = new Date(year, month - 1, day)
+
+    let age = today.getFullYear() - birthDateObj.getFullYear()
+    const monthDiff = today.getMonth() - birthDateObj.getMonth()
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+      age--
+    }
+
+    return age
+  }
+
+  // 생년월일 변경 핸들러 (나이 자동 재계산)
+  const handleBirthDateChange = (birthDate: string) => {
+    if (!editedParticipant) return
+
+    // 숫자만 입력 허용
+    const numericValue = birthDate.replace(/[^0-9]/g, '')
+
+    // 6자리 또는 8자리로 제한
+    const limitedValue = numericValue.slice(0, 8)
+
+    // 8자리(YYYYMMDD)인 경우 6자리(YYMMDD)로 변환
+    let finalValue = limitedValue
+    if (limitedValue.length === 8) {
+      // YYYY를 YY로 변환 (뒤의 두 자리만 사용)
+      finalValue = limitedValue.substring(2)
+    }
+
+    // 나이 계산 (원본 8자리 또는 6자리로 계산)
+    const calculatedAge = calculateAge(limitedValue)
+
+    setEditedParticipant({
+      ...editedParticipant,
+      birth_date: finalValue,
+      age: calculatedAge
+    })
+  }
+
   // 참가자 정보 저장
   const saveParticipantChanges = async () => {
     if (!editedParticipant) return
+
+    // 생년월일 유효성 검사 (6자리 형식만 저장됨)
+    if (editedParticipant.birth_date) {
+      const birthDate = editedParticipant.birth_date.trim()
+      if (birthDate.length !== 6) {
+        alert('생년월일은 6자리(YYMMDD) 형식이어야 합니다.')
+        return
+      }
+    }
 
     try {
       const { error } = await supabase
@@ -673,6 +751,7 @@ export default function AdminPage() {
           email: editedParticipant.email,
           phone: editedParticipant.phone,
           birth_date: editedParticipant.birth_date,
+          age: editedParticipant.age,
           gender: editedParticipant.gender,
           address: editedParticipant.address,
           shirt_size: editedParticipant.shirt_size,
@@ -2852,21 +2931,30 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">생년월일</label>
                     {isEditingParticipant && editedParticipant ? (
-                      <input
-                        type="text"
-                        value={editedParticipant.birth_date || ''}
-                        onChange={(e) => setEditedParticipant({...editedParticipant, birth_date: e.target.value})}
-                        placeholder="YYYYMMDD"
-                        maxLength={8}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                      />
+                      <div>
+                        <input
+                          type="text"
+                          value={editedParticipant.birth_date || ''}
+                          onChange={(e) => handleBirthDateChange(e.target.value)}
+                          placeholder="YYMMDD 또는 YYYYMMDD"
+                          maxLength={8}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          6자리(YYMMDD) 또는 8자리(YYYYMMDD) 입력 가능 (자동으로 6자리로 저장됨)
+                        </p>
+                      </div>
                     ) : (
                       <p className="text-base text-gray-900">{selectedParticipant.birth_date || '-'}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">나이</label>
-                    <p className="text-base text-gray-900">{selectedParticipant.age}세</p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <p className="text-base text-gray-900 font-medium text-blue-600">{editedParticipant.age}세</p>
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedParticipant.age}세</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">성별</label>

@@ -393,47 +393,6 @@ export default function CommunityPostPage() {
               </div>
             </div>
 
-            {/* 댓글 작성 */}
-            {user ? (
-              <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3 sm:space-y-4">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <img
-                      src={getGradeInfo(user.grade).icon}
-                      alt="등급"
-                      className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
-                    />
-                    <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">{user.name}</span>
-                  </div>
-                  <textarea
-                    {...register('content')}
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
-                    placeholder="댓글을 입력하세요..."
-                  />
-                  {errors.content && (
-                    <p className="text-red-500 text-xs sm:text-sm break-words">{errors.content.message}</p>
-                  )}
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      disabled={isSubmittingComment}
-                      className="flex items-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium touch-manipulation"
-                    >
-                      <Send className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <span>{isSubmittingComment ? '등록 중...' : '댓글 등록'}</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
-              <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-red-50">
-                <p className="text-center text-red-800 text-xs sm:text-sm">
-                  댓글을 작성하려면 <strong>로그인</strong>이 필요합니다.
-                </p>
-              </div>
-            )}
-
             {/* 댓글 목록 */}
             <div className="divide-y divide-gray-200">
               {comments.length === 0 ? (
@@ -481,6 +440,47 @@ export default function CommunityPostPage() {
                 })
               )}
             </div>
+
+            {/* 댓글 작성 */}
+            {user ? (
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+                <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3 sm:space-y-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <img
+                      src={getGradeInfo(user.grade).icon}
+                      alt="등급"
+                      className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+                    />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700 break-words">{user.name}</span>
+                  </div>
+                  <textarea
+                    {...register('content')}
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                    placeholder="댓글을 입력하세요..."
+                  />
+                  {errors.content && (
+                    <p className="text-red-500 text-xs sm:text-sm break-words">{errors.content.message}</p>
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSubmittingComment}
+                      className="flex items-center space-x-2 px-4 py-2 sm:px-6 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-medium touch-manipulation"
+                    >
+                      <Send className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <span>{isSubmittingComment ? '등록 중...' : '댓글 등록'}</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-red-50">
+                <p className="text-center text-red-800 text-xs sm:text-sm">
+                  댓글을 작성하려면 <strong>로그인</strong>이 필요합니다.
+                </p>
+              </div>
+            )}
           </section>
         </div>
       </section>
