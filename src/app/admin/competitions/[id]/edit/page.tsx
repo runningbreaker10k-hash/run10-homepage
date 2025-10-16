@@ -245,36 +245,74 @@ export default function EditCompetitionPage() {
         return
       }
 
-      // 2. 기존 참가 그룹 삭제
-      const { error: deleteError } = await supabase
+      // 2. 기존 참가 그룹 가져오기
+      const { data: existingGroups, error: fetchError } = await supabase
         .from('participation_groups')
-        .delete()
+        .select('*')
         .eq('competition_id', competitionId)
 
-      if (deleteError) {
-        console.error('Error deleting existing groups:', deleteError)
+      if (fetchError) {
+        console.error('Error fetching existing groups:', fetchError)
+        alert('참가 그룹 조회 중 오류가 발생했습니다.')
+        return
+      }
+
+      // 3. 참가 그룹 UPSERT (distance 기준으로 매칭하여 기존 ID 유지)
+      const groupsData = participationGroups.map(group => {
+        // distance 기준으로 기존 그룹 찾기 (ID 유지)
+        const existingGroup = existingGroups?.find(eg => eg.distance === group.distance)
+
+        if (existingGroup) {
+          // 기존 그룹 업데이트 (ID 유지)
+          return {
+            id: existingGroup.id,
+            competition_id: competitionId,
+            name: group.name,
+            distance: group.distance,
+            max_participants: group.maxParticipants,
+            entry_fee: group.entryFee,
+            description: group.description || null,
+            created_at: existingGroup.created_at
+          }
+        } else {
+          // 새 그룹 추가
+          return {
+            competition_id: competitionId,
+            name: group.name,
+            distance: group.distance,
+            max_participants: group.maxParticipants,
+            entry_fee: group.entryFee,
+            description: group.description || null
+          }
+        }
+      })
+
+      // UPSERT 실행 (id가 있으면 update, 없으면 insert)
+      const { error: upsertError } = await supabase
+        .from('participation_groups')
+        .upsert(groupsData, { onConflict: 'id' })
+
+      if (upsertError) {
+        console.error('Error upserting groups:', upsertError)
         alert('참가 그룹 수정 중 오류가 발생했습니다.')
         return
       }
 
-      // 3. 새 참가 그룹들 저장
-      const groupsData = participationGroups.map(group => ({
-        competition_id: competitionId,
-        name: group.name,
-        distance: group.distance,
-        max_participants: group.maxParticipants,
-        entry_fee: group.entryFee,
-        description: group.description || null
-      }))
+      // 4. 삭제된 그룹 처리 (UI에서 제거된 distance는 DB에서도 삭제)
+      const currentDistances = participationGroups.map(g => g.distance)
+      const groupsToDelete = existingGroups?.filter(eg => !currentDistances.includes(eg.distance))
 
-      const { error: insertError } = await supabase
-        .from('participation_groups')
-        .insert(groupsData)
+      if (groupsToDelete && groupsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('participation_groups')
+          .delete()
+          .in('id', groupsToDelete.map(g => g.id))
 
-      if (insertError) {
-        console.error('Error inserting new groups:', insertError)
-        alert('참가 그룹 수정 중 오류가 발생했습니다.')
-        return
+        if (deleteError) {
+          console.error('Error deleting removed groups:', deleteError)
+          // 경고만 표시하고 계속 진행
+          console.warn('일부 그룹 삭제 중 오류가 발생했습니다.')
+        }
       }
 
       alert('대회가 성공적으로 수정되었습니다!')

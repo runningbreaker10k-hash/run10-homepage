@@ -334,45 +334,73 @@ export default function AdminPage() {
       const { count } = await countQuery
       setTotalRegistrations(count || 0)
 
-      // 데이터 가져오기
-      let query = supabase
-        .from('registrations')
-        .select(`
-          *,
-          competitions (
-            title,
-            date
-          )
-        `)
+      // Supabase는 한 번에 최대 1000개만 반환하므로 여러 번 나눠서 가져오기
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
 
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('registrations')
+          .select(`
+            *,
+            competitions (
+              title,
+              date
+            )
+          `)
+          .range(offset, offset + pageSize - 1)
+
+        if (error) {
+          console.error('Supabase error:', error)
+          throw error
+        }
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      // 정렬 처리 및 클라이언트 필터링
+      let filtered = allData
+
+      // 대회 필터
       if (selectedCompetitionForParticipants) {
-        query = query.eq('competition_id', selectedCompetitionForParticipants)
+        filtered = filtered.filter(reg => reg.competition_id === selectedCompetitionForParticipants)
       }
 
+      // 결제 상태 필터
       if (paymentStatusFilter !== 'all') {
-        query = query.eq('payment_status', paymentStatusFilter)
+        filtered = filtered.filter(reg => reg.payment_status === paymentStatusFilter)
       }
 
+      // 거리 필터
       if (distanceFilter !== 'all') {
-        query = query.eq('distance', distanceFilter)
+        filtered = filtered.filter(reg => reg.distance === distanceFilter)
       }
 
+      // 성별 필터
       if (genderFilter !== 'all') {
-        query = query.eq('gender', genderFilter)
+        filtered = filtered.filter(reg => reg.gender === genderFilter)
       }
 
+      // 검색어 필터
       if (participantSearchTerm) {
-        query = query.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
+        const searchLower = participantSearchTerm.toLowerCase()
+        filtered = filtered.filter(reg =>
+          reg.name?.toLowerCase().includes(searchLower) ||
+          reg.email?.toLowerCase().includes(searchLower) ||
+          reg.phone?.includes(participantSearchTerm)
+        )
       }
-
-      const { data, error } = await query
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
-      // 정렬 처리 및 클라이언트 필터링 (지역, 나이)
-      let filtered = data || []
 
       // 지역 필터 (address 필드에서 검색)
       if (regionFilter !== 'all') {
@@ -832,24 +860,51 @@ export default function AdminPage() {
   const fetchMembers = async () => {
     setMembersLoading(true)
     try {
-      // 먼저 전체 데이터를 가져온 후 클라이언트에서 필터링
-      let query = supabase
-        .from('users')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
+      // Supabase는 한 번에 최대 1000개만 반환하므로 여러 번 나눠서 가져오기
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
 
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+
+          // 가져온 데이터가 pageSize보다 적으면 마지막 페이지
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      let filtered = allData
+
+      // 검색어 필터 (클라이언트 측)
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        const searchLower = searchTerm.toLowerCase()
+        filtered = filtered.filter(member =>
+          member.name?.toLowerCase().includes(searchLower) ||
+          member.user_id?.toLowerCase().includes(searchLower) ||
+          member.email?.toLowerCase().includes(searchLower) ||
+          member.phone?.includes(searchTerm)
+        )
       }
 
+      // 성별 필터 (클라이언트 측)
       if (memberGenderFilter !== 'all') {
-        query = query.eq('gender', memberGenderFilter)
+        filtered = filtered.filter(member => member.gender === memberGenderFilter)
       }
-
-      const { data, error } = await query
-      if (error) throw error
-
-      let filtered = data || []
 
       // 지역 필터 (클라이언트 측)
       if (memberRegionFilter !== 'all') {
@@ -903,9 +958,9 @@ export default function AdminPage() {
 
       // 페이지네이션 적용
       setTotalMembers(filtered.length)
-      const from = (currentMemberPage - 1) * membersPerPage
-      const to = from + membersPerPage
-      setMembers(filtered.slice(from, to))
+      const startIndex = (currentMemberPage - 1) * membersPerPage
+      const endIndex = startIndex + membersPerPage
+      setMembers(filtered.slice(startIndex, endIndex))
     } catch (error) {
       console.error('회원 로드 오류:', error)
       setMembers([])
@@ -970,24 +1025,50 @@ export default function AdminPage() {
     try {
       setMembersLoading(true)
 
-      // 필터링된 전체 데이터 가져오기 (페이지네이션 없이)
-      let query = supabase
-        .from('users')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Supabase는 한 번에 최대 1000개만 반환하므로 여러 번 나눠서 가져오기
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
 
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      let filtered = allData
+
+      // 검색어 필터 (클라이언트 측)
       if (searchTerm) {
-        query = query.or(`name.ilike.%${searchTerm}%,user_id.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
+        const searchLower = searchTerm.toLowerCase()
+        filtered = filtered.filter(member =>
+          member.name?.toLowerCase().includes(searchLower) ||
+          member.user_id?.toLowerCase().includes(searchLower) ||
+          member.email?.toLowerCase().includes(searchLower) ||
+          member.phone?.includes(searchTerm)
+        )
       }
 
+      // 성별 필터 (클라이언트 측)
       if (memberGenderFilter !== 'all') {
-        query = query.eq('gender', memberGenderFilter)
+        filtered = filtered.filter(member => member.gender === memberGenderFilter)
       }
-
-      const { data, error } = await query
-      if (error) throw error
-
-      let filtered = data || []
 
       // 지역 필터
       if (memberRegionFilter !== 'all') {
