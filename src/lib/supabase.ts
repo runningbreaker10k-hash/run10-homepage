@@ -280,6 +280,8 @@ export type Database = {
           image_url?: string
           views: number
           is_notice: boolean
+          is_private: boolean
+          post_password?: string
           created_at: string
           updated_at: string
         }
@@ -292,6 +294,8 @@ export type Database = {
           image_url?: string
           views?: number
           is_notice?: boolean
+          is_private?: boolean
+          post_password?: string
           created_at?: string
           updated_at?: string
         }
@@ -304,6 +308,8 @@ export type Database = {
           image_url?: string
           views?: number
           is_notice?: boolean
+          is_private?: boolean
+          post_password?: string
           created_at?: string
           updated_at?: string
         }
@@ -359,6 +365,8 @@ export type Database = {
           image_url?: string
           views: number
           is_notice: boolean
+          is_private: boolean
+          post_password?: string
           created_at: string
           updated_at: string
           author_id: string

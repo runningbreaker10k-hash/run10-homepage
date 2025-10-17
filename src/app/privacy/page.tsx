@@ -47,7 +47,7 @@ export default function PrivacyPage() {
                   <li><strong>마케팅 및 광고</strong>
                     <ul className="list-disc list-inside ml-6 mt-1 space-y-1 text-sm">
                       <li>신규 대회 및 서비스 안내</li>
-                      <li>이벤트 및 광고성 정보 전달 (동의 시에만)</li>
+                      <li>이벤트 및 광고성 정보 전달</li>
                     </ul>
                   </li>
                 </ol>

@@ -267,7 +267,7 @@ export default function CompetitionDetailPage() {
       let query = supabase
         .from('community_posts')
         .select(`
-          id, title, content, created_at, updated_at, views, is_notice,
+          id, title, content, created_at, updated_at, views, is_notice, is_private, post_password,
           user_id, users(user_id, name, grade, role),
           post_comments(id)
         `, { count: 'exact' })
@@ -1077,6 +1077,9 @@ export default function CompetitionDetailPage() {
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                               공지
                             </span>
+                          )}
+                          {post.is_private && (
+                            <span className="text-blue-600">🔒</span>
                           )}
                           <span className="font-medium text-gray-900 hover:text-blue-600">
                             {post.title}

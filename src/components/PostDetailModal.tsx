@@ -10,6 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import AdminReplyModal from './AdminReplyModal'
 import MessageModal from './MessageModal'
+import PasswordCheckModal from './PasswordCheckModal'
 
 const commentSchema = z.object({
   content: z.string()
@@ -33,8 +34,11 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   const [isEditing, setIsEditing] = useState(false)
   const [editFormData, setEditFormData] = useState({
     title: post?.title || '',
-    content: post?.content || ''
+    content: post?.content || '',
+    is_private: post?.is_private || false,
+    post_password: post?.post_password || ''
   })
+  const [editPasswordConfirm, setEditPasswordConfirm] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAdminReply, setShowAdminReply] = useState(false)
   const [replies, setReplies] = useState<any[]>([])
@@ -47,6 +51,9 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     showCancel: false,
     onConfirm: undefined as (() => void) | undefined
   })
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [isPasswordVerified, setIsPasswordVerified] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   const {
     register,
@@ -66,15 +73,36 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     if (post) {
       const newFormData = {
         title: post.title || '',
-        content: post.content || ''
+        content: post.content || '',
+        is_private: post.is_private || false,
+        post_password: post.post_password || ''
       }
       console.log('Post 변경 - editFormData 업데이트:', newFormData)
       setEditFormData(newFormData)
 
-      // 통합 시스템에서는 모든 게시글에 댓글 시스템 사용
-      loadComments()
+      // 비밀글 접근 권한 확인
+      if (post.is_private) {
+        // 관리자는 바로 통과
+        if (user?.role === 'admin') {
+          setIsPasswordVerified(true)
+          loadComments()
+        }
+        // 작성자는 바로 통과
+        else if (user?.id === post.user_id) {
+          setIsPasswordVerified(true)
+          loadComments()
+        }
+        // 그 외에는 비밀번호 확인 필요
+        else {
+          setIsPasswordVerified(false)
+          setShowPasswordModal(true)
+        }
+      } else {
+        setIsPasswordVerified(true)
+        loadComments()
+      }
     }
-  }, [post])
+  }, [post, user])
 
   // 통합 시스템에서는 답글 시스템 대신 댓글 시스템만 사용
   const fetchReplies = async () => {
@@ -182,13 +210,31 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   console.log('PostDetailModal - editFormData:', editFormData)
 
 
+  const handlePasswordCheck = (inputPassword: string) => {
+    console.log('입력한 비밀번호:', inputPassword, '타입:', typeof inputPassword)
+    console.log('저장된 비밀번호:', post.post_password, '타입:', typeof post.post_password)
+    console.log('일치 여부:', post.post_password === inputPassword)
+
+    if (post.post_password === inputPassword) {
+      setIsPasswordVerified(true)
+      setShowPasswordModal(false)
+      setPasswordError('')
+      loadComments()
+    } else {
+      setPasswordError('비밀번호가 일치하지 않습니다')
+    }
+  }
+
   const handleEdit = () => {
     const newFormData = {
       title: post.title || '',
-      content: post.content || ''
+      content: post.content || '',
+      is_private: post.is_private || false,
+      post_password: post.post_password || ''
     }
     console.log('수정 모드 전환 - 폼 데이터 설정:', newFormData)
     setEditFormData(newFormData)
+    setEditPasswordConfirm(post.post_password || '')
     setIsEditing(true)
   }
 
@@ -234,6 +280,51 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 비밀글인 경우 비밀번호 체크
+    if (editFormData.is_private) {
+      if (!editFormData.post_password.trim()) {
+        setMessageProps({
+          type: 'error',
+          message: '비밀번호를 입력해주세요',
+          showCancel: false,
+          onConfirm: undefined
+        })
+        setShowMessage(true)
+        return
+      }
+      if (editFormData.post_password.length !== 4 || !/^\d+$/.test(editFormData.post_password)) {
+        setMessageProps({
+          type: 'error',
+          message: '비밀번호는 4자리 숫자여야 합니다',
+          showCancel: false,
+          onConfirm: undefined
+        })
+        setShowMessage(true)
+        return
+      }
+      if (!editPasswordConfirm.trim()) {
+        setMessageProps({
+          type: 'error',
+          message: '비밀번호 확인을 입력해주세요',
+          showCancel: false,
+          onConfirm: undefined
+        })
+        setShowMessage(true)
+        return
+      }
+      if (editFormData.post_password !== editPasswordConfirm) {
+        setMessageProps({
+          type: 'error',
+          message: '비밀번호가 일치하지 않습니다',
+          showCancel: false,
+          onConfirm: undefined
+        })
+        setShowMessage(true)
+        return
+      }
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -243,6 +334,8 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         .update({
           title: editFormData.title,
           content: editFormData.content,
+          is_private: editFormData.is_private,
+          post_password: editFormData.is_private ? editFormData.post_password : null,
           // 로컬 타임존으로 업데이트 시간 설정 (UTC 변환 방지)
           updated_at: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString()
         })
@@ -270,11 +363,25 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   // 통합 시스템에서는 답글 대신 댓글 시스템만 사용
 
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    const { name, value, type } = e.target
+
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked
+      setEditFormData(prev => ({
+        ...prev,
+        [name]: checked,
+        // 비밀글 체크 해제시 비밀번호도 초기화
+        ...(name === 'is_private' && !checked ? { post_password: '' } : {})
+      }))
+      if (name === 'is_private' && !checked) {
+        setEditPasswordConfirm('')
+      }
+    } else {
+      setEditFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -316,6 +423,70 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
           <div className="p-6">
             {isEditing ? (
               <form onSubmit={handleEditSubmit} className="space-y-4">
+                {/* 비밀글 옵션 */}
+                <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-is_private"
+                      name="is_private"
+                      checked={editFormData.is_private}
+                      onChange={handleEditInputChange}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="edit-is_private" className="text-sm font-medium text-blue-900 cursor-pointer">
+                      🔒 비밀글로 설정
+                    </label>
+                  </div>
+
+                  {editFormData.is_private && (
+                    <div className="mt-2 space-y-2">
+                      <div>
+                        <label htmlFor="edit-post_password" className="block text-xs font-medium text-blue-800 mb-1">
+                          비밀번호 (4자리 숫자)
+                        </label>
+                        <input
+                          type="password"
+                          id="edit-post_password"
+                          name="post_password"
+                          value={editFormData.post_password}
+                          onChange={handleEditInputChange}
+                          maxLength={4}
+                          placeholder="4자리 숫자 입력"
+                          className="w-full px-3 py-2 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="edit-post_password_confirm" className="block text-xs font-medium text-blue-800 mb-1">
+                          비밀번호 확인
+                        </label>
+                        <input
+                          type="password"
+                          id="edit-post_password_confirm"
+                          value={editPasswordConfirm}
+                          onChange={(e) => setEditPasswordConfirm(e.target.value)}
+                          maxLength={4}
+                          placeholder="비밀번호 재입력"
+                          className="w-full px-3 py-2 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        {editFormData.post_password && editPasswordConfirm && editFormData.post_password !== editPasswordConfirm && (
+                          <p className="mt-1 text-xs text-red-600">
+                            비밀번호가 일치하지 않습니다
+                          </p>
+                        )}
+                        {editFormData.post_password && editPasswordConfirm && editFormData.post_password === editPasswordConfirm && (
+                          <p className="mt-1 text-xs text-green-600">
+                            비밀번호가 일치합니다
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-xs text-blue-700">
+                        작성자와 관리자만 게시글을 볼 수 있습니다
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
                     제목 *
@@ -363,6 +534,13 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                   </button>
                 </div>
               </form>
+            ) : !isPasswordVerified ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🔒</div>
+                  <p className="text-gray-600">비밀번호 확인이 필요합니다</p>
+                </div>
+              </div>
             ) : (
               <>
                 {/* 게시글 */}
@@ -375,6 +553,11 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                             <Pin className="w-3 h-3 mr-1" />
                             공지
+                          </span>
+                        )}
+                        {post.is_private && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            🔒 비밀글
                           </span>
                         )}
                         <h1 className="text-xl font-bold text-gray-900">{post.title}</h1>
@@ -635,6 +818,16 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         message={messageProps.message}
         showCancel={messageProps.showCancel}
         onConfirm={messageProps.onConfirm}
+      />
+
+      <PasswordCheckModal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false)
+          onClose()
+        }}
+        onConfirm={handlePasswordCheck}
+        errorMessage={passwordError}
       />
     </>
   )
