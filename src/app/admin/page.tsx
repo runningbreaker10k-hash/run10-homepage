@@ -49,6 +49,7 @@ export default function AdminPage() {
   const [regionFilter, setRegionFilter] = useState<string>('all')
   const [ageFilter, setAgeFilter] = useState<string>('all')
   const [genderFilter, setGenderFilter] = useState<string>('all')
+  const [gradeFilter, setGradeFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'created_at' | 'distance'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [selectedParticipant, setSelectedParticipant] = useState<Registration | null>(null)
@@ -88,6 +89,7 @@ export default function AdminPage() {
   const [memberRegionFilter, setMemberRegionFilter] = useState<string>('all')
   const [memberAgeFilter, setMemberAgeFilter] = useState<string>('all')
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
+  const [memberGradeFilter, setMemberGradeFilter] = useState<string>('all')
 
   useEffect(() => {
     if (!user) {
@@ -123,7 +125,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
+  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community') {
@@ -133,11 +135,18 @@ export default function AdminPage() {
   }, [currentPostPage, user, activeTab])
 
   useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'competitions' && competitionSubTab === 'boards') {
+      fetchCompetitionPosts()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPostPage, user, activeTab, competitionSubTab, selectedCompetitionForPosts])
+
+  useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'members') {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter])
+  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
 
 
   // 대회 관리 함수들
@@ -348,6 +357,9 @@ export default function AdminPage() {
             competitions (
               title,
               date
+            ),
+            users (
+              grade
             )
           `)
           .range(offset, offset + pageSize - 1)
@@ -390,6 +402,14 @@ export default function AdminPage() {
       // 성별 필터
       if (genderFilter !== 'all') {
         filtered = filtered.filter(reg => reg.gender === genderFilter)
+      }
+
+      // 종족(grade) 필터 - users 테이블 JOIN 데이터 사용
+      if (gradeFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          // users가 있고 grade가 일치하는 경우만
+          return reg.users && reg.users.grade === gradeFilter
+        })
       }
 
       // 검색어 필터
@@ -906,6 +926,11 @@ export default function AdminPage() {
         filtered = filtered.filter(member => member.gender === memberGenderFilter)
       }
 
+      // 종족(grade) 필터 (클라이언트 측)
+      if (memberGradeFilter !== 'all') {
+        filtered = filtered.filter(member => member.grade === memberGradeFilter)
+      }
+
       // 지역 필터 (클라이언트 측)
       if (memberRegionFilter !== 'all') {
         filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
@@ -1070,6 +1095,11 @@ export default function AdminPage() {
         filtered = filtered.filter(member => member.gender === memberGenderFilter)
       }
 
+      // 종족(grade) 필터 (클라이언트 측)
+      if (memberGradeFilter !== 'all') {
+        filtered = filtered.filter(member => member.grade === memberGradeFilter)
+      }
+
       // 지역 필터
       if (memberRegionFilter !== 'all') {
         filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
@@ -1172,6 +1202,9 @@ export default function AdminPage() {
           competitions (
             title,
             date
+          ),
+          users (
+            grade
           )
         `)
 
@@ -1199,6 +1232,13 @@ export default function AdminPage() {
       if (error) throw error
 
       let filtered = data || []
+
+      // 종족(grade) 필터
+      if (gradeFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          return reg.users && reg.users.grade === gradeFilter
+        })
+      }
 
       // 지역 필터
       if (regionFilter !== 'all') {
@@ -1825,6 +1865,31 @@ export default function AdminPage() {
                             ))}
                           </div>
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">종족</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { value: 'all', label: '전체' },
+                              { value: 'cheetah', label: '치타족' },
+                              { value: 'horse', label: '홀스족' },
+                              { value: 'wolf', label: '울프족' },
+                              { value: 'turtle', label: '터틀족' }
+                            ].map((grade) => (
+                              <button
+                                key={grade.value}
+                                onClick={() => setGradeFilter(grade.value)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                  gradeFilter === grade.value
+                                    ? 'bg-red-600 text-white'
+                                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {grade.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {/* 정렬 옵션 */}
@@ -2186,6 +2251,46 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+
+                {/* 페이지네이션 */}
+                {!postsLoading && totalPosts > 0 && (
+                  <div className="px-6 py-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-700">
+                        전체 {totalPosts}개 중 {((currentPostPage - 1) * postsPerPage) + 1}-{Math.min(currentPostPage * postsPerPage, totalPosts)}개 표시
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setCurrentPostPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPostPage === 1}
+                          className={`px-3 py-1 rounded ${
+                            currentPostPage === 1
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                          }`}
+                        >
+                          이전
+                        </button>
+                        <span className="text-sm text-gray-700">
+                          {currentPostPage} / {Math.ceil(totalPosts / postsPerPage)}
+                        </span>
+                        <button
+                          onClick={() => setCurrentPostPage(prev =>
+                            Math.min(Math.ceil(totalPosts / postsPerPage), prev + 1)
+                          )}
+                          disabled={currentPostPage >= Math.ceil(totalPosts / postsPerPage)}
+                          className={`px-3 py-1 rounded ${
+                            currentPostPage >= Math.ceil(totalPosts / postsPerPage)
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                          }`}
+                        >
+                          다음
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -2580,6 +2685,34 @@ export default function AdminPage() {
                             }`}
                           >
                             {gender.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">종족</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { value: 'all', label: '전체' },
+                          { value: 'cheetah', label: '치타족' },
+                          { value: 'horse', label: '홀스족' },
+                          { value: 'wolf', label: '울프족' },
+                          { value: 'turtle', label: '터틀족' }
+                        ].map((grade) => (
+                          <button
+                            key={grade.value}
+                            onClick={() => {
+                              setMemberGradeFilter(grade.value)
+                              setCurrentMemberPage(1)
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              memberGradeFilter === grade.value
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {grade.label}
                           </button>
                         ))}
                       </div>

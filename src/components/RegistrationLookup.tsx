@@ -32,10 +32,8 @@ const lookupSchema = z.object({
   password: z.string().min(1, '비밀번호를 입력해주세요')
 })
 
+// 참가 관련 정보만 수정 가능 (회원정보는 마이페이지에서 수정)
 const updateSchema = z.object({
-  phone: z.string().regex(/^[0-9-+().\s]+$/, '올바른 전화번호 형식을 입력해주세요'),
-  email: z.string().email('올바른 이메일 형식을 입력해주세요'),
-  address: z.string().min(5, '주소를 입력해주세요'),
   shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL']),
   depositor_name: z.string().min(2, '입금자명을 입력해주세요'),
   notes: z.string().optional()
@@ -152,11 +150,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       setRegistration(registrationData as RegistrationWithCompetition)
 
-      // 수정 폼에 기존 데이터 설정
+      // 수정 폼에 기존 데이터 설정 (참가 관련 정보만)
       resetUpdate({
-        phone: registrationData.phone,
-        email: registrationData.email,
-        address: registrationData.address,
         shirt_size: registrationData.shirt_size,
         depositor_name: registrationData.depositor_name,
         notes: registrationData.notes || ''
@@ -205,16 +200,13 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       setRegistration(registrationData as RegistrationWithCompetition)
 
-      // 수정 폼에 기존 데이터 설정
+      // 수정 폼에 기존 데이터 설정 (참가 관련 정보만)
       resetUpdate({
-        phone: registrationData.phone,
-        email: registrationData.email,
-        address: registrationData.address,
         shirt_size: registrationData.shirt_size,
         depositor_name: registrationData.depositor_name,
         notes: registrationData.notes || ''
       })
-      
+
     } catch (error) {
       console.error('Error:', error)
       alert('조회 중 오류가 발생했습니다. 다시 시도해주세요.')
@@ -229,9 +221,15 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
     setIsUpdating(true)
 
     try {
+      const updateData = {
+        shirt_size: data.shirt_size,
+        depositor_name: data.depositor_name,
+        notes: data.notes
+      }
+
       const { error } = await supabase
         .from('registrations')
-        .update(data)
+        .update(updateData)
         .eq('id', registration.id)
 
       if (error) {
@@ -243,7 +241,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
       // 업데이트된 데이터로 상태 갱신
       setRegistration(prev => prev ? {
         ...prev,
-        ...data
+        ...updateData
       } : null)
       setIsEditing(false)
 
@@ -551,7 +549,18 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             </div>
           ) : (
             <form onSubmit={handleSubmitUpdate(onUpdateSubmit)} className="space-y-4 sm:space-y-6">
+              {/* 회원정보 안내 */}
+              {user && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-blue-800">
+                    💡 <strong>회원정보(이름, 연락처, 이메일, 주소 등)</strong>는 마이페이지에서 수정하실 수 있습니다.
+                    여기서는 <strong>참가 관련 정보만 수정</strong>할 수 있습니다.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {/* 참가 종목 (수정 불가) */}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     참가 종목 (수정 불가)
@@ -568,48 +577,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   <p className="mt-1 text-xs text-gray-500">참가 종목 변경을 원하시면 문의(게시판, 유선) 해 주세요</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    연락처 *
-                  </label>
-                  <input
-                    {...registerUpdate('phone')}
-                    type="tel"
-                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                  />
-                  {updateErrors.phone && (
-                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.phone.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    이메일 *
-                  </label>
-                  <input
-                    {...registerUpdate('email')}
-                    type="email"
-                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                  />
-                  {updateErrors.email && (
-                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.email.message}</p>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    주소 *
-                  </label>
-                  <textarea
-                    {...registerUpdate('address')}
-                    rows={2}
-                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                  />
-                  {updateErrors.address && (
-                    <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.address.message}</p>
-                  )}
-                </div>
-
+                {/* 티셔츠 사이즈 */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     티셔츠 사이즈 *
@@ -618,6 +586,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     {...registerUpdate('shirt_size')}
                     className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
+                    <option value="XS">XS</option>
                     <option value="S">S</option>
                     <option value="M">M</option>
                     <option value="L">L</option>
@@ -629,6 +598,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   )}
                 </div>
 
+                {/* 입금자명 */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     입금자명 *
@@ -643,14 +613,16 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   )}
                 </div>
 
+                {/* 기타사항 */}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    특이사항 (선택)
+                    기타사항 (선택)
                   </label>
                   <textarea
                     {...registerUpdate('notes')}
                     rows={3}
                     className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    placeholder="특이사항이나 요청사항이 있으시면 입력해주세요"
                   />
                 </div>
               </div>
