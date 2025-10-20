@@ -61,6 +61,7 @@ export default function AdminPage() {
   const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(true)
+  const [availableParticipationGroups, setAvailableParticipationGroups] = useState<any[]>([])
 
   // 회원 상세 정보 모달
   const [selectedMember, setSelectedMember] = useState<User | null>(null)
@@ -685,9 +686,28 @@ export default function AdminPage() {
   }
 
   // 참가자 상세 정보 모달 열기
-  const openParticipantModal = (registration: Registration) => {
+  const openParticipantModal = async (registration: Registration) => {
     setSelectedParticipant(registration)
     setShowParticipantModal(true)
+
+    // 해당 대회의 참가 그룹 정보 가져오기
+    if (registration.competition_id) {
+      try {
+        const { data, error } = await supabase
+          .from('participation_groups')
+          .select('*')
+          .eq('competition_id', registration.competition_id)
+          .order('distance', { ascending: true })
+
+        if (error) {
+          console.error('참가 그룹 조회 오류:', error)
+        } else {
+          setAvailableParticipationGroups(data || [])
+        }
+      } catch (error) {
+        console.error('참가 그룹 조회 중 오류:', error)
+      }
+    }
   }
 
   // 참가자 상세 정보 모달 닫기
@@ -696,6 +716,7 @@ export default function AdminPage() {
     setShowParticipantModal(false)
     setIsEditingParticipant(false)
     setEditedParticipant(null)
+    setAvailableParticipationGroups([])
   }
 
   // 참가자 정보 수정 시작
@@ -779,9 +800,25 @@ export default function AdminPage() {
     })
   }
 
+  // 신청 종목 변경 핸들러
+  const handleParticipationGroupChange = (groupId: string) => {
+    if (!editedParticipant) return
+
+    const selectedGroup = availableParticipationGroups.find(g => g.id === groupId)
+
+    if (selectedGroup) {
+      setEditedParticipant({
+        ...editedParticipant,
+        participation_group_id: groupId,
+        entry_fee: selectedGroup.entry_fee,
+        distance: selectedGroup.distance
+      })
+    }
+  }
+
   // 참가자 정보 저장
   const saveParticipantChanges = async () => {
-    if (!editedParticipant) return
+    if (!editedParticipant || !selectedParticipant) return
 
     // 생년월일 유효성 검사 (6자리 형식만 저장됨)
     if (editedParticipant.birth_date) {
@@ -793,6 +830,26 @@ export default function AdminPage() {
     }
 
     try {
+      // 신청 종목이 변경되었는지 확인
+      const groupChanged = selectedParticipant.participation_group_id !== editedParticipant.participation_group_id
+
+      if (groupChanged && selectedParticipant.participation_group_id) {
+        // 기존 그룹의 참가자 수 감소
+        const { data: oldGroup, error: fetchOldGroupError } = await supabase
+          .from('participation_groups')
+          .select('current_participants')
+          .eq('id', selectedParticipant.participation_group_id)
+          .single()
+
+        if (!fetchOldGroupError && oldGroup) {
+          await supabase
+            .from('participation_groups')
+            .update({ current_participants: Math.max(0, oldGroup.current_participants - 1) })
+            .eq('id', selectedParticipant.participation_group_id)
+        }
+      }
+
+      // 참가자 정보 업데이트
       const { error } = await supabase
         .from('registrations')
         .update({
@@ -805,10 +862,29 @@ export default function AdminPage() {
           shirt_size: editedParticipant.shirt_size,
           depositor_name: editedParticipant.depositor_name,
           notes: editedParticipant.notes,
+          participation_group_id: editedParticipant.participation_group_id,
+          entry_fee: editedParticipant.entry_fee,
+          distance: editedParticipant.distance
         })
         .eq('id', editedParticipant.id)
 
       if (error) throw error
+
+      if (groupChanged && editedParticipant.participation_group_id) {
+        // 새 그룹의 참가자 수 증가
+        const { data: newGroup, error: fetchNewGroupError } = await supabase
+          .from('participation_groups')
+          .select('current_participants')
+          .eq('id', editedParticipant.participation_group_id)
+          .single()
+
+        if (!fetchNewGroupError && newGroup) {
+          await supabase
+            .from('participation_groups')
+            .update({ current_participants: newGroup.current_participants + 1 })
+            .eq('id', editedParticipant.participation_group_id)
+        }
+      }
 
       alert('참가자 정보가 수정되었습니다.')
       setSelectedParticipant(editedParticipant)
@@ -3220,9 +3296,24 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">신청 종목</label>
-                    <p className="text-base text-blue-600 font-medium">
-                      {selectedParticipant.distance ? getDistanceLabel(selectedParticipant.distance) : '-'}
-                    </p>
+                    {isEditingParticipant && editedParticipant ? (
+                      <select
+                        value={editedParticipant.participation_group_id || ''}
+                        onChange={(e) => handleParticipationGroupChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      >
+                        <option value="">종목 선택</option>
+                        {availableParticipationGroups.map((group) => (
+                          <option key={group.id} value={group.id}>
+                            {group.name} - {group.distance} (₩{group.entry_fee.toLocaleString()})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="text-base text-blue-600 font-medium">
+                        {selectedParticipant.distance ? getDistanceLabel(selectedParticipant.distance) : '-'}
+                      </p>
+                    )}
                   </div>
                   {selectedParticipant.competitions?.date && (
                     <div>
@@ -3272,14 +3363,18 @@ export default function AdminPage() {
                       <p className="text-base text-gray-900">{selectedParticipant.depositor_name || '-'}</p>
                     )}
                   </div>
-                  {selectedParticipant.entry_fee && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-1">참가비</label>
-                      <p className="text-base text-gray-900">
-                        {selectedParticipant.entry_fee.toLocaleString()}원
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">참가비</label>
+                    {isEditingParticipant && editedParticipant ? (
+                      <p className="text-base text-blue-600 font-semibold">
+                        {editedParticipant.entry_fee ? `₩${editedParticipant.entry_fee.toLocaleString()}` : '-'}
                       </p>
-                    </div>
-                  )}
+                    ) : (
+                      <p className="text-base text-gray-900">
+                        {selectedParticipant.entry_fee ? `₩${selectedParticipant.entry_fee.toLocaleString()}` : '-'}
+                      </p>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">결제 상태</label>
                     <div>

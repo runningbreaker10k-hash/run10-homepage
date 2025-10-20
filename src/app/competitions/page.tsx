@@ -106,6 +106,16 @@ export default function CompetitionsPage() {
       )
     }
 
+    // 등록률이 50% 이상이면 마감임박
+    const registrationRate = competition.current_participants / competition.max_participants
+    if (registrationRate >= 0.5) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+          마감임박
+        </span>
+      )
+    }
+
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
         접수중

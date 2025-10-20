@@ -21,6 +21,8 @@ export default function Home() {
     registration_end: string;
     image_url?: string;
     entry_fee: number;
+    max_participants: number;
+    current_participants: number;
   }
 
   const [upcomingCompetitions, setUpcomingCompetitions] = useState<UpcomingCompetition[]>([])
@@ -37,7 +39,7 @@ export default function Home() {
       const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString()
       const { data, error } = await supabase
         .from('competitions')
-        .select('id, title, description, date, location, registration_end, image_url, entry_fee')
+        .select('id, title, description, date, location, registration_end, image_url, entry_fee, max_participants, current_participants')
         .eq('status', 'published')
         .gte('registration_end', localNow) // 신청 마감일이 현재 시점보다 나중인 것
         .order('registration_end', { ascending: true }) // 마감일이 가까운 순서로 정렬
@@ -151,11 +153,21 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* 접수중/Coming Soon 배지 */}
+                  {/* 접수중/마감임박/Coming Soon 배지 */}
                   <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
-                    <div className="bg-red-600 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg inline-block">
+                    <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg inline-block ${
+                      upcomingCompetitions.length > 0 && upcomingCompetitions[0]
+                        ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
+                            ? 'bg-orange-600'
+                            : 'bg-red-600')
+                        : 'bg-red-600'
+                    }`}>
                       <span className="text-xs sm:text-sm font-bold text-white">
-                        {upcomingCompetitions.length > 0 ? '접수중' : 'Coming Soon'}
+                        {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
+                          ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
+                              ? '마감임박'
+                              : '접수중')
+                          : 'Coming Soon'}
                       </span>
                     </div>
                   </div>
