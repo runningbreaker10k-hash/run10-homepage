@@ -278,11 +278,10 @@ export default function CommunityPage() {
                     <div className="bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-b border-gray-200">
                       <div className="grid grid-cols-12 gap-2 sm:gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         <div className="col-span-1 text-center">번호</div>
-                        <div className="col-span-6 sm:col-span-6">제목</div>
+                        <div className="col-span-11 sm:col-span-6">제목</div>
                         <div className="col-span-2 text-center hidden sm:block">작성자</div>
                         <div className="col-span-2 text-center hidden sm:block">작성일</div>
                         <div className="col-span-1 text-center hidden sm:block">조회</div>
-                        <div className="col-span-3 text-center sm:hidden">정보</div>
                       </div>
                     </div>
 
@@ -305,8 +304,9 @@ export default function CommunityPage() {
                             </div>
 
                             {/* 제목 */}
-                            <div className="col-span-6 sm:col-span-6 min-w-0">
+                            <div className="col-span-11 sm:col-span-6 min-w-0">
                               <div className="flex flex-col space-y-1">
+                                {/* 제목 줄 */}
                                 <div className="flex items-center space-x-1 sm:space-x-2">
                                   {post.is_notice && (
                                     <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
@@ -326,7 +326,7 @@ export default function CommunityPage() {
                                     <span className="text-xs text-blue-600 flex-shrink-0">📷</span>
                                   )}
                                 </div>
-                                {/* 모바일에서만 보이는 작성자/날짜 정보 */}
+                                {/* 정보 줄 - 모바일에서만 */}
                                 <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
                                   <div className="flex items-center space-x-1">
                                     <img

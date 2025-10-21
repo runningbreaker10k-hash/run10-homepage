@@ -19,7 +19,8 @@ import {
   CheckCircle,
   Pin,
   X,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
@@ -942,61 +943,62 @@ export default function CompetitionDetailPage() {
     ),
 
     board: (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
           <div className="flex items-center">
-            <h3 className="text-xl font-semibold text-gray-900">대회 게시판</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">요청게시판</h3>
           </div>
           {user && (
             <button
               onClick={() => setShowPostForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium touch-manipulation flex items-center space-x-2"
             >
-              글쓰기
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span>글쓰기</span>
             </button>
           )}
         </div>
 
         {!user ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-            <MessageCircle className="h-16 w-16 text-blue-400 mx-auto mb-6" />
-            <h4 className="text-2xl font-bold text-blue-900 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-8 text-center">
+            <MessageCircle className="h-12 w-12 sm:h-16 sm:w-16 text-blue-400 mx-auto mb-4 sm:mb-6" />
+            <h4 className="text-lg sm:text-2xl font-bold text-blue-900 mb-2 sm:mb-4">
               회원만 게시판을 이용할 수 있습니다
             </h4>
-            <p className="text-blue-700 text-lg mb-6">
+            <p className="text-blue-700 text-sm sm:text-lg mb-4 sm:mb-6">
               회원가입 후 대회 관련 소통에 참여하고 다른 참가자들과 정보를 공유하세요.
             </p>
 
-            <div className="bg-white rounded-lg p-6 mb-6">
-              <h5 className="text-lg font-semibold text-gray-900 mb-4">게시판에서 가능한 활동</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+              <h5 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">게시판에서 가능한 활동</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   대회 관련 질문과 답변
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   참가자들과 정보 공유
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   운영진 공지사항 확인
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   대회 후기 및 사진 공유
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
                 onClick={() => {
                   setAuthDefaultTab('signup')
                   setShowAuthModal(true)
                 }}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+                className="px-6 sm:px-8 py-2 sm:py-3 bg-blue-600 text-white rounded-lg text-sm sm:text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg text-center touch-manipulation"
               >
                 회원가입하기
               </button>
@@ -1005,7 +1007,7 @@ export default function CompetitionDetailPage() {
                   setAuthDefaultTab('login')
                   setShowAuthModal(true)
                 }}
-                className="px-8 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
+                className="px-6 sm:px-8 py-2 sm:py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg text-sm sm:text-lg font-semibold hover:bg-blue-50 transition-colors text-center touch-manipulation"
               >
                 로그인
               </button>
@@ -1015,7 +1017,7 @@ export default function CompetitionDetailPage() {
           <>
 
         {/* 검색 */}
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
           <div className="flex-1">
             <input
               type="text"
@@ -1025,10 +1027,10 @@ export default function CompetitionDetailPage() {
                 setSearchKeyword(e.target.value)
                 setCurrentPage(1)
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-right whitespace-nowrap">
             총 {totalPosts}개의 게시글
           </div>
         </div>
@@ -1036,15 +1038,15 @@ export default function CompetitionDetailPage() {
         {/* 게시글 목록 */}
         {boardLoading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : boardPosts.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="bg-gray-50 rounded-lg p-6 sm:p-8 text-center">
+            <MessageCircle className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
               {searchKeyword ? '검색 결과가 없습니다' : '아직 게시글이 없습니다'}
             </h4>
-            <p className="text-gray-600">
+            <p className="text-sm text-gray-600">
               {searchKeyword ? '다른 키워드로 검색해보세요.' : '첫 번째 글을 작성해보세요.'}
             </p>
           </div>
@@ -1052,13 +1054,13 @@ export default function CompetitionDetailPage() {
           <>
             {/* 게시글 목록 헤더 */}
             <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-              <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
-                <div className="grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-b border-gray-200">
+                <div className="grid grid-cols-12 gap-2 sm:gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <div className="col-span-1 text-center">번호</div>
-                  <div className="col-span-6">제목</div>
-                  <div className="col-span-2 text-center">작성자</div>
-                  <div className="col-span-2 text-center">작성일</div>
-                  <div className="col-span-1 text-center">조회</div>
+                  <div className="col-span-9 sm:col-span-6">제목</div>
+                  <div className="col-span-2 text-center hidden sm:block">작성자</div>
+                  <div className="col-span-2 text-center hidden sm:block">작성일</div>
+                  <div className="col-span-1 text-center hidden sm:block">조회</div>
                 </div>
               </div>
 
@@ -1067,47 +1069,67 @@ export default function CompetitionDetailPage() {
                 {boardPosts.map((post, index) => (
                   <div
                     key={post.id}
-                    className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => handlePostClick(post)}
                   >
-                    <div className="grid grid-cols-12 gap-4 items-center">
+                    <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center">
                       {/* 번호 */}
-                      <div className="col-span-1 text-center text-sm text-gray-500">
+                      <div className="col-span-1 text-center text-xs sm:text-sm text-gray-500">
                         {post.is_notice ? (
-                          <Pin className="w-4 h-4 text-red-600 mx-auto" />
+                          <Pin className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 mx-auto" />
                         ) : (
                           totalPosts - (currentPage - 1) * postsPerPage - index
                         )}
                       </div>
 
                       {/* 제목 */}
-                      <div className="col-span-6">
-                        <div className="flex items-center space-x-2">
-                          {post.is_notice && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                              공지
+                      <div className="col-span-9 sm:col-span-6 min-w-0">
+                        <div className="flex flex-col space-y-1">
+                          {/* 제목 줄 */}
+                          <div className="flex items-center space-x-1 sm:space-x-2">
+                            {post.is_notice && (
+                              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
+                                공지
+                              </span>
+                            )}
+                            {post.is_private && (
+                              <span className="text-blue-600 flex-shrink-0">🔒</span>
+                            )}
+                            <span className="font-medium text-gray-900 hover:text-blue-600 text-sm sm:text-base truncate">
+                              {post.title}
                             </span>
-                          )}
-                          {post.is_private && (
-                            <span className="text-blue-600">🔒</span>
-                          )}
-                          <span className="font-medium text-gray-900 hover:text-blue-600">
-                            {post.title}
-                          </span>
-                          {(post.post_comments?.length || 0) > 0 && (
-                            <span className="flex items-center text-xs text-red-600">
-                              <MessageSquare className="w-3 h-3 mr-1" />
-                              {post.post_comments?.length || 0}
-                            </span>
-                          )}
-                          {post.image_url && (
-                            <span className="text-xs text-blue-600">📷</span>
-                          )}
+                            {(post.post_comments?.length || 0) > 0 && (
+                              <span className="flex items-center text-xs text-red-600 flex-shrink-0">
+                                <MessageSquare className="w-3 h-3 mr-0.5" />
+                                {post.post_comments?.length || 0}
+                              </span>
+                            )}
+                            {post.image_url && (
+                              <span className="text-xs text-blue-600 flex-shrink-0">📷</span>
+                            )}
+                          </div>
+                          {/* 정보 줄 - 모바일에서만 */}
+                          <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
+                            <div className="flex items-center space-x-1">
+                              {post.users?.grade && (
+                                <img
+                                  src={getGradeInfo(post.users.grade).icon}
+                                  alt="등급"
+                                  className="w-3 h-3"
+                                />
+                              )}
+                              <span>{post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}</span>
+                            </div>
+                            <span>•</span>
+                            <span>{formatKST(post.created_at, 'MM.dd')}</span>
+                            <span>•</span>
+                            <span>조회 {post.views || 0}</span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* 작성자 */}
-                      <div className="col-span-2 text-center">
+                      {/* 작성자 - 데스크톱만 */}
+                      <div className="col-span-2 text-center hidden sm:block">
                         <div className="flex items-center justify-center space-x-2">
                           {post.users?.grade && (
                             <img
@@ -1122,13 +1144,13 @@ export default function CompetitionDetailPage() {
                         </div>
                       </div>
 
-                      {/* 작성일 */}
-                      <div className="col-span-2 text-center text-sm text-gray-500">
+                      {/* 작성일 - 데스크톱만 */}
+                      <div className="col-span-2 text-center text-sm text-gray-500 hidden sm:block">
                         {formatKST(post.created_at, 'yyyy.MM.dd')}
                       </div>
 
-                      {/* 조회수 */}
-                      <div className="col-span-1 text-center text-sm text-gray-500">
+                      {/* 조회수 - 데스크톱만 */}
+                      <div className="col-span-1 text-center text-sm text-gray-500 hidden sm:block">
                         {post.views || 0}
                       </div>
                     </div>
@@ -1139,19 +1161,19 @@ export default function CompetitionDetailPage() {
 
             {/* 페이지네이션 */}
             {Math.ceil(totalPosts / postsPerPage) > 1 && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="flex justify-center space-x-2">
+              <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
+                <div className="flex justify-center space-x-1 sm:space-x-2">
                   <button
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 touch-manipulation"
                   >
                     처음
                   </button>
                   <button
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 touch-manipulation"
                   >
                     이전
                   </button>
@@ -1167,7 +1189,7 @@ export default function CompetitionDetailPage() {
                         <button
                           key={pageNumber}
                           onClick={() => setCurrentPage(pageNumber)}
-                          className={`px-3 py-1 text-sm border rounded ${
+                          className={`px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border rounded touch-manipulation ${
                             currentPage === pageNumber
                               ? 'bg-blue-600 text-white border-blue-600'
                               : 'border-gray-300 hover:bg-gray-100'
@@ -1183,14 +1205,14 @@ export default function CompetitionDetailPage() {
                   <button
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 touch-manipulation"
                   >
                     다음
                   </button>
                   <button
                     onClick={() => setCurrentPage(Math.ceil(totalPosts / postsPerPage))}
                     disabled={currentPage === Math.ceil(totalPosts / postsPerPage)}
-                    className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 touch-manipulation"
                   >
                     끝
                   </button>
@@ -1281,7 +1303,7 @@ export default function CompetitionDetailPage() {
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'register', label: '신청', icon: Users },
               { key: 'lookup', label: '조회', icon: Search },
-              { key: 'board', label: '대회게시판', icon: MessageCircle }
+              { key: 'board', label: '요청게시판', icon: MessageCircle }
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
