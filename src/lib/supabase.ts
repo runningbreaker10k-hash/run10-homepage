@@ -33,6 +33,7 @@ export type Database = {
           email: string
           email_marketing_agree: boolean
           birth_date: string
+          gender_digit?: string
           gender: 'male' | 'female'
           record_time: number
           grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
@@ -54,6 +55,7 @@ export type Database = {
           email: string
           email_marketing_agree?: boolean
           birth_date: string
+          gender_digit?: string
           gender: 'male' | 'female'
           record_time: number
           grade?: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
@@ -75,6 +77,7 @@ export type Database = {
           email?: string
           email_marketing_agree?: boolean
           birth_date?: string
+          gender_digit?: string
           gender?: 'male' | 'female'
           record_time?: number
           grade?: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'

@@ -12,6 +12,15 @@ export interface User {
   grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
   role: 'admin' | 'user'
   gender?: string
+  gender_digit?: string
+  birth_date?: string
+  postal_code?: string
+  address1?: string
+  address2?: string
+  phone_marketing_agree?: boolean
+  email_marketing_agree?: boolean
+  record_time?: number
+  etc?: string
   created_at: string
 }
 
@@ -20,7 +29,7 @@ interface AuthContextType {
   login: (userData: User) => void
   logout: () => void
   isLoading: boolean
-  updateUser: (userData: Partial<User>) => void
+  updateUser: (userData: Partial<User> | Record<string, any>) => void
   getGradeInfo: (grade: string) => { display: string; icon: string; color: string }
 }
 
@@ -88,20 +97,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }
 
   // 사용자 정보 업데이트 함수
-  const updateUser = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<User> | Record<string, any>) => {
     if (!user) return
 
     try {
-      console.log('AuthContext에서 받은 업데이트 데이터:', userData)
-      console.log('업데이트할 사용자 ID:', user.id)
-
       // 데이터베이스 업데이트
       const { error } = await supabase
         .from('users')
-        .update(userData)
+        .update(userData as any)
         .eq('id', user.id)
-
-      console.log('DB 업데이트 결과 - 에러:', error)
 
       if (error) throw error
 

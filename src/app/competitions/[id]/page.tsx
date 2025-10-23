@@ -294,7 +294,6 @@ export default function CompetitionDetailPage() {
         return
       }
 
-      console.log('게시글 데이터:', data) // 디버깅용
       setBoardPosts(data || [])
       setTotalPosts(count || 0)
     } catch (error) {

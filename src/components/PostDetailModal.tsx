@@ -77,7 +77,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         is_private: post.is_private || false,
         post_password: post.post_password || ''
       }
-      console.log('Post 변경 - editFormData 업데이트:', newFormData)
       setEditFormData(newFormData)
 
       // 비밀글 접근 권한 확인
@@ -197,23 +196,15 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   // 수정 모드 상태 변경 시 로그
   useEffect(() => {
     if (isEditing) {
-      console.log('수정 모드 활성화 - 현재 editFormData:', editFormData)
     }
   }, [isEditing, editFormData])
 
   if (!isOpen || !post) return null
 
   // 디버깅을 위한 콘솔 로그
-  console.log('PostDetailModal - post data:', post)
-  console.log('PostDetailModal - post.content:', post.content)
-  console.log('PostDetailModal - post.password:', post.password)
-  console.log('PostDetailModal - editFormData:', editFormData)
 
 
   const handlePasswordCheck = (inputPassword: string) => {
-    console.log('입력한 비밀번호:', inputPassword, '타입:', typeof inputPassword)
-    console.log('저장된 비밀번호:', post.post_password, '타입:', typeof post.post_password)
-    console.log('일치 여부:', post.post_password === inputPassword)
 
     if (post.post_password === inputPassword) {
       setIsPasswordVerified(true)
@@ -232,7 +223,6 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
       is_private: post.is_private || false,
       post_password: post.post_password || ''
     }
-    console.log('수정 모드 전환 - 폼 데이터 설정:', newFormData)
     setEditFormData(newFormData)
     setEditPasswordConfirm(post.post_password || '')
     setIsEditing(true)

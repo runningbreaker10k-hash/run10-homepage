@@ -43,7 +43,9 @@ const membershipSchema = z.object({
     .email('올바른 이메일 주소를 입력해주세요'),
   email_marketing_agree: z.boolean(),
   birth_date: z.string()
-    .regex(/^\d{6}$/, '생년월일은 YYMMDD 형식으로 입력해주세요'),
+    .regex(/^\d{6}$/, '생년월일은 6자리 숫자로 입력해주세요'),
+  gender_digit: z.string()
+    .regex(/^[1-4]$/, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1-4)'),
   gender: z.enum(['male', 'female'], {
     required_error: '성별을 선택해주세요'
   }),
@@ -101,6 +103,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   const watchedEmail = watch('email')
   const watchedRecordRange = watch('record_range')
   const watchedGender = watch('gender')
+  const watchedGenderDigit = watch('gender_digit')
 
   // 기록 범위와 성별에 따른 등급 표시
   const getGradeDisplay = (recordRange?: string, gender?: string) => {
@@ -241,6 +244,20 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`
   }
 
+  // 주민번호 뒷자리로 성별 자동 설정
+  const handleGenderDigitChange = (value: string) => {
+    const digit = value.replace(/\D/g, '').slice(0, 1)
+    setValue('gender_digit', digit)
+
+    if (digit === '1' || digit === '3') {
+      setValue('gender', 'male')
+      trigger('gender')
+    } else if (digit === '2' || digit === '4') {
+      setValue('gender', 'female')
+      trigger('gender')
+    }
+  }
+
   const onSubmit = async (data: MembershipFormData) => {
     if (idCheckStatus !== 'available') {
       showError('아이디 중복확인을 완료해주세요')
@@ -279,21 +296,19 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         email: data.email,
         email_marketing_agree: !!data.email_marketing_agree,
         birth_date: data.birth_date,
+        gender_digit: data.gender_digit,
         gender: data.gender,
         record_time: recordTime,
         grade: grade,
         etc: data.etc || null
       }
 
-      console.log('전송할 데이터:', insertData)
 
       const { data: result, error } = await supabase
         .from('users')
         .insert([insertData])
         .select()
 
-      console.log('Supabase 결과:', result)
-      console.log('Supabase 에러:', error)
 
       if (error) throw error
 
@@ -541,42 +556,67 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           {errors.email && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.email.message}</p>}
         </div>
 
-        {/* 생년월일 */}
+        {/* 주민번호 앞자리 (생년월일 + 성별) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            생년월일 <span className="text-red-500">*</span>
+            주민번호(앞 7자리) <span className="text-red-500">*</span>
           </label>
-          <input
-            {...register('birth_date')}
-            type="text"
-            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="YYMMDD (예: 901225)"
-            maxLength={6}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              {...register('birth_date')}
+              type="text"
+              className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+              placeholder="000000"
+              maxLength={6}
+              onChange={(e) => {
+                const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6)
+                setValue('birth_date', cleaned)
+              }}
+            />
+            <span className="text-lg sm:text-xl font-bold text-gray-400">-</span>
+            <input
+              {...register('gender_digit')}
+              type="text"
+              className="w-12 sm:w-14 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-medium"
+              placeholder="0"
+              maxLength={1}
+              onChange={(e) => handleGenderDigitChange(e.target.value)}
+            />
+            <div className="flex-1 flex items-center gap-1">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-300 rounded-full"></div>
+              ))}
+            </div>
+          </div>
           {errors.birth_date && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.birth_date.message}</p>}
+          {errors.gender_digit && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender_digit.message}</p>}
         </div>
 
-        {/* 성별 */}
+        {/* 성별 (자동 선택되지만 수정 가능) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            성별 <span className="text-red-500">*</span>
+            성별 {watchedGenderDigit && '(자동 선택됨, 수정 가능)'} <span className="text-red-500">*</span>
           </label>
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <label className="flex items-center touch-manipulation">
+          <div className="flex gap-3 sm:gap-4">
+            <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
+              watchedGender === 'male' ? 'bg-blue-100 border-blue-500 font-semibold' : 'bg-white border-gray-300 hover:border-blue-300'
+            }`}>
               <input
                 {...register('gender')}
                 type="radio"
                 value="male"
-                className="mr-2 touch-manipulation"
+                className="mr-2"
               />
               <span className="text-sm sm:text-base">남성</span>
             </label>
-            <label className="flex items-center touch-manipulation">
+            <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
+              watchedGender === 'female' ? 'bg-pink-100 border-pink-500 font-semibold' : 'bg-white border-gray-300 hover:border-pink-300'
+            }`}>
               <input
                 {...register('gender')}
                 type="radio"
                 value="female"
-                className="mr-2 touch-manipulation"
+                className="mr-2"
               />
               <span className="text-sm sm:text-base">여성</span>
             </label>

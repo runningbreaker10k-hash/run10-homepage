@@ -21,7 +21,8 @@ const profileSchema = z.object({
   phone_marketing_agree: z.boolean(),
   email: z.string().email('올바른 이메일 주소를 입력해주세요'),
   email_marketing_agree: z.boolean(),
-  birth_date: z.string().regex(/^\d{6}$/, '생년월일은 YYMMDD 형식으로 입력해주세요'),
+  birth_date: z.string().regex(/^\d{6}$/, '생년월일은 6자리 숫자로 입력해주세요'),
+  gender_digit: z.string().regex(/^[1-4]$/, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1-4)'),
   gender: z.enum(['male', 'female']),
   record_minutes: z.number().min(1, '최소 1분은 입력해주세요').max(200, '최대 200분까지 입력 가능합니다'),
   record_seconds: z.number().min(0, '초는 0~59 사이여야 합니다').max(59, '초는 0~59 사이여야 합니다'),
@@ -124,7 +125,14 @@ export default function MyPage() {
       }
 
       if (data) {
-        console.log('DB에서 받은 데이터:', data)
+        // 성별에서 gender_digit 추출 (기존 데이터 호환성)
+        let genderDigit = ''
+        if (data.gender === 'male') {
+          genderDigit = '1' // 기본값
+        } else if (data.gender === 'female') {
+          genderDigit = '2' // 기본값
+        }
+
         const formData = {
           name: data.name || '',
           postal_code: data.postal_code || '',
@@ -135,12 +143,12 @@ export default function MyPage() {
           email: data.email || '',
           email_marketing_agree: data.email_marketing_agree || false,
           birth_date: data.birth_date || '',
+          gender_digit: genderDigit,
           gender: data.gender || 'male',
           record_minutes: Math.floor((data.record_time || 3600) / 60),
           record_seconds: (data.record_time || 3600) % 60,
           etc: data.etc || ''
         }
-        console.log('폼에 설정할 데이터:', formData)
         profileForm.reset(formData)
       }
     } catch {
@@ -152,11 +160,9 @@ export default function MyPage() {
 
   const loadRegistrations = async () => {
     if (!user) {
-      console.log('사용자 정보가 없습니다')
       return
     }
 
-    console.log('신청 내역 로드 시작, user.id:', user.id)
 
     try {
       // Step 1: registrations 데이터 먼저 가져오기
@@ -177,17 +183,14 @@ export default function MyPage() {
         throw new Error(`신청 내역 조회 실패: ${registrationError.message}`)
       }
 
-      console.log('신청 내역 데이터:', registrationData)
 
       if (!registrationData || registrationData.length === 0) {
-        console.log('신청 내역이 없습니다')
         setRegistrations([])
         return
       }
 
       // Step 2: 각 신청의 대회 정보 가져오기
       const competitionIds = [...new Set(registrationData.map(r => r.competition_id))]
-      console.log('대회 ID들:', competitionIds)
 
       const { data: competitionData, error: competitionError } = await supabase
         .from('competitions')
@@ -199,7 +202,6 @@ export default function MyPage() {
         throw new Error(`대회 정보 조회 실패: ${competitionError.message}`)
       }
 
-      console.log('대회 정보 데이터:', competitionData)
 
       // Step 3: 데이터 결합
       const registrationsWithCompetitions = registrationData.map(registration => {
@@ -214,7 +216,6 @@ export default function MyPage() {
         }
       })
 
-      console.log('최종 결합된 데이터:', registrationsWithCompetitions)
       setRegistrations(registrationsWithCompetitions as unknown as Registration[])
 
     } catch (error) {
@@ -263,7 +264,6 @@ export default function MyPage() {
     setIsLoading(true)
 
     try {
-      console.log('폼에서 받은 데이터:', data)
 
       // 기록에 따른 등급 계산 (성별에 따라 다른 기준 적용)
       const recordTime = (data.record_minutes * 60) + data.record_seconds
@@ -295,8 +295,6 @@ export default function MyPage() {
       // record_minutes, record_seconds 제거 (DB에 없는 필드)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { record_minutes, record_seconds, ...dbData } = updateData
-
-      console.log('DB에 저장할 데이터:', dbData)
 
       await updateUser(dbData)
       alert('회원 정보가 수정되었습니다.')
@@ -495,7 +493,8 @@ export default function MyPage() {
               <input
                 {...profileForm.register('name')}
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                placeholder="성명을 입력하세요"
               />
               {profileForm.formState.errors.name && (
                 <p className="text-red-500 text-sm mt-1">{profileForm.formState.errors.name.message}</p>
@@ -505,23 +504,23 @@ export default function MyPage() {
             {/* 주소 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">주소</label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <input
                   {...profileForm.register('postal_code')}
                   type="text"
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder="우편번호"
                 />
                 <input
                   {...profileForm.register('address1')}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder="기본주소"
                 />
                 <input
                   {...profileForm.register('address2')}
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder="상세주소"
                 />
               </div>
@@ -539,7 +538,7 @@ export default function MyPage() {
               <input
                 {...profileForm.register('phone')}
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                 placeholder="010-0000-0000"
                 onChange={(e) => {
                   const formatted = formatPhoneNumber(e.target.value)
@@ -564,7 +563,7 @@ export default function MyPage() {
               <input
                 {...profileForm.register('email')}
                 type="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
               />
               <div className="mt-2">
                 <label className="flex items-center">
@@ -578,23 +577,58 @@ export default function MyPage() {
               </div>
             </div>
 
-            {/* 생년월일 */}
+            {/* 주민번호 앞자리 (생년월일 + 성별) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">생년월일</label>
-              <input
-                {...profileForm.register('birth_date')}
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="YYMMDD (예: 901225)"
-                maxLength={6}
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">주민번호 앞 7자리</label>
+              <div className="flex items-center gap-2">
+                <input
+                  {...profileForm.register('birth_date')}
+                  type="text"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center"
+                  placeholder="000000"
+                  maxLength={6}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    profileForm.setValue('birth_date', cleaned)
+                  }}
+                />
+                <span className="text-lg font-bold text-gray-400">-</span>
+                <input
+                  {...profileForm.register('gender_digit')}
+                  type="text"
+                  className="w-14 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center font-medium"
+                  placeholder="0"
+                  maxLength={1}
+                  onChange={(e) => {
+                    const digit = e.target.value.replace(/\D/g, '').slice(0, 1)
+                    profileForm.setValue('gender_digit', digit)
+
+                    if (digit === '1' || digit === '3') {
+                      profileForm.setValue('gender', 'male')
+                      profileForm.trigger('gender')
+                    } else if (digit === '2' || digit === '4') {
+                      profileForm.setValue('gender', 'female')
+                      profileForm.trigger('gender')
+                    }
+                  }}
+                />
+                <div className="flex-1 flex items-center gap-1">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* 성별 */}
+            {/* 성별 (자동 선택되지만 수정 가능) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">성별</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                성별 {profileForm.watch('gender_digit') && '(자동 선택됨, 수정 가능)'}
+              </label>
               <div className="flex gap-4">
-                <label className="flex items-center">
+                <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg transition-all cursor-pointer border-2 ${
+                  profileForm.watch('gender') === 'male' ? 'bg-blue-100 border-blue-500 font-semibold' : 'bg-white border-gray-300 hover:border-blue-300'
+                }`}>
                   <input
                     {...profileForm.register('gender')}
                     type="radio"
@@ -603,7 +637,9 @@ export default function MyPage() {
                   />
                   <span>남성</span>
                 </label>
-                <label className="flex items-center">
+                <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg transition-all cursor-pointer border-2 ${
+                  profileForm.watch('gender') === 'female' ? 'bg-pink-100 border-pink-500 font-semibold' : 'bg-white border-gray-300 hover:border-pink-300'
+                }`}>
                   <input
                     {...profileForm.register('gender')}
                     type="radio"
@@ -623,7 +659,7 @@ export default function MyPage() {
                   <input
                     type="number"
                     {...profileForm.register('record_minutes', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder="분"
                     min="1"
                     max="200"
@@ -634,7 +670,7 @@ export default function MyPage() {
                   <input
                     type="number"
                     {...profileForm.register('record_seconds', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                     placeholder="초"
                     min="0"
                     max="59"
@@ -660,7 +696,7 @@ export default function MyPage() {
               <textarea
                 {...profileForm.register('etc')}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                 placeholder="추가 정보가 있다면 입력하세요"
               />
             </div>
@@ -668,7 +704,7 @@ export default function MyPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? '수정 중...' : '회원정보 수정'}
             </button>
@@ -685,7 +721,7 @@ export default function MyPage() {
                 type="button"
                 onClick={handleWithdraw}
                 disabled={isLoading}
-                className="flex items-center px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 {isLoading ? '처리 중...' : '탈퇴하기'}
@@ -700,7 +736,7 @@ export default function MyPage() {
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-medium text-gray-900 mb-6">비밀번호 변경</h2>
           
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6 max-w-md">
+          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
             {/* 현재 비밀번호 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
@@ -708,14 +744,15 @@ export default function MyPage() {
                 <input
                   {...passwordForm.register('current_password')}
                   type={showCurrentPassword ? 'text' : 'password'}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  placeholder="현재 비밀번호를 입력하세요"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.current_password && (
@@ -730,15 +767,15 @@ export default function MyPage() {
                 <input
                   {...passwordForm.register('new_password')}
                   type={showNewPassword ? 'text' : 'password'}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder="영문, 숫자 포함 8자 이상"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.new_password && (
@@ -753,15 +790,15 @@ export default function MyPage() {
                 <input
                   {...passwordForm.register('confirm_password')}
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                   placeholder="새 비밀번호를 다시 입력하세요"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.confirm_password && (
@@ -772,7 +809,7 @@ export default function MyPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? '변경 중...' : '비밀번호 변경'}
             </button>

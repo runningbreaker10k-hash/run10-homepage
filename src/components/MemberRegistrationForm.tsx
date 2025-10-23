@@ -129,7 +129,6 @@ export default function MemberRegistrationForm({
   }
 
   const onSubmit = async (data: MemberRegistrationFormData) => {
-    console.log('폼 제출 시작:', data)
 
     if (!user || !userDetails) {
       alert('사용자 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.')
@@ -401,7 +400,6 @@ export default function MemberRegistrationForm({
 
       {/* 참가 신청 폼 */}
       <form onSubmit={handleSubmit(onSubmit, (errors) => {
-        console.log('폼 검증 오류:', errors)
       })} className="space-y-4 sm:space-y-6">
         {/* 참가 그룹 선택 */}
         <div>
