@@ -42,3 +42,27 @@ export function formatRelativeKST(utcDate: string | Date): string {
     return '방금 전'
   }
 }
+
+/**
+ * UTC 날짜를 datetime-local input에 사용할 수 있는 형식으로 변환 (KST 기준)
+ * 예: "2024-03-20T14:30"
+ */
+export function toDatetimeLocal(utcDate: string | Date): string {
+  const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate
+  // 로컬 시간대 기준으로 datetime-local 형식 생성
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+/**
+ * datetime-local input 값을 UTC ISO 문자열로 변환
+ */
+export function fromDatetimeLocal(datetimeLocal: string): string {
+  const date = new Date(datetimeLocal)
+  return date.toISOString()
+}

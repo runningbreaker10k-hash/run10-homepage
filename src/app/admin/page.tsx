@@ -17,21 +17,38 @@ import {
   Search,
   Pin,
   MessageSquare,
-  Download
+  Download,
+  X
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Competition, Registration, CompetitionPost, User } from '@/types'
+import { Competition, Registration, CompetitionPost, User, Popup } from '@/types'
 import { format } from 'date-fns'
-import { formatKST } from '@/lib/dateUtils'
+import { formatKST, toDatetimeLocal, fromDatetimeLocal } from '@/lib/dateUtils'
 import PostDetailModal from '@/components/PostDetailModal'
 import AuthModal from '@/components/AuthModal'
+import ImageUpload from '@/components/ImageUpload'
+import PopupImageUpload from '@/components/PopupImageUpload'
 
 export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members'>('competitions')
+  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants' | 'boards'>('management')
   const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // 팝업 관리 관련 상태
+  const [popups, setPopups] = useState<Popup[]>([])
+  const [popupsLoading, setPopupsLoading] = useState(false)
+  const [showPopupModal, setShowPopupModal] = useState(false)
+  const [selectedPopup, setSelectedPopup] = useState<Popup | null>(null)
+  const [isEditingPopup, setIsEditingPopup] = useState(false)
+  const [popupTitle, setPopupTitle] = useState('')
+  const [popupImageUrl, setPopupImageUrl] = useState('')
+  const [popupStartDate, setPopupStartDate] = useState('')
+  const [popupEndDate, setPopupEndDate] = useState('')
+  const [popupDisplayPage, setPopupDisplayPage] = useState<'all' | 'home' | 'competition'>('all')
+  const [popupCompetitionId, setPopupCompetitionId] = useState<string>('')
+  const [popupIsActive, setPopupIsActive] = useState(true)
 
   // 대회 관리 관련 상태
   const [competitions, setCompetitions] = useState<Competition[]>([])
@@ -124,6 +141,10 @@ export default function AdminPage() {
         fetchCompetitions()
         setCurrentMemberPage(1)
         fetchMembers()
+      } else if (activeTab === 'popups') {
+        fetchPopups()
+        // 팝업 관리에서도 대회 목록이 필요 (대회 선택용)
+        fetchCompetitions()
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -150,6 +171,146 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
 
+
+  // 팝업 관리 함수들
+  const fetchPopups = async () => {
+    setPopupsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('popups')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setPopups(data || [])
+    } catch (error) {
+      console.error('팝업 조회 오류:', error)
+      alert('팝업을 불러오는 중 오류가 발생했습니다.')
+    } finally {
+      setPopupsLoading(false)
+    }
+  }
+
+  const handleCreatePopup = () => {
+    setIsEditingPopup(false)
+    setSelectedPopup(null)
+    setPopupTitle('')
+    setPopupImageUrl('')
+    setPopupStartDate('')
+    setPopupEndDate('')
+    setPopupDisplayPage('home')
+    setPopupCompetitionId('')
+    setPopupIsActive(true)
+    setShowPopupModal(true)
+  }
+
+  const handleEditPopup = (popup: Popup) => {
+    setIsEditingPopup(true)
+    setSelectedPopup(popup)
+    setPopupTitle(popup.title)
+    setPopupImageUrl(popup.content_image_url)
+    setPopupStartDate(toDatetimeLocal(popup.start_date))
+    setPopupEndDate(toDatetimeLocal(popup.end_date))
+    setPopupDisplayPage(popup.display_page)
+    setPopupCompetitionId(popup.competition_id || '')
+    setPopupIsActive(popup.is_active)
+    setShowPopupModal(true)
+  }
+
+  const handleSavePopup = async () => {
+    if (!popupTitle.trim()) {
+      alert('팝업 제목을 입력해주세요.')
+      return
+    }
+    if (!popupImageUrl.trim()) {
+      alert('팝업 이미지를 업로드해주세요.')
+      return
+    }
+    if (!popupStartDate) {
+      alert('시작 일시를 선택해주세요.')
+      return
+    }
+    if (!popupEndDate) {
+      alert('종료 일시를 선택해주세요.')
+      return
+    }
+    if (new Date(popupStartDate) >= new Date(popupEndDate)) {
+      alert('종료 일시는 시작 일시보다 나중이어야 합니다.')
+      return
+    }
+    if (popupDisplayPage === 'competition' && !popupCompetitionId) {
+      alert('대회를 선택해주세요.')
+      return
+    }
+
+    try {
+      const popupData = {
+        title: popupTitle,
+        content_image_url: popupImageUrl,
+        start_date: fromDatetimeLocal(popupStartDate),
+        end_date: fromDatetimeLocal(popupEndDate),
+        display_page: popupDisplayPage,
+        competition_id: popupDisplayPage === 'competition' ? popupCompetitionId : null,
+        is_active: popupIsActive
+      }
+
+      if (isEditingPopup && selectedPopup) {
+        const { error } = await supabase
+          .from('popups')
+          .update(popupData)
+          .eq('id', selectedPopup.id)
+
+        if (error) throw error
+        alert('팝업이 수정되었습니다.')
+      } else {
+        const { error } = await supabase
+          .from('popups')
+          .insert(popupData)
+
+        if (error) throw error
+        alert('팝업이 등록되었습니다.')
+      }
+
+      setShowPopupModal(false)
+      fetchPopups()
+    } catch (error) {
+      console.error('팝업 저장 오류:', error)
+      alert('팝업 저장 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleDeletePopup = async (popupId: string) => {
+    if (!confirm('정말 이 팝업을 삭제하시겠습니까?')) return
+
+    try {
+      const { error } = await supabase
+        .from('popups')
+        .delete()
+        .eq('id', popupId)
+
+      if (error) throw error
+      alert('팝업이 삭제되었습니다.')
+      fetchPopups()
+    } catch (error) {
+      console.error('팝업 삭제 오류:', error)
+      alert('팝업 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleTogglePopupActive = async (popup: Popup) => {
+    try {
+      const { error } = await supabase
+        .from('popups')
+        .update({ is_active: !popup.is_active })
+        .eq('id', popup.id)
+
+      if (error) throw error
+      fetchPopups()
+    } catch (error) {
+      console.error('팝업 활성화 토글 오류:', error)
+      alert('팝업 활성화 상태 변경 중 오류가 발생했습니다.')
+    }
+  }
 
   // 대회 관리 함수들
   const fetchCompetitions = async () => {
@@ -1641,6 +1802,17 @@ export default function AdminPage() {
                 <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 회원 관리
               </button>
+              <button
+                onClick={() => setActiveTab('popups')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                  activeTab === 'popups'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                팝업 관리
+              </button>
             </nav>
           </div>
         </div>
@@ -2713,6 +2885,124 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* 팝업 관리 섹션 */}
+        {activeTab === 'popups' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">팝업 관리 ({popups.length})</h2>
+              <button
+                onClick={handleCreatePopup}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>팝업 등록</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              {popupsLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                </div>
+              ) : popups.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  등록된 팝업이 없습니다.
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        제목
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        표시 페이지
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        표시 기간
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        상태
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        관리
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {popups.map((popup) => {
+                      const competition = popup.competition_id
+                        ? competitions.find(c => c.id === popup.competition_id)
+                        : null
+                      const now = new Date()
+                      const startDate = new Date(popup.start_date)
+                      const endDate = new Date(popup.end_date)
+                      const isActive = popup.is_active && now >= startDate && now <= endDate
+
+                      return (
+                        <tr key={popup.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">{popup.title}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {popup.display_page === 'all' && '모든 페이지'}
+                              {popup.display_page === 'home' && '메인 페이지'}
+                              {popup.display_page === 'competition' && (
+                                <div>
+                                  <div>대회 상세</div>
+                                  {competition && (
+                                    <div className="text-xs text-gray-500">{competition.title}</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              <div>{formatKST(popup.start_date, 'yyyy.MM.dd HH:mm')}</div>
+                              <div className="text-gray-500">~ {formatKST(popup.end_date, 'yyyy.MM.dd HH:mm')}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => handleTogglePopupActive(popup)}
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                isActive
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {isActive ? '활성화' : '비활성화'}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditPopup(popup)}
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePopup(popup.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'members' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -3481,13 +3771,11 @@ export default function AdminPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       >
                         <option value="">선택 안함</option>
-                        <option value="XS">XS</option>
                         <option value="S">S</option>
                         <option value="M">M</option>
                         <option value="L">L</option>
                         <option value="XL">XL</option>
                         <option value="2XL">2XL</option>
-                        <option value="3XL">3XL</option>
                       </select>
                     ) : (
                       <p className="text-base text-gray-900">{selectedParticipant.shirt_size || '-'}</p>
@@ -3710,6 +3998,150 @@ export default function AdminPage() {
                   닫기
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 팝업 등록/수정 모달 */}
+      {showPopupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isEditingPopup ? '팝업 수정' : '팝업 등록'}
+              </h2>
+              <button
+                onClick={() => setShowPopupModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-6">
+              {/* 제목 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  팝업 제목 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={popupTitle}
+                  onChange={(e) => setPopupTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                  placeholder="팝업 제목을 입력하세요"
+                />
+              </div>
+
+              {/* 이미지 업로드 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  팝업 이미지 <span className="text-red-500">*</span>
+                </label>
+                <PopupImageUpload
+                  currentImageUrl={popupImageUrl}
+                  onImageUploaded={setPopupImageUrl}
+                />
+              </div>
+
+              {/* 표시 페이지 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  표시 페이지 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={popupDisplayPage}
+                  onChange={(e) => {
+                    setPopupDisplayPage(e.target.value as 'home' | 'competition')
+                    if (e.target.value !== 'competition') {
+                      setPopupCompetitionId('')
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                >
+                  <option value="home">메인 페이지</option>
+                  <option value="competition">대회 상세 페이지</option>
+                </select>
+              </div>
+
+              {/* 대회 선택 (표시 페이지가 competition일 때만) */}
+              {popupDisplayPage === 'competition' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    대회 선택 <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={popupCompetitionId}
+                    onChange={(e) => setPopupCompetitionId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                  >
+                    <option value="">대회를 선택하세요</option>
+                    {competitions.map((competition) => (
+                      <option key={competition.id} value={competition.id}>
+                        {competition.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* 시작 일시 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  시작 일시 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={popupStartDate}
+                  onChange={(e) => setPopupStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                />
+              </div>
+
+              {/* 종료 일시 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  종료 일시 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={popupEndDate}
+                  onChange={(e) => setPopupEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                />
+              </div>
+
+              {/* 활성화 여부 */}
+              <div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={popupIsActive}
+                    onChange={(e) => setPopupIsActive(e.target.checked)}
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">활성화</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  체크 해제 시 설정된 기간이어도 팝업이 표시되지 않습니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowPopupModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSavePopup}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                {isEditingPopup ? '수정' : '등록'}
+              </button>
             </div>
           </div>
         </div>

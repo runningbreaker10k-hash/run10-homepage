@@ -33,6 +33,7 @@ import PostDetailModal from '@/components/PostDetailModal'
 import MessageModal from '@/components/MessageModal'
 import AuthModal from '@/components/AuthModal'
 import { useAuth } from '@/contexts/AuthContext'
+import PagePopup from '@/components/PagePopup'
 
 export default function CompetitionDetailPage() {
   const params = useParams()
@@ -1263,6 +1264,8 @@ export default function CompetitionDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 대회 상세 페이지 팝업 */}
+      <PagePopup pageId="competition" competitionId={competitionId} />
         {/* Hero Section */}
       <div className="relative">
         <div className="relative w-full h-64 md:h-80 overflow-hidden">

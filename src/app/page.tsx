@@ -10,6 +10,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import PagePopup from '@/components/PagePopup'
 
 export default function Home() {
   type UpcomingCompetition = {
@@ -63,6 +64,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* 메인 페이지 팝업 */}
+      <PagePopup pageId="home" />
       {/* Hero Section - 러너 이미지 배경 + 런텐프로젝트 */}
       <section className="relative h-[50vh] min-h-[400px] sm:h-[60vh] flex items-center justify-center sm:justify-end">
         {/* 배경 이미지 - 러너들의 다리와 신발 */}

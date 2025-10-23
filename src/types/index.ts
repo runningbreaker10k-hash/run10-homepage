@@ -19,3 +19,7 @@ export type CompetitionPost = CommunityPost
 export type User = Database['public']['Tables']['users']['Row']
 export type UserInsert = Database['public']['Tables']['users']['Insert']
 export type UserUpdate = Database['public']['Tables']['users']['Update']
+
+export type Popup = Database['public']['Tables']['popups']['Row']
+export type PopupInsert = Database['public']['Tables']['popups']['Insert']
+export type PopupUpdate = Database['public']['Tables']['popups']['Update']

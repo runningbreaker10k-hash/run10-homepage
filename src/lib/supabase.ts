@@ -340,6 +340,44 @@ export type Database = {
           updated_at?: string
         }
       }
+      popups: {
+        Row: {
+          id: string
+          title: string
+          content_image_url: string
+          start_date: string
+          end_date: string
+          display_page: 'all' | 'home' | 'competition'
+          competition_id?: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          content_image_url: string
+          start_date: string
+          end_date: string
+          display_page: 'all' | 'home' | 'competition'
+          competition_id?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          content_image_url?: string
+          start_date?: string
+          end_date?: string
+          display_page?: 'all' | 'home' | 'competition'
+          competition_id?: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       user_profiles: {

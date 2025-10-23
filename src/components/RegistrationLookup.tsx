@@ -34,7 +34,7 @@ const lookupSchema = z.object({
 
 // 참가 관련 정보만 수정 가능 (회원정보는 마이페이지에서 수정)
 const updateSchema = z.object({
-  shirt_size: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL']),
+  shirt_size: z.enum(['S', 'M', 'L', 'XL', 'XXL']),
   depositor_name: z.string().min(2, '입금자명을 입력해주세요'),
   notes: z.string().optional()
 })
@@ -586,7 +586,6 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     {...registerUpdate('shirt_size')}
                     className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
-                    <option value="XS">XS</option>
                     <option value="S">S</option>
                     <option value="M">M</option>
                     <option value="L">L</option>
