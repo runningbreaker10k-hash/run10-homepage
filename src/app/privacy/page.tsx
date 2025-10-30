@@ -21,7 +21,7 @@ export default function PrivacyPage() {
             <div className="prose max-w-none">
               <div className="mb-8 p-4 bg-red-50 rounded-lg">
                 <p className="text-gray-700 leading-relaxed">
-                  런텐(RUN10)(이하 "회사")은 개인정보보호법에 따라 이용자의 개인정보 보호 및 권익을 보호하고 
+                  (주)러닝브레이커(이하 "회사")은 개인정보보호법에 따라 이용자의 개인정보 보호 및 권익을 보호하고 
                   개인정보와 관련한 이용자의 고충을 원활하게 처리할 수 있도록 다음과 같은 개인정보처리방침을 두고 있습니다.
                 </p>
               </div>
