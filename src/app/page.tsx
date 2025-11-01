@@ -215,7 +215,10 @@ export default function Home() {
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 sm:p-6 border-l-4 border-gray-400">
                       <div className="flex items-center text-base sm:text-lg">
                         <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-3 flex-shrink-0 text-gray-600" />
-                        <span className="font-medium text-gray-800">새로운 대회가 곧 공개됩니다</span>
+                        <span className="font-medium text-gray-800">
+                          2025 대회 접수가 마감되었습니다.<br />
+                          새로운 2월 대회가 곧 공개됩니다.
+                        </span>
                       </div>
                     </div>
                   )}
@@ -228,7 +231,7 @@ export default function Home() {
                     }
                     className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl block hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500 w-full text-center"
                   >
-                    대회 참가하기
+                    대회 확인하기
                   </Link>
                 </div>
               </div>
