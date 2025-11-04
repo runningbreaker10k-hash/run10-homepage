@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* 회사정보 */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-red-600">회사정보</h3>
+            <h3 className="text-lg font-semibold mb-4 text-red-600">(주)러닝브레이커</h3>
             <div className="space-y-3">
               <div className="flex items-start space-x-2">
                 <MapPin className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
@@ -25,7 +25,7 @@ export default function Footer() {
                 <span className="text-gray-300 text-sm">runningbreaker10k@gmail.com</span>
               </div>
               <div className="text-xs text-gray-400 pt-2">
-                <p>사업자등록번호: 160111-0649785</p>
+                <p>사업자등록번호: 544-86-02889</p>
                 <p>대표: 윤 세 준</p>
                 {/* 통신판매업신고번호: 2024-서울강남-1234 */}
               </div>
