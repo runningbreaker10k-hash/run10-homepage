@@ -163,14 +163,14 @@ export default function Home() {
                         ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
                             ? 'bg-orange-600'
                             : 'bg-red-600')
-                        : 'bg-red-600'
+                        : ''
                     }`}>
                       <span className="text-xs sm:text-sm font-bold text-white">
                         {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
                           ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
                               ? '마감임박'
                               : '접수중')
-                          : 'Coming Soon'}
+                          : ''}
                       </span>
                     </div>
                   </div>
