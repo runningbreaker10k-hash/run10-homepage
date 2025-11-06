@@ -262,6 +262,35 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
     resetUpdate()
   }
 
+  // 대회 신청 마감 여부 확인
+  const isRegistrationOpen = () => {
+    const now = new Date()
+    const registrationStart = new Date(competition.registration_start)
+    const registrationEnd = new Date(competition.registration_end)
+
+    return now >= registrationStart &&
+           now <= registrationEnd &&
+           competition.current_participants < competition.max_participants &&
+           competition.status === 'published'
+  }
+
+  // 수정 버튼 클릭 핸들러
+  const handleEditClick = () => {
+    // 이미 수정 모드인 경우 (취소 버튼) - 바로 수정 모드 종료
+    if (isEditing) {
+      setIsEditing(false)
+      return
+    }
+
+    // 수정 모드 진입 시 - 대회 마감 여부 확인
+    if (!isRegistrationOpen()) {
+      alert('신청이 마감된 대회의 정보 수정은 불가능 합니다')
+      return
+    }
+
+    setIsEditing(true)
+  }
+
   const getPaymentStatusBadge = (status: string) => {
     if (status === 'confirmed') {
       return (
@@ -437,7 +466,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">신청 정보</h3>
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
               <button
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={handleEditClick}
                 className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 touch-manipulation"
               >
                 <Edit className="h-4 w-4 sm:h-5 sm:w-5 mr-1 flex-shrink-0" />
