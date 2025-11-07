@@ -300,7 +300,7 @@ export default function MyPage() {
             // 배송완료 & 대회일 전 → 수정 불가
             if (competition.shipping_status === 'completed' && today < competitionDate) {
               alert(
-                `[${competition.title}] 대회 용품이 이미 발송되었습니다.\n` +
+                `[${competition.title}] 대회 용품 발송으로 인하여\n` +
                 `대회일(${competitionDate.toLocaleDateString('ko-KR')})까지 회원정보 수정이 불가합니다.\n\n` +
                 `긴급한 경우 관리자에게 문의해주세요.`
               )
