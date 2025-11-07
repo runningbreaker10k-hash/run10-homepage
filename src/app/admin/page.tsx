@@ -414,6 +414,25 @@ export default function AdminPage() {
     }
   }
 
+  // 대회 배송 상태 변경
+  const updateShippingStatus = async (competitionId: string, newStatus: 'pending' | 'completed') => {
+    try {
+      const { error } = await supabase
+        .from('competitions')
+        .update({ shipping_status: newStatus })
+        .eq('id', competitionId)
+
+      if (error) throw error
+
+      fetchCompetitions()
+      const statusText = newStatus === 'pending' ? '배송대기' : '배송완료'
+      alert(`배송 상태가 "${statusText}"로 변경되었습니다.`)
+    } catch (error) {
+      console.error('배송 상태 변경 오류:', error)
+      alert('배송 상태 변경 중 오류가 발생했습니다.')
+    }
+  }
+
   // 종목별 참가자 수 조회
   const showParticipationGroups = async (competition: Competition) => {
     try {
@@ -1887,6 +1906,9 @@ export default function AdminPage() {
                             상태
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            배송상태
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             참가자
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1910,6 +1932,20 @@ export default function AdminPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               {getStatusBadge(competition.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <select
+                                value={competition.shipping_status || 'pending'}
+                                onChange={(e) => updateShippingStatus(competition.id, e.target.value as 'pending' | 'completed')}
+                                className={`text-xs font-medium px-2 py-1 rounded-full border-0 focus:ring-2 focus:ring-offset-1 ${
+                                  (competition.shipping_status || 'pending') === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500'
+                                    : 'bg-green-100 text-green-800 focus:ring-green-500'
+                                }`}
+                              >
+                                <option value="pending">배송대기</option>
+                                <option value="completed">배송완료</option>
+                              </select>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               <div className="flex flex-col">

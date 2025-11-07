@@ -112,6 +112,7 @@ export type Database = {
           created_at: string
           updated_at: string
           status: 'draft' | 'published' | 'closed'
+          shipping_status: 'pending' | 'completed'
         }
         Insert: {
           id?: string
@@ -137,6 +138,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
           status?: 'draft' | 'published' | 'closed'
+          shipping_status?: 'pending' | 'completed'
         }
         Update: {
           id?: string
@@ -162,6 +164,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
           status?: 'draft' | 'published' | 'closed'
+          shipping_status?: 'pending' | 'completed'
         }
       }
       participation_groups: {

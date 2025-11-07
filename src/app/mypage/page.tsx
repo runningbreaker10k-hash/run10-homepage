@@ -261,9 +261,61 @@ export default function MyPage() {
 
   // 회원 정보 수정
   const onProfileSubmit = async (data: ProfileFormData) => {
+    if (!user) return
+
     setIsLoading(true)
 
     try {
+      // 1. 배송 상태 체크 - 참가신청한 대회 조회
+      const { data: registrationsData, error: regError } = await supabase
+        .from('registrations')
+        .select('competition_id')
+        .eq('user_id', user.id)
+
+      if (regError) {
+        console.error('참가신청 조회 오류:', regError)
+      }
+
+      // 참가신청이 있는 경우에만 대회 정보 확인
+      if (registrationsData && registrationsData.length > 0) {
+        const competitionIds = [...new Set(registrationsData.map(r => r.competition_id))]
+
+        // 2. 대회 정보 조회 (배송 상태, 마감일, 대회일)
+        const { data: competitionsData, error: compError } = await supabase
+          .from('competitions')
+          .select('id, title, registration_end, date, shipping_status')
+          .in('id', competitionIds)
+
+        if (compError) {
+          console.error('대회 정보 조회 오류:', compError)
+        }
+
+        if (competitionsData) {
+          const today = new Date()
+
+          // 3. 각 대회별로 배송 상태 확인
+          for (const competition of competitionsData) {
+            const competitionDate = new Date(competition.date)
+
+            // 배송완료 & 대회일 전 → 수정 불가
+            if (competition.shipping_status === 'completed' && today < competitionDate) {
+              alert(
+                `[${competition.title}] 대회 용품이 이미 발송되었습니다.\n` +
+                `대회일(${competitionDate.toLocaleDateString('ko-KR')})까지 회원정보 수정이 불가합니다.\n\n` +
+                `긴급한 경우 관리자에게 문의해주세요.`
+              )
+              return
+            }
+
+            // 그 외 모든 경우 → 수정 가능
+            // - 마감일 전
+            // - 마감일 후 + 배송대기(pending)
+            // - 대회일 이후
+          }
+        }
+      }
+
+      // 4. 배송 상태 체크 통과 → 회원정보 수정 진행
 
       // 기록에 따른 등급 계산 (성별에 따라 다른 기준 적용)
       const recordTime = (data.record_minutes * 60) + data.record_seconds
