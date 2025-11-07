@@ -1623,7 +1623,7 @@ export default function AdminPage() {
       }
 
       // CSV 생성
-      const csvHeader = '대회명,대회일자,이름,생년월일,나이,성별,전화번호,이메일,주소,신청거리,티셔츠사이즈,결제상태,입금자명,신청일시\n'
+      const csvHeader = '대회명,대회일자,이름,생년월일,나이,성별,회원등급,전화번호,이메일,주소,신청거리,티셔츠사이즈,결제상태,입금자명,신청일시\n'
       const csvContent = filtered.map(reg => {
         const distanceMap: { [key: string]: string } = {
           '3km': '3km',
@@ -1637,6 +1637,13 @@ export default function AdminPage() {
           'confirmed': '확인',
           'cancelled': '취소'
         }
+        const gradeMap: { [key: string]: string } = {
+          'cheetah': '치타족',
+          'horse': '홀스족',
+          'wolf': '울프족',
+          'turtle': '터틀족',
+          'bolt': '볼타족'
+        }
         return [
           `"${reg.competitions?.title || ''}"`,
           reg.competitions?.date || '',
@@ -1644,11 +1651,12 @@ export default function AdminPage() {
           reg.birth_date || '',
           reg.age || '',
           reg.gender === 'male' ? '남성' : reg.gender === 'female' ? '여성' : '',
+          gradeMap[reg.users?.grade] || '비회원',
           reg.phone || '',
           reg.email || '',
           `"${reg.address || ''}"`,
           distanceMap[reg.distance] || reg.distance || '',
-          reg.tshirt_size || '',
+          reg.shirt_size || '',
           paymentMap[reg.payment_status] || reg.payment_status || '',
           reg.depositor_name || '',
           formatKST(reg.created_at, 'yyyy-MM-dd HH:mm:ss')
