@@ -41,6 +41,7 @@ export default function PrivacyPage() {
                     <ul className="list-disc list-inside ml-6 mt-1 space-y-1 text-sm">
                       <li>웹사이트 서비스 제공 및 운영</li>
                       <li>회원제 서비스 이용에 따른 본인확인</li>
+                      <li>서비스 이용 관련 필수 공지사항 전달 (카카오톡 채널 알림톡, 문자메시지, 이메일 등)</li>
                       <li>고객상담 및 불만처리</li>
                     </ul>
                   </li>
@@ -138,6 +139,26 @@ export default function PrivacyPage() {
                   <li>회사는 이용자에게 개별적인 맞춤서비스를 제공하기 위해 이용정보를 저장하고 수시로 불러오는 '쿠키(cookie)'를 사용합니다.</li>
                   <li>쿠키는 웹사이트를 운영하는데 이용되는 서버(HTTP)가 이용자의 컴퓨터 브라우저에게 보내는 소량의 정보이며 이용자의 PC 컴퓨터 내의 하드디스크에 저장되기도 합니다.</li>
                   <li>쿠키 설치 거부 방법: 웹브라우저 상단의 도구 → 인터넷 옵션 → 개인정보 메뉴의 옵션 설정을 통해 쿠키 저장을 거부할 수 있습니다.</li>
+                </ol>
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">제7조의2 (서비스 관련 필수 정보의 전송)</h2>
+              <div className="text-gray-700 mb-6 leading-relaxed">
+                <ol className="list-decimal list-inside space-y-3">
+                  <li>회사는 회원에게 서비스 이용과 관련된 다음의 필수 정보를 카카오톡 채널 알림톡, 문자메시지(SMS/LMS), 이메일 등의 방법으로 전송할 수 있습니다:
+                    <ul className="list-disc list-inside ml-6 mt-2 space-y-1">
+                      <li>회원 본인이 참가 신청한 대회의 필수 안내사항 (일정, 장소, 변경사항 등)</li>
+                      <li>결제 및 환불 처리 안내</li>
+                      <li>본인이 작성한 글 또는 댓글에 대한 답변 알림</li>
+                      <li>이용약관 또는 개인정보처리방침 변경 공지</li>
+                      <li>서비스 점검, 장애, 중단 등 운영 관련 공지</li>
+                      <li>보안 관련 중요 공지</li>
+                      <li>회원 문의사항에 대한 답변</li>
+                      <li>기타 법령에서 정한 의무적 통지사항</li>
+                    </ul>
+                  </li>
+                  <li>위 정보는 회원의 권익 보호 및 서비스 정상 이용을 위한 필수 사항으로, 별도의 수신 동의 없이 전송됩니다.</li>
+                  <li>위 정보는 광고성 정보가 아니므로 수신 거부가 불가능하며, 수신 거부 시 서비스 이용에 불편이 발생할 수 있습니다.</li>
                 </ol>
               </div>
 
