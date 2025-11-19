@@ -105,7 +105,7 @@ export default function AboutPage() {
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
                     <li>평지코스 정확한 기록 인증</li>
                     <li>깨끗하고 쾌적한 러닝코스</li>
-                    <li>70명 대상 국내 최고 경품</li>
+                    <li>100명 대상 국내 최고 경품</li>
                     <li>수준별 출발 안정적 레이스</li>
                   </ul>
                 </div>
@@ -144,10 +144,10 @@ export default function AboutPage() {
                     나의 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
                   </p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
-                    <li>치타족 (30-39분59초) - 최상급 러너</li>
-                    <li>홀스족 (40-49분59초) - 상급 러너</li>
-                    <li>울프족 (50-59분59초) - 중급 러너</li>
-                    <li>터틀족 (60분 이상) - 초급 러너</li>
+                    <li>치타족 (남성 30-39분59초 / 여성 40-49분59초)</li>
+                    <li>홀스족 (남성 40-49분59초 / 여성 50-59분59초)</li>
+                    <li>울프족 (남성 50-59분59초 / 여성 60-69분59초)</li>
+                    <li>터틀족 (남성 60분 이상 / 여성 70분 이상)</li>
                   </ul>
                 </div>
               </div>

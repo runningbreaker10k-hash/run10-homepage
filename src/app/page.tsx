@@ -96,7 +96,7 @@ export default function Home() {
             <div className="text-right text-white">
               <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-4 sm:mb-6 tracking-tight">
                 <span className="block">we are</span>
-                <span className="block text-red-500">RUN10</span>
+                <span className="block text-red-600">RUN10</span>
               </h1>
               <div className="space-y-1 text-base sm:text-lg md:text-xl font-light tracking-wider">
                 <p className="opacity-90">we&ensp; can RUN10</p>
@@ -149,8 +149,8 @@ export default function Home() {
                       </h3>
                       <div className="space-y-2 text-sm sm:text-base lg:text-lg">
                         <p>1. 평지코스 정확한 기록 인증</p>
-                        <p>2. 깨끗하고 쾌적한 러닝코스</p>
-                        <p>3. 70명 대상 국내 최고 경품</p>
+                        <p>2. 안전하고 쾌적한 자연 코스</p>
+                        <p>3. 100명 대상 국내 최고 경품</p>
                         <p>4. 수준별 출발 안정적 레이스</p>
                       </div>
                     </div>
