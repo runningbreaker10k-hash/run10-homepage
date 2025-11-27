@@ -7,11 +7,12 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, Save, Eye } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Trash2, GripVertical } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import ImageUpload from '@/components/ImageUpload'
 import ContentImageUpload from '@/components/ContentImageUpload'
+import MultipleImageUpload from '@/components/MultipleImageUpload'
 
 // 거리 옵션 상수
 const DISTANCE_OPTIONS = [
@@ -47,7 +48,8 @@ export default function EditCompetitionPage() {
   const router = useRouter()
   const params = useParams()
   const competitionId = params.id as string
-  
+
+  const [activeTab, setActiveTab] = useState<'info' | 'photos'>('info')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [imageUrl, setImageUrl] = useState('')
@@ -66,6 +68,16 @@ export default function EditCompetitionPage() {
   }>>([])
   const [showGroupForm, setShowGroupForm] = useState(false)
   const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
+  const [photos, setPhotos] = useState<Array<{
+    id: string
+    image_url: string
+    caption: string | null
+    display_order: number
+  }>>([])
+  const [photosLoading, setPhotosLoading] = useState(false)
+  const [photosPage, setPhotosPage] = useState(1)
+  const PHOTOS_PER_PAGE = 20
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(new Set())
   
   const {
     register,
@@ -106,6 +118,151 @@ export default function EditCompetitionPage() {
   const deleteParticipationGroup = (index: number) => {
     const updatedGroups = participationGroups.filter((_, i) => i !== index)
     setParticipationGroups(updatedGroups)
+  }
+
+  const fetchPhotos = async () => {
+    setPhotosLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('competition_photos')
+        .select('*')
+        .eq('competition_id', competitionId)
+        .order('display_order', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching photos:', error)
+        return
+      }
+
+      setPhotos(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setPhotosLoading(false)
+    }
+  }
+
+  const deletePhoto = async (photoId: string, imageUrl: string) => {
+    if (!confirm('이 사진을 삭제하시겠습니까?')) return
+
+    try {
+      // Storage에서 파일 삭제
+      const filePath = imageUrl.split('/').slice(-3).join('/')
+      const { error: storageError } = await supabase.storage
+        .from('competition-images')
+        .remove([filePath])
+
+      if (storageError) {
+        console.error('Storage delete error:', storageError)
+      }
+
+      // DB에서 삭제
+      const { error: dbError } = await supabase
+        .from('competition_photos')
+        .delete()
+        .eq('id', photoId)
+
+      if (dbError) {
+        alert('사진 삭제 중 오류가 발생했습니다.')
+        return
+      }
+
+      // 목록 새로고침
+      fetchPhotos()
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('사진 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  const updatePhotoOrder = async (photoId: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from('competition_photos')
+        .update({ display_order: newOrder })
+        .eq('id', photoId)
+
+      if (error) {
+        console.error('Update order error:', error)
+        alert('순서 변경 중 오류가 발생했습니다.')
+        return
+      }
+
+      fetchPhotos()
+    } catch (error) {
+      console.error('Update error:', error)
+    }
+  }
+
+  const togglePhotoSelection = (photoId: string) => {
+    setSelectedPhotoIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(photoId)) {
+        newSet.delete(photoId)
+      } else {
+        newSet.add(photoId)
+      }
+      return newSet
+    })
+  }
+
+  const toggleSelectAll = () => {
+    const currentPagePhotos = photos.slice((photosPage - 1) * PHOTOS_PER_PAGE, photosPage * PHOTOS_PER_PAGE)
+    const currentPageIds = currentPagePhotos.map(p => p.id)
+    const allSelected = currentPageIds.every(id => selectedPhotoIds.has(id))
+
+    setSelectedPhotoIds(prev => {
+      const newSet = new Set(prev)
+      if (allSelected) {
+        currentPageIds.forEach(id => newSet.delete(id))
+      } else {
+        currentPageIds.forEach(id => newSet.add(id))
+      }
+      return newSet
+    })
+  }
+
+  const deleteSelectedPhotos = async () => {
+    if (selectedPhotoIds.size === 0) {
+      alert('삭제할 사진을 선택해주세요.')
+      return
+    }
+
+    if (!confirm(`선택한 ${selectedPhotoIds.size}개의 사진을 삭제하시겠습니까?`)) return
+
+    try {
+      const selectedPhotos = photos.filter(p => selectedPhotoIds.has(p.id))
+
+      // Storage에서 파일 삭제
+      for (const photo of selectedPhotos) {
+        const filePath = photo.image_url.split('/').slice(-3).join('/')
+        const { error: storageError } = await supabase.storage
+          .from('competition-images')
+          .remove([filePath])
+
+        if (storageError) {
+          console.error('Storage delete error:', storageError)
+        }
+      }
+
+      // DB에서 삭제
+      const { error: dbError } = await supabase
+        .from('competition_photos')
+        .delete()
+        .in('id', Array.from(selectedPhotoIds))
+
+      if (dbError) {
+        alert('사진 삭제 중 오류가 발생했습니다.')
+        return
+      }
+
+      alert(`${selectedPhotoIds.size}개의 사진이 삭제되었습니다.`)
+      setSelectedPhotoIds(new Set())
+      fetchPhotos()
+    } catch (error) {
+      console.error('Delete error:', error)
+      alert('사진 삭제 중 오류가 발생했습니다.')
+    }
   }
 
   const fetchCompetition = async () => {
@@ -197,6 +354,12 @@ export default function EditCompetitionPage() {
     fetchCompetition()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitionId])
+
+  useEffect(() => {
+    if (activeTab === 'photos') {
+      fetchPhotos()
+    }
+  }, [activeTab])
 
   const handleImageUploaded = (url: string) => {
     setImageUrl(url)
@@ -384,8 +547,39 @@ export default function EditCompetitionPage() {
         </div>
       </div>
 
-      {/* Form */}
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              type="button"
+              onClick={() => setActiveTab('info')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'info'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              기본 정보
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('photos')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab === 'photos'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              사진 관리
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Tab Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {activeTab === 'info' && (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* 기본 정보 */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -690,6 +884,178 @@ export default function EditCompetitionPage() {
             </button>
           </div>
         </form>
+        )}
+
+        {activeTab === 'photos' && (
+          <div className="space-y-6">
+            {/* 새 사진 업로드 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">사진 업로드</h2>
+              <MultipleImageUpload
+                competitionId={competitionId}
+                onUploadComplete={() => {
+                  fetchPhotos()
+                }}
+              />
+            </div>
+
+            {/* 기존 사진 목록 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  업로드된 사진 ({photos.length}장)
+                  {selectedPhotoIds.size > 0 && (
+                    <span className="ml-3 text-sm font-normal text-blue-600">
+                      {selectedPhotoIds.size}개 선택됨
+                    </span>
+                  )}
+                </h2>
+                {photos.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={
+                          photos.slice((photosPage - 1) * PHOTOS_PER_PAGE, photosPage * PHOTOS_PER_PAGE)
+                            .every(p => selectedPhotoIds.has(p.id)) &&
+                          photos.slice((photosPage - 1) * PHOTOS_PER_PAGE, photosPage * PHOTOS_PER_PAGE).length > 0
+                        }
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">현재 페이지 전체 선택</span>
+                    </label>
+                    {selectedPhotoIds.size > 0 && (
+                      <button
+                        onClick={deleteSelectedPhotos}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4 inline mr-1" />
+                        선택 삭제 ({selectedPhotoIds.size})
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {photosLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                </div>
+              ) : photos.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  아직 업로드된 사진이 없습니다.
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {photos
+                      .slice((photosPage - 1) * PHOTOS_PER_PAGE, photosPage * PHOTOS_PER_PAGE)
+                      .map((photo, idx) => {
+                        const actualIndex = (photosPage - 1) * PHOTOS_PER_PAGE + idx
+                        return (
+                          <div
+                            key={photo.id}
+                            className={`bg-gray-50 border-2 rounded-lg overflow-hidden transition-all ${
+                              selectedPhotoIds.has(photo.id)
+                                ? 'border-blue-500 ring-2 ring-blue-200'
+                                : 'border-gray-200'
+                            }`}
+                          >
+                            <div className="relative aspect-video">
+                              <img
+                                src={photo.image_url}
+                                alt={photo.caption || `사진 ${actualIndex + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 left-2 px-2 py-1 bg-black bg-opacity-60 text-white text-xs rounded">
+                                {actualIndex + 1}번째
+                              </div>
+                              <div className="absolute top-2 right-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPhotoIds.has(photo.id)}
+                                  onChange={() => togglePhotoSelection(photo.id)}
+                                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="p-4 space-y-3">
+                              {photo.caption && (
+                                <p className="text-sm text-gray-700 line-clamp-2">{photo.caption}</p>
+                              )}
+
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                                <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={() => updatePhotoOrder(photo.id, Math.max(0, photo.display_order - 1))}
+                                    disabled={actualIndex === 0}
+                                    className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    ←
+                                  </button>
+                                  <button
+                                    onClick={() => updatePhotoOrder(photo.id, Math.min(photos.length - 1, photo.display_order + 1))}
+                                    disabled={actualIndex === photos.length - 1}
+                                    className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    →
+                                  </button>
+                                </div>
+
+                                <button
+                                  onClick={() => deletePhoto(photo.id, photo.image_url)}
+                                  className="px-3 py-1 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4 inline mr-1" />
+                                  삭제
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  {photos.length > PHOTOS_PER_PAGE && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <button
+                        onClick={() => setPhotosPage(prev => Math.max(1, prev - 1))}
+                        disabled={photosPage === 1}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        이전
+                      </button>
+                      {Array.from({ length: Math.ceil(photos.length / PHOTOS_PER_PAGE) }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setPhotosPage(page)}
+                          className={`px-3 py-2 border rounded-lg ${
+                            page === photosPage
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setPhotosPage(prev => Math.min(Math.ceil(photos.length / PHOTOS_PER_PAGE), prev + 1))}
+                        disabled={photosPage === Math.ceil(photos.length / PHOTOS_PER_PAGE)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        다음
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 참가 그룹 추가/수정 모달 */}
