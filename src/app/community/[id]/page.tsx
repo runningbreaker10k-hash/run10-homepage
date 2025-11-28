@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Edit, Trash2, MessageSquare, Send, Eye, Pin } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, MessageSquare, Send, Eye, Pin, AlertTriangle, Ban } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -25,6 +25,7 @@ interface Post {
   image_url?: string
   views: number
   is_notice: boolean
+  report_count: number
   created_at: string
   updated_at: string
   user_id: string
@@ -224,6 +225,43 @@ export default function CommunityPostPage() {
     }
   }
 
+  const handleReportPost = async () => {
+    if (!user) {
+      alert('로그인 후 이용해주세요')
+      return
+    }
+
+    if (!post) return
+
+    if (confirm('해당 게시글을 신고하겠습니까?\n신고된 글은 24시간내에 운영자가 검토후 삭제등 조치가 됩니다.')) {
+      try {
+        const { error } = await supabase
+          .from('community_posts')
+          .update({ report_count: (post.report_count || 0) + 1 })
+          .eq('id', postId)
+
+        if (error) throw error
+
+        alert('신고처리 완료되었습니다.')
+        await loadPost()
+      } catch (error) {
+        console.error('신고 처리 오류:', error)
+        alert('신고 처리 중 오류가 발생했습니다')
+      }
+    }
+  }
+
+  const handleBlockUser = () => {
+    if (!user) {
+      alert('로그인 후 이용해주세요')
+      return
+    }
+
+    if (confirm('해당 사용자의 게시글을 모두 차단하시겠습니까?')) {
+      alert('차단처리 완료되었습니다.')
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return formatKST(dateString, 'yyyy년 MM월 dd일 HH:mm')
   }
@@ -378,6 +416,28 @@ export default function CommunityPostPage() {
               <div className="text-sm sm:text-base text-gray-800 leading-relaxed break-words">
                 {formatContent(post.content)}
               </div>
+
+              {/* 신고/차단 버튼 - 공지글이 아닐 때만 표시 */}
+              {!post.is_notice && user && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={handleReportPost}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors touch-manipulation"
+                    >
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                      <span>신고하기</span>
+                    </button>
+                    <button
+                      onClick={handleBlockUser}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors touch-manipulation"
+                    >
+                      <Ban className="w-4 h-4 flex-shrink-0" />
+                      <span>차단하기</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </article>
 

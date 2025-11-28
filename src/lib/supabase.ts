@@ -288,6 +288,7 @@ export type Database = {
           is_notice: boolean
           is_private: boolean
           post_password?: string
+          report_count: number
           created_at: string
           updated_at: string
         }
@@ -302,6 +303,7 @@ export type Database = {
           is_notice?: boolean
           is_private?: boolean
           post_password?: string
+          report_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -316,6 +318,7 @@ export type Database = {
           is_notice?: boolean
           is_private?: boolean
           post_password?: string
+          report_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -411,6 +414,7 @@ export type Database = {
           is_notice: boolean
           is_private: boolean
           post_password?: string
+          report_count: number
           created_at: string
           updated_at: string
           author_id: string

@@ -95,6 +95,7 @@ export default function AdminPage() {
   const [currentPostPage, setCurrentPostPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
   const [selectedCompetitionForPosts, setSelectedCompetitionForPosts] = useState<string>('')
+  const [showOnlyReportedPosts, setShowOnlyReportedPosts] = useState(false)
   const postsPerPage = 10
 
   // 회원 관리 관련 상태
@@ -155,7 +156,7 @@ export default function AdminPage() {
       fetchCommunityPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPostPage, user, activeTab])
+  }, [currentPostPage, user, activeTab, showOnlyReportedPosts])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'competitions' && competitionSubTab === 'boards') {
@@ -703,12 +704,19 @@ export default function AdminPage() {
       const from = (currentPostPage - 1) * postsPerPage
       const to = from + postsPerPage - 1
 
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('community_posts_with_author')
         .select('*', { count: 'exact' })
         .is('competition_id', null)  // 회원게시판: competition_id가 null인 게시글만
+
+      // 신고된 글만 보기 필터
+      if (showOnlyReportedPosts) {
+        query = query.gte('report_count', 1)
+      }
+
+      const { data, error, count } = await query
         .range(from, to)
-        .order('created_at', { ascending: false })
+        .order(showOnlyReportedPosts ? 'report_count' : 'created_at', { ascending: false })
 
       if (error) throw error
       setPosts(data || [])
@@ -2726,7 +2734,26 @@ export default function AdminPage() {
         {activeTab === 'community' && (
           <div className="bg-white rounded-lg shadow">
             <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">자유게시판 관리</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">자유게시판 관리</h2>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOnlyReportedPosts}
+                      onChange={(e) => {
+                        setShowOnlyReportedPosts(e.target.checked)
+                        setCurrentPostPage(1)
+                      }}
+                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                    />
+                    <span className="text-sm text-gray-700 whitespace-nowrap">신고된 글 모아보기</span>
+                  </label>
+                  <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+                    총 {totalPosts}개
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="overflow-x-auto">
               {postsLoading ? (
@@ -2737,16 +2764,16 @@ export default function AdminPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-full">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         제목
                       </th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
                         작성자
                       </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
                         통계
                       </th>
-                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                         작성일
                       </th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -2756,12 +2783,13 @@ export default function AdminPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {posts.map((post) => {
-                      const gradeInfo = post.users ? getGradeInfo(post.users.grade) : null
-                      const commentCount = (post as any).comment_count || 0
+                      const postData = post as any
+                      const commentCount = postData.comment_count || 0
+                      const reportCount = postData.report_count || 0
                       return (
                         <tr key={post.id} className="hover:bg-gray-50">
                           <td className="px-3 sm:px-6 py-4">
-                            <div className="flex flex-col space-y-1">
+                            <div className="flex flex-col space-y-1.5">
                               <div className="flex items-start space-x-2">
                                 {post.is_notice && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
@@ -2774,44 +2802,49 @@ export default function AdminPage() {
                                     setSelectedPost(post)
                                     setShowPostDetail(true)
                                   }}
-                                  className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left break-words"
+                                  className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left break-words flex-1 min-w-0"
                                 >
                                   {post.title}
                                 </button>
-                                {post.image_url && (
-                                  <span className="text-xs text-blue-600 flex-shrink-0">📷</span>
-                                )}
                               </div>
                               {/* 모바일에서 추가 정보 표시 */}
-                              <div className="flex items-center space-x-2 text-xs text-gray-500">
-                                {gradeInfo && (
-                                  <span className="lg:hidden">{post.users.name} ({gradeInfo.display})</span>
+                              <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 lg:hidden">
+                                {postData.author_name && (
+                                  <span className="bg-gray-100 px-2 py-0.5 rounded">{postData.author_name}</span>
                                 )}
-                                <span className="md:hidden">• 조회 {post.views} • 댓글 {commentCount}</span>
-                                <span className="sm:hidden">• {formatKST(post.created_at, 'MM.dd')}</span>
+                                <span className="sm:hidden">조회 {post.views}</span>
+                                <span className="sm:hidden">•</span>
+                                <span className="sm:hidden">댓글 {commentCount}</span>
+                                {reportCount > 0 && (
+                                  <>
+                                    <span className="sm:hidden">•</span>
+                                    <span className="sm:hidden text-red-600">신고 {reportCount}</span>
+                                  </>
+                                )}
+                                <span className="md:hidden">•</span>
+                                <span className="md:hidden">{formatKST(post.created_at, 'MM.dd')}</span>
                               </div>
                             </div>
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                            <div className="flex items-center space-x-2">
-                              {gradeInfo && (
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">{post.users.name}</div>
-                                  <div className="text-xs text-gray-500">{gradeInfo.display}</div>
-                                </div>
-                              )}
-                            </div>
+                            <div className="text-sm font-medium text-gray-900">{postData.author_name || '-'}</div>
                           </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                             <div className="text-sm space-y-1">
-                              <div className="flex items-center text-gray-500">
-                                <Eye className="h-3 w-3 mr-1" />
+                              <div className="flex items-center text-gray-600">
+                                <Eye className="h-3 w-3 mr-1.5" />
                                 <span>{post.views}</span>
                               </div>
-                              <div className="flex items-center text-gray-500">
-                                <MessageSquare className="h-3 w-3 mr-1" />
+                              <div className="flex items-center text-gray-600">
+                                <MessageSquare className="h-3 w-3 mr-1.5" />
                                 <span>{commentCount}</span>
                               </div>
+                              {reportCount > 0 && (
+                                <div className="flex items-center text-red-600 font-medium">
+                                  <span className="mr-1">⚠️</span>
+                                  <span>{reportCount}</span>
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
