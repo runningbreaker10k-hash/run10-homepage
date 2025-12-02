@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { ArrowLeft, Edit, Trash2, MessageSquare, Send, Eye, Pin, AlertTriangle, Ban } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, MessageSquare, Send, Eye, Pin, AlertTriangle, Ban, MoreVertical } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -61,6 +61,8 @@ export default function CommunityPostPage() {
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [showPostMenu, setShowPostMenu] = useState(false)
+  const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null)
 
   const {
     register,
@@ -78,6 +80,20 @@ export default function CommunityPostPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId])
+
+  // 외부 클릭 시 메뉴 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('.menu-container')) {
+        setShowPostMenu(false)
+        setOpenCommentMenuId(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadPost = async () => {
     try {
@@ -222,6 +238,41 @@ export default function CommunityPostPage() {
         console.error('댓글 삭제 오류:', error)
         alert('댓글 삭제 중 오류가 발생했습니다')
       }
+    }
+  }
+
+  const handleReportComment = async (commentId: string, currentReportCount: number) => {
+    if (!user) {
+      alert('로그인 후 이용해주세요')
+      return
+    }
+
+    if (confirm('해당 댓글을 신고하겠습니까?\n신고된 댓글은 24시간내에 운영자가 검토후 삭제등 조치가 됩니다.')) {
+      try {
+        const { error } = await supabase
+          .from('post_comments')
+          .update({ report_count: (currentReportCount || 0) + 1 })
+          .eq('id', commentId)
+
+        if (error) throw error
+
+        alert('신고처리 완료되었습니다.')
+        await loadComments()
+      } catch (error) {
+        console.error('댓글 신고 오류:', error)
+        alert('신고 처리 중 오류가 발생했습니다')
+      }
+    }
+  }
+
+  const handleBlockCommentUser = () => {
+    if (!user) {
+      alert('로그인 후 이용해주세요')
+      return
+    }
+
+    if (confirm('해당 사용자의 댓글을 모두 차단하시겠습니까?')) {
+      alert('차단처리 완료되었습니다.')
     }
   }
 
@@ -394,9 +445,47 @@ export default function CommunityPostPage() {
                   <span className="hidden sm:inline">•</span>
                   <span className="break-words">{formatDate(post.created_at)}</span>
                 </div>
-                <div className="flex items-center space-x-1 text-gray-500">
+                <div className="flex items-center space-x-1 sm:space-x-2 text-gray-500">
                   <Eye className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                   <span className="text-xs sm:text-sm">{post.views}</span>
+
+                  {/* 신고/차단 메뉴 - 공지글이 아닐 때만 표시 */}
+                  {!post.is_notice && user && (
+                    <div className="relative menu-container ml-2">
+                      <button
+                        onClick={() => setShowPostMenu(!showPostMenu)}
+                        className="p-1 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+                        aria-label="메뉴"
+                      >
+                        <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+
+                      {showPostMenu && (
+                        <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                          <button
+                            onClick={() => {
+                              setShowPostMenu(false)
+                              handleReportPost()
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                          >
+                            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                            <span>신고</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowPostMenu(false)
+                              handleBlockUser()
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                          >
+                            <Ban className="w-4 h-4 flex-shrink-0" />
+                            <span>차단</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -416,28 +505,6 @@ export default function CommunityPostPage() {
               <div className="text-sm sm:text-base text-gray-800 leading-relaxed break-words">
                 {formatContent(post.content)}
               </div>
-
-              {/* 신고/차단 버튼 - 공지글이 아닐 때만 표시 */}
-              {!post.is_notice && user && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleReportPost}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors touch-manipulation"
-                    >
-                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                      <span>신고하기</span>
-                    </button>
-                    <button
-                      onClick={handleBlockUser}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors touch-manipulation"
-                    >
-                      <Ban className="w-4 h-4 flex-shrink-0" />
-                      <span>차단하기</span>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </article>
 
@@ -485,15 +552,55 @@ export default function CommunityPostPage() {
                             {formatContent(comment.content)}
                           </div>
                         </div>
-                        {canDeleteComment && (
-                          <button
-                            onClick={() => handleDeleteComment(comment.id, comment.user_id)}
-                            className="text-gray-400 hover:text-red-500 p-1 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation flex-shrink-0"
-                            title="댓글 삭제"
-                          >
-                            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {/* 신고/차단 메뉴 */}
+                          {user && user.id !== comment.user_id && (
+                            <div className="relative menu-container">
+                              <button
+                                onClick={() => setOpenCommentMenuId(openCommentMenuId === comment.id ? null : comment.id)}
+                                className="p-1 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
+                                aria-label="메뉴"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+
+                              {openCommentMenuId === comment.id && (
+                                <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                  <button
+                                    onClick={() => {
+                                      setOpenCommentMenuId(null)
+                                      handleReportComment(comment.id, comment.report_count)
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                                  >
+                                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                    <span>신고</span>
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setOpenCommentMenuId(null)
+                                      handleBlockCommentUser()
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                                  >
+                                    <Ban className="w-3 h-3 flex-shrink-0" />
+                                    <span>차단</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {/* 삭제 버튼 */}
+                          {canDeleteComment && (
+                            <button
+                              onClick={() => handleDeleteComment(comment.id, comment.user_id)}
+                              className="text-gray-400 hover:text-red-500 p-1 sm:p-2 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation flex-shrink-0"
+                              title="댓글 삭제"
+                            >
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )

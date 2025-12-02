@@ -34,6 +34,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants' | 'boards'>('management')
+  const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   // 팝업 관리 관련 상태
@@ -48,6 +49,7 @@ export default function AdminPage() {
   const [popupEndDate, setPopupEndDate] = useState('')
   const [popupDisplayPage, setPopupDisplayPage] = useState<'all' | 'home' | 'competition'>('all')
   const [popupCompetitionId, setPopupCompetitionId] = useState<string>('')
+  const [popupLinkUrl, setPopupLinkUrl] = useState('')
   const [popupIsActive, setPopupIsActive] = useState(true)
 
   // 대회 관리 관련 상태
@@ -98,6 +100,15 @@ export default function AdminPage() {
   const [showOnlyReportedPosts, setShowOnlyReportedPosts] = useState(false)
   const postsPerPage = 10
 
+  // 댓글 관리 관련 상태
+  const [comments, setComments] = useState<any[]>([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [currentCommentPage, setCurrentCommentPage] = useState(1)
+  const [totalComments, setTotalComments] = useState(0)
+  const [showOnlyReportedComments, setShowOnlyReportedComments] = useState(false)
+  const [commentSearchTerm, setCommentSearchTerm] = useState('')
+  const commentsPerPage = 10
+
   // 회원 관리 관련 상태
   const [members, setMembers] = useState<User[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
@@ -135,8 +146,13 @@ export default function AdminPage() {
           fetchCompetitionPosts()
         }
       } else if (activeTab === 'community') {
-        setCurrentPostPage(1)
-        fetchCommunityPosts()
+        if (communitySubTab === 'posts') {
+          setCurrentPostPage(1)
+          fetchCommunityPosts()
+        } else if (communitySubTab === 'comments') {
+          setCurrentCommentPage(1)
+          fetchComments()
+        }
       } else if (activeTab === 'members') {
         // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
         fetchCompetitions()
@@ -149,14 +165,21 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
+  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
 
   useEffect(() => {
-    if (user && user.role === 'admin' && activeTab === 'community') {
+    if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
       fetchCommunityPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPostPage, user, activeTab, showOnlyReportedPosts])
+  }, [currentPostPage, user, activeTab, communitySubTab, showOnlyReportedPosts])
+
+  useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'comments') {
+      fetchComments()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyReportedComments, commentSearchTerm])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'competitions' && competitionSubTab === 'boards') {
@@ -201,6 +224,7 @@ export default function AdminPage() {
     setPopupEndDate('')
     setPopupDisplayPage('home')
     setPopupCompetitionId('')
+    setPopupLinkUrl('')
     setPopupIsActive(true)
     setShowPopupModal(true)
   }
@@ -214,6 +238,7 @@ export default function AdminPage() {
     setPopupEndDate(toDatetimeLocal(popup.end_date))
     setPopupDisplayPage(popup.display_page)
     setPopupCompetitionId(popup.competition_id || '')
+    setPopupLinkUrl(popup.link_url || '')
     setPopupIsActive(popup.is_active)
     setShowPopupModal(true)
   }
@@ -243,6 +268,11 @@ export default function AdminPage() {
       alert('대회를 선택해주세요.')
       return
     }
+    // URL 형식 검증 (입력된 경우만)
+    if (popupLinkUrl.trim() && !popupLinkUrl.match(/^https?:\/\/.+/i) && !popupLinkUrl.startsWith('/')) {
+      alert('올바른 URL 형식을 입력해주세요. (예: https://example.com 또는 /competitions/123)')
+      return
+    }
 
     try {
       const popupData = {
@@ -252,6 +282,7 @@ export default function AdminPage() {
         end_date: fromDatetimeLocal(popupEndDate),
         display_page: popupDisplayPage,
         competition_id: popupDisplayPage === 'competition' ? popupCompetitionId : null,
+        link_url: popupLinkUrl.trim() || null,
         is_active: popupIsActive
       }
 
@@ -816,6 +847,66 @@ export default function AdminPage() {
     } catch (error) {
       console.error('공지글 설정 오류:', error)
       alert('공지글 설정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 댓글 관리 함수들
+  const fetchComments = async () => {
+    setCommentsLoading(true)
+    try {
+      const from = (currentCommentPage - 1) * commentsPerPage
+      const to = from + commentsPerPage - 1
+
+      let query = supabase
+        .from('post_comments')
+        .select(`
+          *,
+          users!inner(name, user_id, grade),
+          community_posts!inner(title, id)
+        `, { count: 'exact' })
+
+      // 신고된 댓글만 보기 필터
+      if (showOnlyReportedComments) {
+        query = query.gte('report_count', 1)
+      }
+
+      // 검색 필터
+      if (commentSearchTerm.trim()) {
+        query = query.or(`content.ilike.%${commentSearchTerm}%,users.name.ilike.%${commentSearchTerm}%`)
+      }
+
+      const { data, error, count } = await query
+        .range(from, to)
+        .order(showOnlyReportedComments ? 'report_count' : 'created_at', { ascending: false })
+
+      if (error) throw error
+      setComments(data || [])
+      setTotalComments(count || 0)
+    } catch (error) {
+      console.error('댓글 로드 오류:', error)
+      setComments([])
+      setTotalComments(0)
+    } finally {
+      setCommentsLoading(false)
+    }
+  }
+
+  const deleteComment = async (commentId: string) => {
+    if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return
+
+    try {
+      const { error } = await supabase
+        .from('post_comments')
+        .delete()
+        .eq('id', commentId)
+
+      if (error) throw error
+
+      fetchComments()
+      alert('댓글이 삭제되었습니다.')
+    } catch (error) {
+      console.error('댓글 삭제 오류:', error)
+      alert('댓글 삭제 중 오류가 발생했습니다.')
     }
   }
 
@@ -2733,29 +2824,60 @@ export default function AdminPage() {
         )}
         {activeTab === 'community' && (
           <div className="bg-white rounded-lg shadow">
-            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">자유게시판 관리</h2>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={showOnlyReportedPosts}
-                      onChange={(e) => {
-                        setShowOnlyReportedPosts(e.target.checked)
-                        setCurrentPostPage(1)
-                      }}
-                      className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                    />
-                    <span className="text-sm text-gray-700 whitespace-nowrap">신고된 글 모아보기</span>
-                  </label>
-                  <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                    총 {totalPosts}개
+            {/* 자유게시판 서브탭 */}
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+              <nav className="flex flex-wrap gap-2 sm:gap-3">
+                <button
+                  onClick={() => setCommunitySubTab('posts')}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    communitySubTab === 'posts'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
+                  게시판 관리
+                </button>
+                <button
+                  onClick={() => setCommunitySubTab('comments')}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    communitySubTab === 'comments'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
+                  댓글 관리
+                </button>
+              </nav>
+            </div>
+
+            {/* 게시판 관리 탭 */}
+            {communitySubTab === 'posts' && (
+              <>
+                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">게시판 관리</h2>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyReportedPosts}
+                          onChange={(e) => {
+                            setShowOnlyReportedPosts(e.target.checked)
+                            setCurrentPostPage(1)
+                          }}
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                        />
+                        <span className="text-sm text-gray-700 whitespace-nowrap">신고된 글 모아보기</span>
+                      </label>
+                      <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+                        총 {totalPosts}개
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
               {postsLoading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
@@ -2959,7 +3081,208 @@ export default function AdminPage() {
                     </div>
                   </>
                 )}
-            </div>
+                </div>
+              </>
+            )}
+
+            {/* 댓글 관리 탭 */}
+            {communitySubTab === 'comments' && (
+              <>
+                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">댓글 관리</h2>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyReportedComments}
+                          onChange={(e) => {
+                            setShowOnlyReportedComments(e.target.checked)
+                            setCurrentCommentPage(1)
+                          }}
+                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                        />
+                        <span className="text-sm text-gray-700 whitespace-nowrap">신고된 댓글 모아보기</span>
+                      </label>
+                      <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+                        총 {totalComments}개
+                      </div>
+                    </div>
+                  </div>
+                  {/* 검색 */}
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      placeholder="댓글 내용 또는 작성자 검색..."
+                      value={commentSearchTerm}
+                      onChange={(e) => {
+                        setCommentSearchTerm(e.target.value)
+                        setCurrentCommentPage(1)
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  {commentsLoading ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            댓글 내용
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
+                            작성자
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+                            원글 제목
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
+                            신고
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                            작성일
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                            관리
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {comments.map((comment: any) => {
+                          const reportCount = comment.report_count || 0
+                          return (
+                            <tr key={comment.id} className="hover:bg-gray-50">
+                              <td className="px-3 sm:px-6 py-4">
+                                <div className="text-sm text-gray-900 line-clamp-2">
+                                  {comment.content}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 lg:hidden mt-1">
+                                  {comment.users?.name && (
+                                    <span className="bg-gray-100 px-2 py-0.5 rounded">{comment.users.name}</span>
+                                  )}
+                                  {reportCount > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-red-600">신고 {reportCount}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
+                                <div className="text-sm font-medium text-gray-900">{comment.users?.name || '-'}</div>
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 hidden xl:table-cell">
+                                <div className="text-sm text-gray-900 line-clamp-1">
+                                  {comment.community_posts?.title || '-'}
+                                </div>
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                                {reportCount > 0 ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    {reportCount}회
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-gray-500">-</span>
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                                {formatKST(comment.created_at, 'yy.MM.dd HH:mm')}
+                              </td>
+                              <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm">
+                                <div className="flex items-center gap-2">
+                                  <a
+                                    href={`/community/${comment.community_posts?.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                                  >
+                                    보기
+                                  </a>
+                                  <button
+                                    onClick={() => deleteComment(comment.id)}
+                                    className="text-red-600 hover:text-red-800 transition-colors"
+                                  >
+                                    삭제
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {/* 페이지네이션 */}
+                  {totalComments > commentsPerPage && (
+                    <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <button
+                          onClick={() => setCurrentCommentPage(1)}
+                          disabled={currentCommentPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          처음
+                        </button>
+                        <button
+                          onClick={() => setCurrentCommentPage(currentCommentPage - 1)}
+                          disabled={currentCommentPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          이전
+                        </button>
+                        <div className="flex items-center gap-2">
+                          {Array.from({ length: Math.min(5, Math.ceil(totalComments / commentsPerPage)) }, (_, i) => {
+                            const startPage = Math.max(1, currentCommentPage - 2)
+                            const pageNumber = startPage + i
+                            const totalPages = Math.ceil(totalComments / commentsPerPage)
+
+                            if (pageNumber > totalPages) return null
+
+                            return (
+                              <button
+                                key={pageNumber}
+                                onClick={() => setCurrentCommentPage(pageNumber)}
+                                className={`px-3 py-1.5 text-sm rounded-md ${
+                                  currentCommentPage === pageNumber
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setCurrentCommentPage(currentCommentPage + 1)}
+                          disabled={currentCommentPage === Math.ceil(totalComments / commentsPerPage)}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          다음
+                        </button>
+                        <button
+                          onClick={() => setCurrentCommentPage(Math.ceil(totalComments / commentsPerPage))}
+                          disabled={currentCommentPage === Math.ceil(totalComments / commentsPerPage)}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          마지막
+                        </button>
+                      </div>
+                      <div className="text-center text-sm text-gray-600 mt-3">
+                        {currentCommentPage} / {Math.ceil(totalComments / commentsPerPage)} 페이지 (총 {totalComments}개)
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -4187,6 +4510,23 @@ export default function AdminPage() {
                   onChange={(e) => setPopupEndDate(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
                 />
+              </div>
+
+              {/* 링크 URL */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  링크 URL (선택 사항)
+                </label>
+                <input
+                  type="url"
+                  value={popupLinkUrl}
+                  onChange={(e) => setPopupLinkUrl(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 bg-white"
+                  placeholder="예: https://example.com 또는 /competitions/123"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  URL을 입력하면 팝업 클릭 시 해당 페이지로 이동합니다.
+                </p>
               </div>
 
               {/* 활성화 여부 */}

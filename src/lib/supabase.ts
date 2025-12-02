@@ -329,6 +329,7 @@ export type Database = {
           post_id: string
           user_id: string
           content: string
+          report_count: number
           created_at: string
           updated_at: string
         }
@@ -337,6 +338,7 @@ export type Database = {
           post_id: string
           user_id: string
           content: string
+          report_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -345,6 +347,7 @@ export type Database = {
           post_id?: string
           user_id?: string
           content?: string
+          report_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -358,6 +361,7 @@ export type Database = {
           end_date: string
           display_page: 'all' | 'home' | 'competition'
           competition_id?: string
+          link_url?: string
           is_active: boolean
           created_at: string
           updated_at: string
@@ -370,6 +374,7 @@ export type Database = {
           end_date: string
           display_page: 'all' | 'home' | 'competition'
           competition_id?: string
+          link_url?: string
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -382,6 +387,7 @@ export type Database = {
           end_date?: string
           display_page?: 'all' | 'home' | 'competition'
           competition_id?: string
+          link_url?: string
           is_active?: boolean
           created_at?: string
           updated_at?: string

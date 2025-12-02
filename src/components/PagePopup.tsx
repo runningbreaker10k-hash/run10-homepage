@@ -116,15 +116,34 @@ export default function PagePopup({ pageId, competitionId }: PagePopupProps) {
 
                 {/* 이미지 내용 */}
                 <div className="bg-gray-100">
-                  <div className="relative w-full h-[350px]">
-                    <Image
-                      src={popup.content_image_url}
-                      alt={popup.title}
-                      fill
-                      className="object-contain"
-                      priority
-                    />
-                  </div>
+                  {popup.link_url ? (
+                    <a
+                      href={popup.link_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block cursor-pointer hover:opacity-90 transition-opacity"
+                    >
+                      <div className="relative w-full h-[350px]">
+                        <Image
+                          src={popup.content_image_url}
+                          alt={popup.title}
+                          fill
+                          className="object-contain"
+                          priority
+                        />
+                      </div>
+                    </a>
+                  ) : (
+                    <div className="relative w-full h-[350px]">
+                      <Image
+                        src={popup.content_image_url}
+                        alt={popup.title}
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* 하단 버튼 */}

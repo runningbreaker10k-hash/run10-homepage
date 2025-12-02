@@ -12,7 +12,7 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'closed'>('published')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'closed'>('all')
 
   useEffect(() => {
     fetchCompetitions()
@@ -192,7 +192,7 @@ export default function CompetitionsPage() {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">최고 경품</h3>
               <p className="text-gray-600">
-                70명을 대상으로 국내 최고 수준의 경품을 제공하여 참가자들에게 특별한 혜택을 드립니다.
+                100명을 대상으로 국내 최고 수준의 경품을 제공하여 참가자들에게 특별한 혜택을 드립니다.
               </p>
             </div>
           </div>
@@ -250,12 +250,10 @@ export default function CompetitionsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {filteredCompetitions.map((competition) => {
               const isClosed = getActualCompetitionStatus(competition) === 'closed'
-              
+
               return (
-                <div key={competition.id} className={`rounded-xl shadow-lg overflow-hidden transition-shadow ${
-                  isClosed 
-                    ? 'bg-gray-100 opacity-60' 
-                    : 'bg-white hover:shadow-xl'
+                <div key={competition.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-shadow ${
+                  isClosed ? '' : 'hover:shadow-xl'
                 }`}>
                   {/* Image Placeholder */}
                   <div className="relative">
@@ -263,15 +261,11 @@ export default function CompetitionsPage() {
                       <img
                         src={competition.image_url}
                         alt={competition.title}
-                        className={`w-full h-48 object-cover ${isClosed ? 'grayscale' : ''}`}
+                        className={`w-full h-48 object-cover ${isClosed ? 'saturate-50' : ''}`}
                       />
                     ) : (
-                      <div className={`w-full h-48 flex items-center justify-center ${
-                        isClosed 
-                          ? 'bg-gradient-to-r from-gray-400 to-gray-500' 
-                          : 'bg-gradient-to-r from-blue-400 to-purple-500'
-                      }`}>
-                        <Trophy className={`h-16 w-16 ${isClosed ? 'text-gray-300' : 'text-white'}`} />
+                      <div className={`w-full h-48 flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500 ${isClosed ? 'saturate-50' : ''}`}>
+                        <Trophy className="h-16 w-16 text-white" />
                       </div>
                     )}
                     <div className="absolute top-4 left-4">
@@ -281,24 +275,22 @@ export default function CompetitionsPage() {
 
                   {/* Content */}
                   <div className="p-6">
-                    <h3 className={`text-xl font-bold mb-3 line-clamp-2 ${
-                      isClosed ? 'text-gray-500' : 'text-gray-900'
-                    }`}>
+                    <h3 className="text-xl font-bold mb-3 line-clamp-2 text-gray-900">
                       {competition.title}
                     </h3>
 
                     <div className="space-y-2 mb-4">
-                      <div className={`flex items-center ${isClosed ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <div className="flex items-center text-gray-600">
                         <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="text-sm">
                           {format(new Date(competition.date), 'yyyy년 M월 d일 HH:mm')}
                         </span>
                       </div>
-                      <div className={`flex items-center ${isClosed ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <div className="flex items-center text-gray-600">
                         <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="text-sm">{competition.location}</span>
                       </div>
-                      <div className={`flex items-center ${isClosed ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <div className="flex items-center text-gray-600">
                         <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span className="text-sm">
                           신청마감: {format(new Date(competition.registration_end), 'M월 d일')}
@@ -306,9 +298,7 @@ export default function CompetitionsPage() {
                       </div>
                     </div>
 
-                    <p className={`text-sm mb-4 line-clamp-2 ${
-                      isClosed ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
+                    <p className="text-sm mb-4 line-clamp-2 text-gray-600">
                       {competition.description}
                     </p>
 
@@ -316,9 +306,9 @@ export default function CompetitionsPage() {
                       {isClosed ? (
                         <Link
                           href={`/competitions/${competition.id}`}
-                          className="bg-gray-400 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-500 transition-colors"
+                          className="border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                         >
-                          상세보기
+                          대회보기
                         </Link>
                       ) : (
                         <Link
