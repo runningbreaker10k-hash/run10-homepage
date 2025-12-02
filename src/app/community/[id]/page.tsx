@@ -398,7 +398,7 @@ export default function CommunityPostPage() {
         <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
 
           {/* 게시글 */}
-          <article className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mb-6 sm:mb-8">
+          <article className="bg-white rounded-lg shadow-md border border-gray-200 mb-6 sm:mb-8">
             {/* 게시글 헤더 */}
             <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-red-50">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
@@ -461,7 +461,7 @@ export default function CommunityPostPage() {
                       </button>
 
                       {showPostMenu && (
-                        <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                           <button
                             onClick={() => {
                               setShowPostMenu(false)
@@ -561,19 +561,19 @@ export default function CommunityPostPage() {
                                 className="p-1 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors touch-manipulation"
                                 aria-label="메뉴"
                               >
-                                <MoreVertical className="w-4 h-4" />
+                                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                               </button>
 
                               {openCommentMenuId === comment.id && (
-                                <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                                <div className="absolute right-0 mt-1 w-36 sm:w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
                                   <button
                                     onClick={() => {
                                       setOpenCommentMenuId(null)
                                       handleReportComment(comment.id, comment.report_count)
                                     }}
-                                    className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                                    className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
                                   >
-                                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                                     <span>신고</span>
                                   </button>
                                   <button
@@ -581,9 +581,9 @@ export default function CommunityPostPage() {
                                       setOpenCommentMenuId(null)
                                       handleBlockCommentUser()
                                     }}
-                                    className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                                    className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
                                   >
-                                    <Ban className="w-3 h-3 flex-shrink-0" />
+                                    <Ban className="w-4 h-4 flex-shrink-0" />
                                     <span>차단</span>
                                   </button>
                                 </div>
