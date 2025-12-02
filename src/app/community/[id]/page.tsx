@@ -431,8 +431,8 @@ export default function CommunityPostPage() {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mt-3 text-xs sm:text-sm text-gray-600">
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mt-3 text-xs sm:text-sm text-gray-600">
+                <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-4">
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     <img
                       src={authorGradeInfo.icon}
@@ -461,7 +461,7 @@ export default function CommunityPostPage() {
                       </button>
 
                       {showPostMenu && (
-                        <div className="absolute left-0 sm:left-auto sm:right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                           <button
                             onClick={() => {
                               setShowPostMenu(false)
