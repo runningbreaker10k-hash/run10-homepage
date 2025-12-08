@@ -82,7 +82,7 @@ export default function CompetitionDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [galleryPage, setGalleryPage] = useState(1)
-  const GALLERY_ITEMS_PER_PAGE = 20
+  const GALLERY_ITEMS_PER_PAGE = 12
 
   // 키보드 이벤트 처리 (ESC, 좌우 화살표)
   useEffect(() => {
@@ -1345,11 +1345,12 @@ export default function CompetitionDetailPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {galleryPhotos
                 .slice((galleryPage - 1) * GALLERY_ITEMS_PER_PAGE, galleryPage * GALLERY_ITEMS_PER_PAGE)
                 .map((photo, idx) => {
                   const actualIndex = (galleryPage - 1) * GALLERY_ITEMS_PER_PAGE + idx
+                  const showRanking = galleryPage === 1 && actualIndex < 5
                   return (
                     <div
                       key={photo.id}
@@ -1360,7 +1361,7 @@ export default function CompetitionDetailPage() {
                       className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
                     >
                       <img
-                        src={photo.image_url}
+                        src={`${photo.image_url}?width=400&height=400&quality=80&resize=cover`}
                         alt={photo.caption || `대회 사진 ${actualIndex + 1}`}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
@@ -1368,6 +1369,21 @@ export default function CompetitionDetailPage() {
                           console.error('Image load error:', photo.image_url)
                         }}
                       />
+                      {showRanking && (
+                        <div className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10">
+                          {/* Best 표시 배지 */}
+                          <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 rounded-full px-2 py-1 sm:px-4 sm:py-2 shadow-xl border-2 border-white/40 backdrop-blur-sm">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <span className="text-white font-bold text-[10px] sm:text-base tracking-tight drop-shadow-lg" style={{textShadow: '0 2px 4px rgba(0,0,0,0.3)'}}>
+                                Best
+                              </span>
+                              <span className="text-white font-black text-xs sm:text-lg drop-shadow-lg" style={{textShadow: '0 2px 4px rgba(0,0,0,0.3)'}}>
+                                {String(actualIndex + 1).padStart(2, '0')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       {photo.caption && (
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 sm:p-3 pointer-events-none">
                           <p className="text-white text-xs sm:text-sm line-clamp-2">{photo.caption}</p>
@@ -1478,7 +1494,7 @@ export default function CompetitionDetailPage() {
           <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {(isCompetitionEnded(competition) ? [
               { key: 'overview', label: '개요', icon: Trophy },
-              { key: 'photos', label: '대회사진', icon: Camera }
+              { key: 'photos', label: '베스트포토', icon: Camera }
             ] : [
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'register', label: '신청', icon: Users },
@@ -1634,7 +1650,7 @@ export default function CompetitionDetailPage() {
                         }`}
                       >
                         <img
-                          src={photo.image_url}
+                          src={`${photo.image_url}?width=100&height=100&quality=70&resize=cover`}
                           alt={`썸네일 ${actualIndex + 1}`}
                           className="w-full h-full object-cover"
                         />
