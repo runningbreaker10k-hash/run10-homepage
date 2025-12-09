@@ -1494,7 +1494,7 @@ export default function CompetitionDetailPage() {
           <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {(isCompetitionEnded(competition) ? [
               { key: 'overview', label: '개요', icon: Trophy },
-              { key: 'photos', label: '베스트포토', icon: Camera }
+              { key: 'photos', label: '베스트포토100', icon: Camera }
             ] : [
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'register', label: '신청', icon: Users },
