@@ -2,17 +2,28 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter } from 'lucide-react'
+import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter, Flag, Shield, Waves, Gift, Zap, Minus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 
+
+type CompetitionWithGroups = Competition & {
+  participation_groups?: Array<{
+    id: string
+    name: string
+    distance: string
+    max_participants: number
+    entry_fee: number
+  }>
+}
 
 export default function CompetitionsPage() {
-  const [competitions, setCompetitions] = useState<Competition[]>([])
+  const [competitions, setCompetitions] = useState<CompetitionWithGroups[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'closed'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('all')
 
   useEffect(() => {
     fetchCompetitions()
@@ -22,7 +33,16 @@ export default function CompetitionsPage() {
     try {
       const { data, error } = await supabase
         .from('competitions')
-        .select('*')
+        .select(`
+          *,
+          participation_groups (
+            id,
+            name,
+            distance,
+            max_participants,
+            entry_fee
+          )
+        `)
         .eq('status', 'published')
         .order('date', { ascending: true })
 
@@ -42,42 +62,80 @@ export default function CompetitionsPage() {
     }
   }
 
+  // 대회번호 생성 (YYYYMMDD 형식)
+  const getCompetitionNumber = (dateString: string) => {
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}${month}${day}`
+  }
+
+  // 종목 표시 (거리만 모아서)
+  const getDistancesText = (competition: CompetitionWithGroups) => {
+    if (!competition.participation_groups || competition.participation_groups.length === 0) {
+      return '10km 코스'
+    }
+
+    const distances = competition.participation_groups
+      .map(group => group.distance)
+      .filter((distance, index, self) => self.indexOf(distance) === index) // 중복 제거
+      .sort()
+      .map(distance => `${distance} 코스`)
+      .join(' / ')
+
+    return distances || '10km 코스'
+  }
+
   const getActualCompetitionStatus = (competition: Competition) => {
     const now = new Date()
     const competitionDate = new Date(competition.date)
+    const registrationStart = new Date(competition.registration_start)
     const registrationEnd = new Date(competition.registration_end)
-    
+
+    // 대회 종료
     if (competitionDate < now) {
       return 'closed'
     }
-    
+
+    // 신청 시작 전 (예정)
+    if (registrationStart > now) {
+      return 'upcoming'
+    }
+
+    // 신청 마감 또는 정원 마감
     if (registrationEnd < now || competition.current_participants >= competition.max_participants) {
       return 'registration_closed'
     }
-    
-    return 'published'
+
+    // 신청 진행 중
+    return 'ongoing'
   }
 
   const filteredCompetitions = competitions.filter(competition => {
     // 검색 필터
     const matchesSearch = competition.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       competition.location.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     if (!matchesSearch) return false
-    
+
     // 상태 필터
     if (statusFilter === 'all') return true
-    
+
     const actualStatus = getActualCompetitionStatus(competition)
-    
-    if (statusFilter === 'published') {
-      return actualStatus === 'published' || actualStatus === 'registration_closed'
+
+    if (statusFilter === 'ongoing') {
+      return actualStatus === 'ongoing' || actualStatus === 'registration_closed'
     }
-    
+
     if (statusFilter === 'closed') {
       return actualStatus === 'closed'
     }
-    
+
+    if (statusFilter === 'upcoming') {
+      return actualStatus === 'upcoming'
+    }
+
     return true
   })
 
@@ -86,39 +144,39 @@ export default function CompetitionsPage() {
   }, [statusFilter])
 
   const getStatusBadge = (competition: Competition) => {
-    const now = new Date()
-    const registrationEnd = new Date(competition.registration_end)
-    const competitionDate = new Date(competition.date)
+    const actualStatus = getActualCompetitionStatus(competition)
 
-    if (competition.status === 'closed' || competitionDate < now) {
+    // 종료
+    if (actualStatus === 'closed') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-gray-800 shadow-md">
           종료
         </span>
       )
     }
 
-    if (registrationEnd < now) {
+    // 예정
+    if (actualStatus === 'upcoming') {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-blue-600 shadow-md">
+          예정
+        </span>
+      )
+    }
+
+    // 접수마감 (대회는 남았지만 신청 마감)
+    if (actualStatus === 'registration_closed') {
+      return (
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-orange-600 shadow-md">
           접수마감
         </span>
       )
     }
 
-    // 등록률이 50% 이상이면 마감임박
-    const registrationRate = competition.current_participants / competition.max_participants
-    if (registrationRate >= 0.5) {
-      return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-          마감임박
-        </span>
-      )
-    }
-
+    // 진행중
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-        접수중
+      <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-red-600 shadow-md">
+        진행
       </span>
     )
   }
@@ -135,7 +193,7 @@ export default function CompetitionsPage() {
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
         <div className="absolute inset-0 opacity-20">
           <img
@@ -148,51 +206,86 @@ export default function CompetitionsPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">런텐 대회</h1>
-          <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 대회</h1>
+          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             전국 각지에서 개최되는 다양한 러닝 대회에 참여하세요
           </p>
         </div>
       </section>
 
       {/* 대회 소개 섹션 */}
-      <section className="py-16 bg-white">
+      <section className="py-8 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-              전국 러닝 협회가 공식 인증하는 10km 대회입니다.
-              정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
+          <div className="text-center mb-8">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              PB(Personal Best) 달성이 쉬운 가장 확실한 공식 대회
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            <div className="text-center">
-              <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Trophy className="h-8 w-8 text-blue-600" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {/* 1. 병목 없는 레이스 - 티어별 스타트 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Flag className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">평지코스</h3>
-              <p className="text-gray-600">
-                정확한 기록 인증을 위한 평지코스에서 최고의 러닝 경험을 제공합니다.
+              <h3 className="text-lg font-bold text-gray-900 mb-3">병목 없는 레이스</h3>
+              <p className="text-sm text-gray-600">
+                티어별 스타트
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-green-600" />
+            {/* 2. 언덕 없는 국내 최고의 평지 코스 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Minus className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">수준별 출발</h3>
-              <p className="text-gray-600">
-                개인 기록에 따른 수준별 출발로 안정적이고 공정한 레이스를 진행합니다.
+              <h3 className="text-lg font-bold text-gray-900 mb-3">언덕 없는</h3>
+              <p className="text-sm text-gray-600">
+                국내 최고의 평지 코스
               </p>
             </div>
 
-            <div className="text-center">
-              <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Calendar className="h-8 w-8 text-purple-600" />
+            {/* 3. 차량통제 필요없는 안전한 코스 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">최고 경품</h3>
-              <p className="text-gray-600">
-                100명을 대상으로 국내 최고 수준의 경품을 제공하여 참가자들에게 특별한 혜택을 드립니다.
+              <h3 className="text-lg font-bold text-gray-900 mb-3">차량통제 필요없는</h3>
+              <p className="text-sm text-gray-600">
+                안전한 코스
+              </p>
+            </div>
+
+            {/* 4. 전국 하천을 따라 달리는 힐링 코스 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Waves className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">전국 하천을 따라</h3>
+              <p className="text-sm text-gray-600">
+                달리는 힐링 코스
+              </p>
+            </div>
+
+            {/* 5. 100명 이상의 경품 최고 수준의 상금 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Gift className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">100명 이상의 경품</h3>
+              <p className="text-sm text-gray-600">
+                최고 수준의 상금
+              </p>
+            </div>
+
+            {/* 6. 5km 러너에게도 기록칩 완벽 지원 */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <Zap className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">5km 러너에게도</h3>
+              <p className="text-sm text-gray-600">
+                기록칩 완벽 지원
               </p>
             </div>
           </div>
@@ -200,17 +293,19 @@ export default function CompetitionsPage() {
       </section>
 
       {/* 대회 목록 섹션 */}
-      <section className="py-16 bg-gray-50">
+      <section className="pt-8 pb-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">참가 가능한 대회</h2>
-            <p className="text-lg text-gray-600">지금 신청 가능한 대회를 확인하고 참가해보세요!</p>
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정</h2>
+            <p className="text-lg text-gray-600">현재 신청 가능한 대회와 지난 대회의 정보와</p>
+            <p className="text-lg text-gray-600">예정인 대회의 일정을 확인 할 수 있습니다.</p>
           </div>
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+            {/* 검색창 */}
+            <div className="w-full lg:flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -218,21 +313,53 @@ export default function CompetitionsPage() {
                   placeholder="대회명 또는 지역으로 검색..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'published' | 'closed')}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+
+            {/* 필터 버튼 */}
+            <div className="flex gap-2 lg:gap-3 lg:flex-1">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                  statusFilter === 'all'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
+                }`}
               >
-                <option value="all">전체</option>
-                <option value="published">진행중</option>
-                <option value="closed">종료</option>
-              </select>
+                전체
+              </button>
+              <button
+                onClick={() => setStatusFilter('ongoing')}
+                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                  statusFilter === 'ongoing'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
+                }`}
+              >
+                진행
+              </button>
+              <button
+                onClick={() => setStatusFilter('closed')}
+                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                  statusFilter === 'closed'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
+                }`}
+              >
+                종료
+              </button>
+              <button
+                onClick={() => setStatusFilter('upcoming')}
+                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                  statusFilter === 'upcoming'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
+                }`}
+              >
+                예정
+              </button>
             </div>
           </div>
         </div>
@@ -249,78 +376,106 @@ export default function CompetitionsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {filteredCompetitions.map((competition) => {
-              const isClosed = getActualCompetitionStatus(competition) === 'closed'
+              const actualStatus = getActualCompetitionStatus(competition)
+              const isUpcoming = actualStatus === 'upcoming'
+              const isOngoing = actualStatus === 'ongoing' || actualStatus === 'registration_closed'
+              const isClosed = actualStatus === 'closed'
 
-              return (
-                <div key={competition.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-shadow ${
-                  isClosed ? '' : 'hover:shadow-xl'
-                }`}>
-                  {/* Image Placeholder */}
-                  <div className="relative">
+              const cardContent = (
+                <>
+                  {/* 빨간 헤더 - 대회번호 */}
+                  <div className="bg-red-600 text-white py-2.5 px-4 text-center">
+                    <h4 className="text-base font-bold">
+                      대회넘버 No. {getCompetitionNumber(competition.date)}
+                    </h4>
+                  </div>
+
+                  {/* 대회 이미지 */}
+                  <div className="relative h-48">
                     {competition.image_url ? (
                       <img
                         src={competition.image_url}
                         alt={competition.title}
-                        className={`w-full h-48 object-cover ${isClosed ? 'saturate-50' : ''}`}
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className={`w-full h-48 flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500 ${isClosed ? 'saturate-50' : ''}`}>
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500">
                         <Trophy className="h-16 w-16 text-white" />
                       </div>
                     )}
-                    <div className="absolute top-4 left-4">
+
+                    {/* 좌측상단 - 상태배지 */}
+                    <div className="absolute top-3 left-3 z-10">
                       {getStatusBadge(competition)}
                     </div>
+
+                    {/* 우측하단 - 원형 + 버튼 (예정일 때는 표시 안함) */}
+                    {!isUpcoming && (
+                      <div className="absolute bottom-3 right-3 z-10">
+                        <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-red-600 font-black text-2xl">
+                          +
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-3 line-clamp-2 text-gray-900">
+                  {/* 하단 정보 */}
+                  <div className="p-5 space-y-2.5">
+                    {/* 1. 대회명 */}
+                    <h3 className="text-xl font-bold text-gray-900 line-clamp-2 mb-3">
                       {competition.title}
                     </h3>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm">
-                          {format(new Date(competition.date), 'yyyy년 M월 d일 HH:mm')}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm">{competition.location}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="text-sm">
-                          신청마감: {format(new Date(competition.registration_end), 'M월 d일')}
-                        </span>
-                      </div>
+                    {/* 2. 종목 */}
+                    <div className="text-sm text-gray-600 flex">
+                      <span className="font-medium text-gray-700 w-12">종목</span>
+                      <span className="flex-1">{getDistancesText(competition)}</span>
                     </div>
 
-                    <p className="text-sm mb-4 line-clamp-2 text-gray-600">
-                      {competition.description}
-                    </p>
+                    {/* 3. 일시 */}
+                    <div className="text-sm text-gray-600 flex">
+                      <span className="font-medium text-gray-700 w-12">일시</span>
+                      <span className="flex-1">
+                        {format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })}
+                      </span>
+                    </div>
 
-                    <div className="flex justify-end">
-                      {isClosed ? (
-                        <Link
-                          href={`/competitions/${competition.id}`}
-                          className="border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                        >
-                          대회보기
-                        </Link>
-                      ) : (
-                        <Link
-                          href={`/competitions/${competition.id}`}
-                          className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                        >
-                          신청하기
-                        </Link>
-                      )}
+                    {/* 4. 장소 */}
+                    <div className="text-sm text-gray-600 flex">
+                      <span className="font-medium text-gray-700 w-12">장소</span>
+                      <span className="flex-1">{competition.location}</span>
+                    </div>
+
+                    {/* 5. 신청 */}
+                    <div className="text-sm text-gray-600 flex">
+                      <span className="font-medium text-gray-700 w-12">신청</span>
+                      <span className={`flex-1 ${isOngoing ? 'text-red-600 font-medium' : ''}`}>
+                        {format(new Date(competition.registration_start), 'yyyy. M. d (E)', { locale: ko })}
+                        {' ~ '}
+                        {isOngoing && '※ 선착순 '}
+                        {competition.max_participants > 0 && isOngoing && `${competition.max_participants.toLocaleString()}명 `}
+                        {isClosed ? '마감 종료' : isOngoing ? '모집' : isUpcoming ? '선착순 접수' : '마감'}
+                      </span>
                     </div>
                   </div>
+                </>
+              )
+
+              return isUpcoming ? (
+                <div
+                  key={competition.id}
+                  className="bg-white rounded-2xl shadow-md overflow-hidden transition-all cursor-not-allowed opacity-75"
+                >
+                  {cardContent}
                 </div>
+              ) : (
+                <Link
+                  key={competition.id}
+                  href={`/competitions/${competition.id}`}
+                  className="bg-white rounded-2xl shadow-md overflow-hidden transition-all hover:shadow-xl"
+                >
+                  {cardContent}
+                </Link>
               )
             })}
           </div>

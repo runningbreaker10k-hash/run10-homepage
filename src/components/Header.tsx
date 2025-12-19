@@ -70,6 +70,19 @@ export default function Header() {
                   <span>런텐 대회</span>
                 </div>
               </Link>
+              
+              {/*
+              <Link
+                href="/rank"
+                className="text-white hover:text-red-200 px-3 py-2 text-sm font-medium transition-colors"
+              >
+                <div className="flex items-center space-x-1">
+                  <Trophy className="h-4 w-4" />
+                  <span>랭커</span>
+                </div>
+              </Link>
+              */}
+
               <Link
                 href="/community"
                 className="text-white hover:text-red-200 px-3 py-2 text-sm font-medium transition-colors"
@@ -184,6 +197,16 @@ export default function Header() {
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4" />
                     <span>런텐 대회</span>
+                  </div>
+                </Link>
+                <Link
+                  href="/rank"
+                  className="text-white hover:text-red-200 block px-3 py-2 text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="h-4 w-4" />
+                    <span>랭커</span>
                   </div>
                 </Link>
                 <Link

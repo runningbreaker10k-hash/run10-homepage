@@ -1,5 +1,20 @@
 # 뱅크다A 자동 입금 확인 연동 가이드
 
+## 🎯 현재 진행 상황 (2025-12-10)
+
+### ✅ 완료된 작업
+- [x] **미확인주문리스트 API** 구현 완료 (`pending-orders/route.ts`)
+- [x] **주문상세 API** 구현 완료 (`order-detail/route.ts`)
+- [x] **입금확인 API** 구현 완료 (`confirm-payment/route.ts`)
+
+### 📋 다음 단계
+- [ ] Vercel 배포
+- [ ] 뱅크다A 관리페이지에서 3개 URL 등록
+- [ ] 하나은행 계좌 연동
+- [ ] 실제 소액 입금 테스트
+
+---
+
 ## 📌 작업 개요
 
 무통장 입금 확인을 수동으로 하던 프로세스를 뱅크다A API를 통해 자동화했습니다.
@@ -16,13 +31,23 @@
 
 ---
 
-## 📁 구현된 파일 (3개)
+## 📁 구현된 파일 (3개) ✅
 
-### 1. 미확인주문리스트 API
+### 1. 미확인주문리스트 API ✅
 **파일**: `src/app/api/bankda/pending-orders/route.ts`
+- **상태**: 구현 완료
 - **메서드**: GET
 - **용도**: 뱅크다A가 입금 매칭을 위해 pending 상태 주문 목록 조회
 - **URL**: `https://your-domain.vercel.app/api/bankda/pending-orders`
+
+**구현 내용**:
+- payment_status='pending' 신청 조회
+- registrations, participation_groups, competitions 테이블 조인
+- 뱅크다A 형식으로 데이터 변환
+- 계좌번호 하이픈 제거 처리 (73491000872504)
+- 날짜 형식 변환 (T 제거)
+- 품목명 자동 생성 (대회명 + 참가종목)
+- 에러 처리 및 로깅
 
 **응답 형식**:
 ```json
@@ -46,11 +71,20 @@
 
 ---
 
-### 2. 주문상세 API
+### 2. 주문상세 API ✅
 **파일**: `src/app/api/bankda/order-detail/route.ts`
+- **상태**: 구현 완료
 - **메서드**: POST
 - **용도**: 뱅크다A가 특정 주문의 상세 정보 조회
 - **URL**: `https://your-domain.vercel.app/api/bankda/order-detail`
+
+**구현 내용**:
+- POST 요청으로 order_id 수신
+- JSON 파싱 및 유효성 검증
+- 존재하지 않는 주문 에러 처리 (return_code: 415)
+- 미확인주문리스트와 동일한 형식 응답
+- GET 메서드로 테스트 엔드포인트 제공
+- 로깅 처리
 
 **요청 형식**:
 ```json
@@ -79,11 +113,24 @@
 
 ---
 
-### 3. 입금확인 API
+### 3. 입금확인 API ✅ (핵심 기능)
 **파일**: `src/app/api/bankda/confirm-payment/route.ts`
+- **상태**: 구현 완료
 - **메서드**: POST
 - **용도**: 뱅크다A가 매칭 성공한 주문의 입금 상태를 confirmed로 변경
 - **URL**: `https://your-domain.vercel.app/api/bankda/confirm-payment`
+
+**구현 내용**:
+- POST 요청으로 복수 주문 배치 처리
+- requests 배열로 여러 order_id 동시 처리
+- 각 주문별 상태 검증:
+  - 존재하지 않는 주문 → 에러 반환
+  - pending 아닌 상태 → 에러 반환
+- **DB 업데이트**: payment_status를 'pending' → 'confirmed'로 변경
+- 부분 성공 처리 (일부 실패 시 return_code: 415)
+- 각 주문별 성공/실패 메시지 응답
+- Vercel 로그 출력
+- GET 메서드로 테스트 엔드포인트 제공
 
 **요청 형식**:
 ```json
@@ -452,35 +499,66 @@ WHERE r.id = 'order_id';
 
 ## 📝 체크리스트
 
-배포 전:
-- [ ] 3개 API 파일 생성 완료
-- [ ] 로컬 테스트 완료
+### 개발 단계 (완료)
+- [x] 미확인주문리스트 API 구현 (`pending-orders/route.ts`)
+- [x] 주문상세 API 구현 (`order-detail/route.ts`)
+- [x] 입금확인 API 구현 (`confirm-payment/route.ts`)
+
+### 배포 및 테스트 단계 (진행 예정)
+- [ ] 로컬 테스트:
+  - [ ] `curl http://localhost:3000/api/bankda/pending-orders`
+  - [ ] `curl -X POST http://localhost:3000/api/bankda/order-detail`
+  - [ ] `curl -X POST http://localhost:3000/api/bankda/confirm-payment`
 - [ ] Git commit & push
+- [ ] Vercel 자동 배포 확인
 
-배포 후:
-- [ ] Vercel 배포 확인
-- [ ] 뱅크다A URL 3개 등록
-- [ ] 뱅크다A 계좌 연동
-- [ ] 뱅크다A 관리페이지 테스트
-- [ ] 소액 실제 입금 테스트
-- [ ] DB payment_status 변경 확인
+### 뱅크다A 설정 단계 (배포 후)
+- [ ] https://a.bankda.com/ 접속
+- [ ] 미확인 주문 리스트 API URL 등록
+- [ ] 주문상세 API URL 등록
+- [ ] 입금확인 주문 API URL 등록
+- [ ] 하나은행 인터넷뱅킹 빠른계좌조회 서비스 활성화
+- [ ] 뱅크다A 관리페이지에서 계좌 연동 (734-910008-72504)
 
-운영:
-- [ ] 매일 미확인 입금 확인
-- [ ] 주 1회 수동 처리 필요 건 확인
+### 검증 단계
+- [ ] 뱅크다A 관리페이지 각 API 테스트 버튼으로 연동 확인
+- [ ] 실제 소액 입금 테스트 (1,000원)
+- [ ] 5-10분 후 DB에서 payment_status 자동 변경 확인
+
+### 운영 단계
+- [ ] 매일 미확인 입금 확인 (1주일 이상 pending 건)
+- [ ] 주 1회 수동 처리 필요 건 확인 (입금자명/금액 불일치)
 - [ ] 월 1회 뱅크다A 연동 상태 확인
 
 ---
 
 ## 📅 작업 이력
 
-- 2025-12-09: 뱅크다A 완전 연동 구현
-  - 미확인주문리스트 API 추가
-  - 주문상세 API 추가
-  - 입금확인 API 구현 완료
-  - 자동화 프로세스 완성
+### 2025-12-10: API 구현 완료 ✅
+- [x] 미확인주문리스트 API 구현 완료
+  - GET /api/bankda/pending-orders
+  - payment_status='pending' 주문 조회
+  - 뱅크다A 형식으로 데이터 변환
+- [x] 주문상세 API 구현 완료
+  - POST /api/bankda/order-detail
+  - order_id로 특정 주문 조회
+  - 에러 처리 및 로깅
+- [x] 입금확인 API 구현 완료 (핵심)
+  - POST /api/bankda/confirm-payment
+  - payment_status 자동 업데이트 (pending → confirmed)
+  - 배치 처리 및 부분 성공 처리
+- [x] 문서화 완료 (BANKDA_INTEGRATION.md)
+
+### 다음 작업 (예정)
+- [ ] Vercel 배포
+- [ ] 뱅크다A 관리페이지 설정 (URL 3개 등록)
+- [ ] 하나은행 계좌 연동
+- [ ] 실제 소액 입금 테스트
+- [ ] 운영 모니터링 시작
 
 ---
 
 **이 문서는 뱅크다A 자동 입금 확인 기능의 모든 내용을 담고 있습니다.**
-**추가 작업이나 문제 발생 시 이 문서를 참고하세요.**
+
+**🚀 현재 상태**: API 구현 완료, 배포 및 설정 단계 진행 예정
+**📌 다음 단계**: Vercel 배포 → 뱅크다A URL 등록 → 계좌 연동 → 테스트

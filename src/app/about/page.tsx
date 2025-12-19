@@ -40,14 +40,16 @@ export default function AboutPage() {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다.
+            </p>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
               정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
             </p>
           </div>
 
           {/* 핵심 가치 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
             <div className="text-center p-6 bg-white rounded-lg shadow-md">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 text-red-600 rounded-full mb-4">
                 <Users className="h-8 w-8" />

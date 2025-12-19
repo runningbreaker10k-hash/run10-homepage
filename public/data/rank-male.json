@@ -1,0 +1,705 @@
+{
+  "updated_at": "2025-12-18",
+  "data": [
+    {
+      "rank": 1,
+      "name": "고성민",
+      "tier": "cheetah",
+      "record": "00:33:21",
+      "birth_date": "790527"
+    },
+    {
+      "rank": 2,
+      "name": "박평식",
+      "tier": "cheetah",
+      "record": "00:33:37",
+      "birth_date": "870422"
+    },
+    {
+      "rank": 3,
+      "name": "박민혁",
+      "tier": "cheetah",
+      "record": "00:34:18",
+      "birth_date": "010811"
+    },
+    {
+      "rank": 4,
+      "name": "김민철",
+      "tier": "cheetah",
+      "record": "00:34:45",
+      "birth_date": "871024"
+    },
+    {
+      "rank": 5,
+      "name": "박창진",
+      "tier": "cheetah",
+      "record": "00:35:26",
+      "birth_date": "970525"
+    },
+    {
+      "rank": 6,
+      "name": "심민국",
+      "tier": "cheetah",
+      "record": "00:35:43",
+      "birth_date": "870326"
+    },
+    {
+      "rank": 7,
+      "name": "안희성",
+      "tier": "cheetah",
+      "record": "00:36:43",
+      "birth_date": "030324"
+    },
+    {
+      "rank": 8,
+      "name": "박준하",
+      "tier": "horse",
+      "record": "00:37:49",
+      "birth_date": "940610"
+    },
+    {
+      "rank": 9,
+      "name": "김성준",
+      "tier": "cheetah",
+      "record": "00:37:51",
+      "birth_date": "891226"
+    },
+    {
+      "rank": 10,
+      "name": "오재민",
+      "tier": "cheetah",
+      "record": "00:37:55",
+      "birth_date": "000705"
+    },
+    {
+      "rank": 11,
+      "name": "박지윤",
+      "tier": "cheetah",
+      "record": "00:38:00",
+      "birth_date": "890601"
+    },
+    {
+      "rank": 12,
+      "name": "곽병철",
+      "tier": "cheetah",
+      "record": "00:38:29",
+      "birth_date": "820919"
+    },
+    {
+      "rank": 13,
+      "name": "김승진",
+      "tier": "cheetah",
+      "record": "00:38:33",
+      "birth_date": "871227"
+    },
+    {
+      "rank": 14,
+      "name": "강현구",
+      "tier": "cheetah",
+      "record": "00:38:49",
+      "birth_date": "901025"
+    },
+    {
+      "rank": 15,
+      "name": "박순철",
+      "tier": "horse",
+      "record": "00:39:23",
+      "birth_date": "901202"
+    },
+    {
+      "rank": 16,
+      "name": "조정래",
+      "tier": "horse",
+      "record": "00:39:26",
+      "birth_date": "950618"
+    },
+    {
+      "rank": 17,
+      "name": "손훈",
+      "tier": "cheetah",
+      "record": "00:39:41",
+      "birth_date": "840116"
+    },
+    {
+      "rank": 18,
+      "name": "이옥균",
+      "tier": "cheetah",
+      "record": "00:39:45",
+      "birth_date": "820310"
+    },
+    {
+      "rank": 19,
+      "name": "조항용",
+      "tier": "horse",
+      "record": "00:39:48",
+      "birth_date": "810725"
+    },
+    {
+      "rank": 20,
+      "name": "이상원",
+      "tier": "cheetah",
+      "record": "00:39:53",
+      "birth_date": "910614"
+    },
+    {
+      "rank": 21,
+      "name": "정현도",
+      "tier": "horse",
+      "record": "00:40:01",
+      "birth_date": "991009"
+    },
+    {
+      "rank": 22,
+      "name": "성민준",
+      "tier": "horse",
+      "record": "00:40:13",
+      "birth_date": "030411"
+    },
+    {
+      "rank": 23,
+      "name": "윤도희",
+      "tier": "horse",
+      "record": "00:40:17",
+      "birth_date": "910516"
+    },
+    {
+      "rank": 24,
+      "name": "이문섭",
+      "tier": "horse",
+      "record": "00:40:28",
+      "birth_date": "860616"
+    },
+    {
+      "rank": 25,
+      "name": "김태민",
+      "tier": "horse",
+      "record": "00:40:33",
+      "birth_date": "910318"
+    },
+    {
+      "rank": 26,
+      "name": "이지열",
+      "tier": "cheetah",
+      "record": "00:40:37",
+      "birth_date": "800720"
+    },
+    {
+      "rank": 27,
+      "name": "임한을",
+      "tier": "cheetah",
+      "record": "00:40:39",
+      "birth_date": "080228"
+    },
+    {
+      "rank": 28,
+      "name": "김동욱",
+      "tier": "horse",
+      "record": "00:40:59",
+      "birth_date": "051007"
+    },
+    {
+      "rank": 29,
+      "name": "이태연",
+      "tier": "horse",
+      "record": "00:40:59",
+      "birth_date": "950308"
+    },
+    {
+      "rank": 30,
+      "name": "문수현",
+      "tier": "horse",
+      "record": "00:41:03",
+      "birth_date": "941229"
+    },
+    {
+      "rank": 31,
+      "name": "김광민",
+      "tier": "horse",
+      "record": "00:41:08",
+      "birth_date": "910124"
+    },
+    {
+      "rank": 32,
+      "name": "김주형",
+      "tier": "horse",
+      "record": "00:41:14",
+      "birth_date": "041111"
+    },
+    {
+      "rank": 33,
+      "name": "김진욱",
+      "tier": "horse",
+      "record": "00:41:16",
+      "birth_date": "950509"
+    },
+    {
+      "rank": 34,
+      "name": "박동현",
+      "tier": "wolf",
+      "record": "00:41:23",
+      "birth_date": "800506"
+    },
+    {
+      "rank": 35,
+      "name": "이두희",
+      "tier": "horse",
+      "record": "00:41:26",
+      "birth_date": "900526"
+    },
+    {
+      "rank": 36,
+      "name": "이상복",
+      "tier": "horse",
+      "record": "00:41:27",
+      "birth_date": "890719"
+    },
+    {
+      "rank": 37,
+      "name": "김재성",
+      "tier": "turtle",
+      "record": "00:41:37",
+      "birth_date": "090717"
+    },
+    {
+      "rank": 38,
+      "name": "김가람",
+      "tier": "horse",
+      "record": "00:41:38",
+      "birth_date": "040404"
+    },
+    {
+      "rank": 39,
+      "name": "김경연",
+      "tier": "horse",
+      "record": "00:41:41",
+      "birth_date": "790830"
+    },
+    {
+      "rank": 40,
+      "name": "이천구",
+      "tier": "horse",
+      "record": "00:41:42",
+      "birth_date": "911105"
+    },
+    {
+      "rank": 41,
+      "name": "하창목",
+      "tier": "horse",
+      "record": "00:41:43",
+      "birth_date": "930319"
+    },
+    {
+      "rank": 42,
+      "name": "정영광",
+      "tier": "horse",
+      "record": "00:41:51",
+      "birth_date": "830413"
+    },
+    {
+      "rank": 43,
+      "name": "고영훈",
+      "tier": "horse",
+      "record": "00:41:53",
+      "birth_date": "891110"
+    },
+    {
+      "rank": 44,
+      "name": "이준훈",
+      "tier": "horse",
+      "record": "00:41:57",
+      "birth_date": "980909"
+    },
+    {
+      "rank": 45,
+      "name": "임성은",
+      "tier": "wolf",
+      "record": "00:41:59",
+      "birth_date": "940505"
+    },
+    {
+      "rank": 46,
+      "name": "김진섭",
+      "tier": "horse",
+      "record": "00:42:02",
+      "birth_date": "841213"
+    },
+    {
+      "rank": 47,
+      "name": "이수환",
+      "tier": "horse",
+      "record": "00:42:03",
+      "birth_date": "890116"
+    },
+    {
+      "rank": 48,
+      "name": "성기선",
+      "tier": "horse",
+      "record": "00:42:04",
+      "birth_date": "920821"
+    },
+    {
+      "rank": 49,
+      "name": "남화수",
+      "tier": "horse",
+      "record": "00:42:10",
+      "birth_date": "820127"
+    },
+    {
+      "rank": 50,
+      "name": "박승열",
+      "tier": "horse",
+      "record": "00:42:21",
+      "birth_date": "951120"
+    },
+    {
+      "rank": 51,
+      "name": "인요한",
+      "tier": "horse",
+      "record": "00:42:25",
+      "birth_date": "940123"
+    },
+    {
+      "rank": 52,
+      "name": "정희도",
+      "tier": "horse",
+      "record": "00:42:27",
+      "birth_date": "750615"
+    },
+    {
+      "rank": 53,
+      "name": "송창욱",
+      "tier": "horse",
+      "record": "00:42:31",
+      "birth_date": "710707"
+    },
+    {
+      "rank": 54,
+      "name": "이상민",
+      "tier": "horse",
+      "record": "00:42:33",
+      "birth_date": "880601"
+    },
+    {
+      "rank": 55,
+      "name": "정주호",
+      "tier": "horse",
+      "record": "00:42:34",
+      "birth_date": "040826"
+    },
+    {
+      "rank": 56,
+      "name": "최완주",
+      "tier": "cheetah",
+      "record": "00:42:37",
+      "birth_date": "900103"
+    },
+    {
+      "rank": 57,
+      "name": "이승수",
+      "tier": "horse",
+      "record": "00:42:39",
+      "birth_date": "911105"
+    },
+    {
+      "rank": 58,
+      "name": "김지명",
+      "tier": "horse",
+      "record": "00:42:44",
+      "birth_date": "860525"
+    },
+    {
+      "rank": 59,
+      "name": "장승권",
+      "tier": "horse",
+      "record": "00:42:48",
+      "birth_date": "000813"
+    },
+    {
+      "rank": 60,
+      "name": "오민석",
+      "tier": "horse",
+      "record": "00:42:53",
+      "birth_date": "011106"
+    },
+    {
+      "rank": 61,
+      "name": "이유섭",
+      "tier": "horse",
+      "record": "00:42:57",
+      "birth_date": "960411"
+    },
+    {
+      "rank": 62,
+      "name": "유권용",
+      "tier": "horse",
+      "record": "00:43:00",
+      "birth_date": "761121"
+    },
+    {
+      "rank": 63,
+      "name": "이성욱",
+      "tier": "horse",
+      "record": "00:43:05",
+      "birth_date": "930305"
+    },
+    {
+      "rank": 64,
+      "name": "이제훈",
+      "tier": "horse",
+      "record": "00:43:08",
+      "birth_date": "790512"
+    },
+    {
+      "rank": 65,
+      "name": "최현창",
+      "tier": "wolf",
+      "record": "00:43:17",
+      "birth_date": "981102"
+    },
+    {
+      "rank": 66,
+      "name": "이영석",
+      "tier": "wolf",
+      "record": "00:43:30",
+      "birth_date": "050922"
+    },
+    {
+      "rank": 67,
+      "name": "최규순",
+      "tier": "horse",
+      "record": "00:43:32",
+      "birth_date": "870408"
+    },
+    {
+      "rank": 68,
+      "name": "윤지호",
+      "tier": "horse",
+      "record": "00:43:42",
+      "birth_date": "990216"
+    },
+    {
+      "rank": 69,
+      "name": "김승철",
+      "tier": "horse",
+      "record": "00:43:47",
+      "birth_date": "851202"
+    },
+    {
+      "rank": 70,
+      "name": "심성민",
+      "tier": "horse",
+      "record": "00:43:49",
+      "birth_date": "960328"
+    },
+    {
+      "rank": 71,
+      "name": "김용선",
+      "tier": "horse",
+      "record": "00:43:51",
+      "birth_date": "780920"
+    },
+    {
+      "rank": 72,
+      "name": "김정수",
+      "tier": "horse",
+      "record": "00:44:02",
+      "birth_date": "000622"
+    },
+    {
+      "rank": 73,
+      "name": "홍지욱",
+      "tier": "horse",
+      "record": "00:44:03",
+      "birth_date": "080526"
+    },
+    {
+      "rank": 74,
+      "name": "김용우",
+      "tier": "horse",
+      "record": "00:44:03",
+      "birth_date": "901016"
+    },
+    {
+      "rank": 75,
+      "name": "정해성",
+      "tier": "horse",
+      "record": "00:44:04",
+      "birth_date": "990312"
+    },
+    {
+      "rank": 76,
+      "name": "전병환",
+      "tier": "horse",
+      "record": "00:44:10",
+      "birth_date": "900511"
+    },
+    {
+      "rank": 77,
+      "name": "이인호",
+      "tier": "horse",
+      "record": "00:44:13",
+      "birth_date": "910612"
+    },
+    {
+      "rank": 78,
+      "name": "조진원",
+      "tier": "wolf",
+      "record": "00:44:18",
+      "birth_date": "870413"
+    },
+    {
+      "rank": 79,
+      "name": "이인규",
+      "tier": "horse",
+      "record": "00:44:20",
+      "birth_date": "860519"
+    },
+    {
+      "rank": 80,
+      "name": "김종수",
+      "tier": "horse",
+      "record": "00:44:23",
+      "birth_date": "790612"
+    },
+    {
+      "rank": 81,
+      "name": "이채욱",
+      "tier": "horse",
+      "record": "00:44:23",
+      "birth_date": "890315"
+    },
+    {
+      "rank": 82,
+      "name": "정준호",
+      "tier": "horse",
+      "record": "00:44:25",
+      "birth_date": "010725"
+    },
+    {
+      "rank": 83,
+      "name": "오인영",
+      "tier": "wolf",
+      "record": "00:44:29",
+      "birth_date": "940914"
+    },
+    {
+      "rank": 84,
+      "name": "곽성민",
+      "tier": "horse",
+      "record": "00:44:33",
+      "birth_date": "850913"
+    },
+    {
+      "rank": 85,
+      "name": "전윤서",
+      "tier": "wolf",
+      "record": "00:44:40",
+      "birth_date": "020329"
+    },
+    {
+      "rank": 86,
+      "name": "정태일",
+      "tier": "horse",
+      "record": "00:44:41",
+      "birth_date": "960225"
+    },
+    {
+      "rank": 87,
+      "name": "서재욱",
+      "tier": "wolf",
+      "record": "00:44:43",
+      "birth_date": "950510"
+    },
+    {
+      "rank": 88,
+      "name": "임일규",
+      "tier": "horse",
+      "record": "00:44:44",
+      "birth_date": "870902"
+    },
+    {
+      "rank": 89,
+      "name": "황호영",
+      "tier": "horse",
+      "record": "00:44:45",
+      "birth_date": "900325"
+    },
+    {
+      "rank": 90,
+      "name": "강성훈",
+      "tier": "horse",
+      "record": "00:44:46",
+      "birth_date": "851001"
+    },
+    {
+      "rank": 91,
+      "name": "노양래",
+      "tier": "horse",
+      "record": "00:44:48",
+      "birth_date": "930225"
+    },
+    {
+      "rank": 92,
+      "name": "강형모",
+      "tier": "wolf",
+      "record": "00:44:48",
+      "birth_date": "840209"
+    },
+    {
+      "rank": 93,
+      "name": "성승훈",
+      "tier": "horse",
+      "record": "00:44:50",
+      "birth_date": "970214"
+    },
+    {
+      "rank": 94,
+      "name": "김영훈",
+      "tier": "wolf",
+      "record": "00:44:57",
+      "birth_date": "870425"
+    },
+    {
+      "rank": 95,
+      "name": "구본혁",
+      "tier": "horse",
+      "record": "00:44:57",
+      "birth_date": "830828"
+    },
+    {
+      "rank": 96,
+      "name": "김성현",
+      "tier": "horse",
+      "record": "00:44:58",
+      "birth_date": "000508"
+    },
+    {
+      "rank": 97,
+      "name": "정대영",
+      "tier": "horse",
+      "record": "00:45:00",
+      "birth_date": "920314"
+    },
+    {
+      "rank": 98,
+      "name": "김종훈",
+      "tier": "wolf",
+      "record": "00:45:01",
+      "birth_date": "791121"
+    },
+    {
+      "rank": 99,
+      "name": "김환범",
+      "tier": "horse",
+      "record": "00:45:03",
+      "birth_date": "810113"
+    },
+    {
+      "rank": 100,
+      "name": "전성식",
+      "tier": "horse",
+      "record": "00:45:08",
+      "birth_date": "950718"
+    }
+  ]
+}

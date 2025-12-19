@@ -32,10 +32,18 @@ import PopupImageUpload from '@/components/PopupImageUpload'
 export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups'>('competitions')
+  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants' | 'boards'>('management')
   const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // 랭커 관리 관련 상태
+  const [maleFile, setMaleFile] = useState<File | null>(null)
+  const [femaleFile, setFemaleFile] = useState<File | null>(null)
+  const [maleUploading, setMaleUploading] = useState(false)
+  const [femaleUploading, setFemaleUploading] = useState(false)
+  const [maleUpdatedAt, setMaleUpdatedAt] = useState<string>('')
+  const [femaleUpdatedAt, setFemaleUpdatedAt] = useState<string>('')
 
   // 팝업 관리 관련 상태
   const [popups, setPopups] = useState<Popup[]>([])
@@ -195,6 +203,120 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
 
+  useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'rank') {
+      fetchRankUpdatedDates()
+    }
+  }, [user, activeTab])
+
+  // 랭커 관리 함수들
+  const fetchRankUpdatedDates = async () => {
+    try {
+      const maleResponse = await fetch('/data/rank-male.json')
+      if (maleResponse.ok) {
+        const maleData = await maleResponse.json()
+        setMaleUpdatedAt(maleData.updated_at || '')
+      }
+    } catch (error) {
+      console.error('Error fetching male rank data:', error)
+    }
+
+    try {
+      const femaleResponse = await fetch('/data/rank-female.json')
+      if (femaleResponse.ok) {
+        const femaleData = await femaleResponse.json()
+        setFemaleUpdatedAt(femaleData.updated_at || '')
+      }
+    } catch (error) {
+      console.error('Error fetching female rank data:', error)
+    }
+  }
+
+  const handleMaleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setMaleFile(e.target.files[0])
+    }
+  }
+
+  const handleFemaleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFemaleFile(e.target.files[0])
+    }
+  }
+
+  const handleMaleUpload = async () => {
+    if (!maleFile) {
+      alert('남자 랭커 CSV 파일을 선택해주세요.')
+      return
+    }
+
+    setMaleUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', maleFile)
+      formData.append('gender', 'male')
+
+      const response = await fetch('/api/rank/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(result.message)
+        setMaleFile(null)
+        setMaleUpdatedAt(result.updated_at)
+        // 파일 input 초기화
+        const fileInput = document.getElementById('male-file-input') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
+      } else {
+        alert(`업로드 실패: ${result.error}\n${result.details ? JSON.stringify(result.details, null, 2) : ''}`)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('업로드 중 오류가 발생했습니다.')
+    } finally {
+      setMaleUploading(false)
+    }
+  }
+
+  const handleFemaleUpload = async () => {
+    if (!femaleFile) {
+      alert('여자 랭커 CSV 파일을 선택해주세요.')
+      return
+    }
+
+    setFemaleUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', femaleFile)
+      formData.append('gender', 'female')
+
+      const response = await fetch('/api/rank/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        alert(result.message)
+        setFemaleFile(null)
+        setFemaleUpdatedAt(result.updated_at)
+        // 파일 input 초기화
+        const fileInput = document.getElementById('female-file-input') as HTMLInputElement
+        if (fileInput) fileInput.value = ''
+      } else {
+        alert(`업로드 실패: ${result.error}\n${result.details ? JSON.stringify(result.details, null, 2) : ''}`)
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('업로드 중 오류가 발생했습니다.')
+    } finally {
+      setFemaleUploading(false)
+    }
+  }
 
   // 팝업 관리 함수들
   const fetchPopups = async () => {
@@ -1938,6 +2060,17 @@ export default function AdminPage() {
               >
                 <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                 팝업 관리
+              </button>
+              <button
+                onClick={() => setActiveTab('rank')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                  activeTab === 'rank'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                랭커 관리
               </button>
             </nav>
           </div>
@@ -3783,6 +3916,119 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'rank' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">랭커 관리</h2>
+
+              {/* 남자 랭커 업로드 */}
+              <div className="mb-8 p-6 border border-gray-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">남자 랭커 CSV 업로드</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      CSV 파일 선택
+                    </label>
+                    <input
+                      id="male-file-input"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleMaleFileChange}
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none p-2"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      CSV 형식: rank,name,tier,record,birth_date
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      예시: 1,홍길동,cheetah,00:35:42,900515
+                    </p>
+                  </div>
+                  {maleFile && (
+                    <div className="text-sm text-gray-700">
+                      선택된 파일: <span className="font-medium">{maleFile.name}</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleMaleUpload}
+                    disabled={!maleFile || maleUploading}
+                    className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
+                      !maleFile || maleUploading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {maleUploading ? '업로드 중...' : '업로드'}
+                  </button>
+                  {maleUpdatedAt && (
+                    <div className="text-sm text-gray-600">
+                      현재 업로드: <span className="font-medium">{maleUpdatedAt}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 여자 랭커 업로드 */}
+              <div className="p-6 border border-gray-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">여자 랭커 CSV 업로드</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      CSV 파일 선택
+                    </label>
+                    <input
+                      id="female-file-input"
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFemaleFileChange}
+                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none p-2"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      CSV 형식: rank,name,tier,record,birth_date
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      예시: 1,김영희,horse,00:42:30,920315
+                    </p>
+                  </div>
+                  {femaleFile && (
+                    <div className="text-sm text-gray-700">
+                      선택된 파일: <span className="font-medium">{femaleFile.name}</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleFemaleUpload}
+                    disabled={!femaleFile || femaleUploading}
+                    className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
+                      !femaleFile || femaleUploading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {femaleUploading ? '업로드 중...' : '업로드'}
+                  </button>
+                  {femaleUpdatedAt && (
+                    <div className="text-sm text-gray-600">
+                      현재 업로드: <span className="font-medium">{femaleUpdatedAt}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 안내 사항 */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">CSV 파일 작성 가이드</h4>
+                <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                  <li>필수 컬럼: rank, name, tier, record, birth_date</li>
+                  <li>순위: 1-100 사이의 숫자</li>
+                  <li>티어: cheetah, horse, wolf, turtle, bolt 중 하나</li>
+                  <li>기록: HH:MM:SS 형식 (예: 00:35:42)</li>
+                  <li>생년월일: YYMMDD 형식 (예: 900515)</li>
+                  <li>업로드 시 기존 데이터를 덮어씁니다</li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
       </div>

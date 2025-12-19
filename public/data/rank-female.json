@@ -1,0 +1,705 @@
+{
+  "updated_at": "2025-12-18",
+  "data": [
+    {
+      "rank": 1,
+      "name": "류승화",
+      "tier": "cheetah",
+      "record": "00:38:55",
+      "birth_date": "780414"
+    },
+    {
+      "rank": 2,
+      "name": "전예서",
+      "tier": "cheetah",
+      "record": "00:40:39",
+      "birth_date": "980706"
+    },
+    {
+      "rank": 3,
+      "name": "반소정",
+      "tier": "cheetah",
+      "record": "00:42:11",
+      "birth_date": "950818"
+    },
+    {
+      "rank": 4,
+      "name": "조새연",
+      "tier": "cheetah",
+      "record": "00:42:37",
+      "birth_date": "960123"
+    },
+    {
+      "rank": 5,
+      "name": "김아림",
+      "tier": "cheetah",
+      "record": "00:42:39",
+      "birth_date": "920511"
+    },
+    {
+      "rank": 6,
+      "name": "장선영",
+      "tier": "cheetah",
+      "record": "00:43:51",
+      "birth_date": "810209"
+    },
+    {
+      "rank": 7,
+      "name": "정재연",
+      "tier": "cheetah",
+      "record": "00:45:05",
+      "birth_date": "750715"
+    },
+    {
+      "rank": 8,
+      "name": "이선영",
+      "tier": "cheetah",
+      "record": "00:46:05",
+      "birth_date": "800628"
+    },
+    {
+      "rank": 9,
+      "name": "조성예",
+      "tier": "turtle",
+      "record": "00:46:39",
+      "birth_date": "910114"
+    },
+    {
+      "rank": 10,
+      "name": "이지민",
+      "tier": "cheetah",
+      "record": "00:47:17",
+      "birth_date": "860219"
+    },
+    {
+      "rank": 11,
+      "name": "남상아",
+      "tier": "cheetah",
+      "record": "00:47:20",
+      "birth_date": "010120"
+    },
+    {
+      "rank": 12,
+      "name": "강지은",
+      "tier": "horse",
+      "record": "00:47:26",
+      "birth_date": "930406"
+    },
+    {
+      "rank": 13,
+      "name": "전정은",
+      "tier": "horse",
+      "record": "00:48:07",
+      "birth_date": "820723"
+    },
+    {
+      "rank": 14,
+      "name": "유은재",
+      "tier": "horse",
+      "record": "00:48:58",
+      "birth_date": "960107"
+    },
+    {
+      "rank": 15,
+      "name": "정유리",
+      "tier": "horse",
+      "record": "00:48:59",
+      "birth_date": "911223"
+    },
+    {
+      "rank": 16,
+      "name": "백지혜",
+      "tier": "horse",
+      "record": "00:49:30",
+      "birth_date": "871011"
+    },
+    {
+      "rank": 17,
+      "name": "오현화",
+      "tier": "horse",
+      "record": "00:49:52",
+      "birth_date": "790813"
+    },
+    {
+      "rank": 18,
+      "name": "김복희",
+      "tier": "horse",
+      "record": "00:50:03",
+      "birth_date": "870720"
+    },
+    {
+      "rank": 19,
+      "name": "전윤희",
+      "tier": "horse",
+      "record": "00:50:22",
+      "birth_date": "831229"
+    },
+    {
+      "rank": 20,
+      "name": "정현선",
+      "tier": "horse",
+      "record": "00:50:27",
+      "birth_date": "970325"
+    },
+    {
+      "rank": 21,
+      "name": "오미영",
+      "tier": "wolf",
+      "record": "00:50:39",
+      "birth_date": "710927"
+    },
+    {
+      "rank": 22,
+      "name": "류기선",
+      "tier": "horse",
+      "record": "00:50:47",
+      "birth_date": "961029"
+    },
+    {
+      "rank": 23,
+      "name": "박은지",
+      "tier": "horse",
+      "record": "00:51:09",
+      "birth_date": "910721"
+    },
+    {
+      "rank": 24,
+      "name": "김미리",
+      "tier": "wolf",
+      "record": "00:51:34",
+      "birth_date": "920409"
+    },
+    {
+      "rank": 25,
+      "name": "김주영",
+      "tier": "horse",
+      "record": "00:51:51",
+      "birth_date": "970423"
+    },
+    {
+      "rank": 26,
+      "name": "임원자",
+      "tier": "horse",
+      "record": "00:52:16",
+      "birth_date": "721012"
+    },
+    {
+      "rank": 27,
+      "name": "강현희",
+      "tier": "wolf",
+      "record": "00:52:17",
+      "birth_date": "001201"
+    },
+    {
+      "rank": 28,
+      "name": "정민서",
+      "tier": "turtle",
+      "record": "00:52:21",
+      "birth_date": "060326"
+    },
+    {
+      "rank": 29,
+      "name": "임승연",
+      "tier": "horse",
+      "record": "00:52:32",
+      "birth_date": "980710"
+    },
+    {
+      "rank": 30,
+      "name": "이아현",
+      "tier": "horse",
+      "record": "00:52:48",
+      "birth_date": "961205"
+    },
+    {
+      "rank": 31,
+      "name": "이시원",
+      "tier": "wolf",
+      "record": "00:52:56",
+      "birth_date": "990715"
+    },
+    {
+      "rank": 32,
+      "name": "박채린",
+      "tier": "horse",
+      "record": "00:53:12",
+      "birth_date": "920920"
+    },
+    {
+      "rank": 33,
+      "name": "송하늘",
+      "tier": "wolf",
+      "record": "00:53:18",
+      "birth_date": "940217"
+    },
+    {
+      "rank": 34,
+      "name": "양이정",
+      "tier": "wolf",
+      "record": "00:53:21",
+      "birth_date": "900731"
+    },
+    {
+      "rank": 35,
+      "name": "송지한",
+      "tier": "horse",
+      "record": "00:53:31",
+      "birth_date": "920511"
+    },
+    {
+      "rank": 36,
+      "name": "안송희",
+      "tier": "horse",
+      "record": "00:54:17",
+      "birth_date": "050421"
+    },
+    {
+      "rank": 37,
+      "name": "정유진",
+      "tier": "horse",
+      "record": "00:54:18",
+      "birth_date": "050831"
+    },
+    {
+      "rank": 38,
+      "name": "공현영",
+      "tier": "wolf",
+      "record": "00:54:20",
+      "birth_date": "030627"
+    },
+    {
+      "rank": 39,
+      "name": "안서현",
+      "tier": "horse",
+      "record": "00:54:22",
+      "birth_date": "680409"
+    },
+    {
+      "rank": 40,
+      "name": "정회선",
+      "tier": "horse",
+      "record": "00:54:23",
+      "birth_date": "810828"
+    },
+    {
+      "rank": 41,
+      "name": "이지현",
+      "tier": "wolf",
+      "record": "00:54:24",
+      "birth_date": "921222"
+    },
+    {
+      "rank": 42,
+      "name": "임서희",
+      "tier": "wolf",
+      "record": "00:54:25",
+      "birth_date": "001029"
+    },
+    {
+      "rank": 43,
+      "name": "이유임",
+      "tier": "horse",
+      "record": "00:54:29",
+      "birth_date": "980829"
+    },
+    {
+      "rank": 44,
+      "name": "최나령",
+      "tier": "wolf",
+      "record": "00:54:29",
+      "birth_date": "731103"
+    },
+    {
+      "rank": 45,
+      "name": "장다영",
+      "tier": "turtle",
+      "record": "00:54:30",
+      "birth_date": "970505"
+    },
+    {
+      "rank": 46,
+      "name": "정혜란",
+      "tier": "wolf",
+      "record": "00:54:37",
+      "birth_date": "820725"
+    },
+    {
+      "rank": 47,
+      "name": "윤수진",
+      "tier": "turtle",
+      "record": "00:54:38",
+      "birth_date": "830301"
+    },
+    {
+      "rank": 48,
+      "name": "성지현",
+      "tier": "wolf",
+      "record": "00:55:10",
+      "birth_date": "731110"
+    },
+    {
+      "rank": 49,
+      "name": "홍승아",
+      "tier": "horse",
+      "record": "00:55:18",
+      "birth_date": "960509"
+    },
+    {
+      "rank": 50,
+      "name": "이누림",
+      "tier": "wolf",
+      "record": "00:55:22",
+      "birth_date": "941225"
+    },
+    {
+      "rank": 51,
+      "name": "김연이",
+      "tier": "wolf",
+      "record": "00:55:27",
+      "birth_date": "970721"
+    },
+    {
+      "rank": 52,
+      "name": "허정옥",
+      "tier": "wolf",
+      "record": "00:55:35",
+      "birth_date": "880115"
+    },
+    {
+      "rank": 53,
+      "name": "정유진",
+      "tier": "turtle",
+      "record": "00:55:37",
+      "birth_date": "951204"
+    },
+    {
+      "rank": 54,
+      "name": "윤현경",
+      "tier": "turtle",
+      "record": "00:55:38",
+      "birth_date": "850814"
+    },
+    {
+      "rank": 55,
+      "name": "송다연",
+      "tier": "turtle",
+      "record": "00:55:39",
+      "birth_date": "810502"
+    },
+    {
+      "rank": 56,
+      "name": "손미라",
+      "tier": "turtle",
+      "record": "00:55:46",
+      "birth_date": "870807"
+    },
+    {
+      "rank": 57,
+      "name": "이영미",
+      "tier": "turtle",
+      "record": "00:55:47",
+      "birth_date": "800116"
+    },
+    {
+      "rank": 58,
+      "name": "박수지",
+      "tier": "horse",
+      "record": "00:55:51",
+      "birth_date": "980529"
+    },
+    {
+      "rank": 59,
+      "name": "윤지수",
+      "tier": "turtle",
+      "record": "00:55:55",
+      "birth_date": "010730"
+    },
+    {
+      "rank": 60,
+      "name": "최우현",
+      "tier": "turtle",
+      "record": "00:55:55",
+      "birth_date": "010904"
+    },
+    {
+      "rank": 61,
+      "name": "박소율",
+      "tier": "horse",
+      "record": "00:55:56",
+      "birth_date": "060118"
+    },
+    {
+      "rank": 62,
+      "name": "김가산",
+      "tier": "wolf",
+      "record": "00:55:57",
+      "birth_date": "960825"
+    },
+    {
+      "rank": 63,
+      "name": "노은선",
+      "tier": "wolf",
+      "record": "00:56:09",
+      "birth_date": "831001"
+    },
+    {
+      "rank": 64,
+      "name": "김옥수",
+      "tier": "horse",
+      "record": "00:56:12",
+      "birth_date": "810206"
+    },
+    {
+      "rank": 65,
+      "name": "김하연",
+      "tier": "wolf",
+      "record": "00:56:14",
+      "birth_date": "941124"
+    },
+    {
+      "rank": 66,
+      "name": "유지영",
+      "tier": "turtle",
+      "record": "00:56:18",
+      "birth_date": "800515"
+    },
+    {
+      "rank": 67,
+      "name": "권효진",
+      "tier": "turtle",
+      "record": "00:56:19",
+      "birth_date": "930724"
+    },
+    {
+      "rank": 68,
+      "name": "양미연",
+      "tier": "wolf",
+      "record": "00:56:21",
+      "birth_date": "800220"
+    },
+    {
+      "rank": 69,
+      "name": "이은영",
+      "tier": "horse",
+      "record": "00:56:32",
+      "birth_date": "940613"
+    },
+    {
+      "rank": 70,
+      "name": "김화실",
+      "tier": "horse",
+      "record": "00:56:36",
+      "birth_date": "910707"
+    },
+    {
+      "rank": 71,
+      "name": "김보미",
+      "tier": "wolf",
+      "record": "00:56:39",
+      "birth_date": "900107"
+    },
+    {
+      "rank": 72,
+      "name": "윤지울",
+      "tier": "horse",
+      "record": "00:56:40",
+      "birth_date": "831215"
+    },
+    {
+      "rank": 73,
+      "name": "박시현",
+      "tier": "horse",
+      "record": "00:56:40",
+      "birth_date": "040804"
+    },
+    {
+      "rank": 74,
+      "name": "황혜진",
+      "tier": "horse",
+      "record": "00:56:42",
+      "birth_date": "940205"
+    },
+    {
+      "rank": 75,
+      "name": "전세경",
+      "tier": "wolf",
+      "record": "00:56:45",
+      "birth_date": "000513"
+    },
+    {
+      "rank": 76,
+      "name": "유시은",
+      "tier": "turtle",
+      "record": "00:56:55",
+      "birth_date": "000819"
+    },
+    {
+      "rank": 77,
+      "name": "손미현",
+      "tier": "horse",
+      "record": "00:56:57",
+      "birth_date": "911104"
+    },
+    {
+      "rank": 78,
+      "name": "한상명",
+      "tier": "wolf",
+      "record": "00:56:58",
+      "birth_date": "720912"
+    },
+    {
+      "rank": 79,
+      "name": "박현아",
+      "tier": "horse",
+      "record": "00:57:07",
+      "birth_date": "740324"
+    },
+    {
+      "rank": 80,
+      "name": "송정현",
+      "tier": "wolf",
+      "record": "00:57:09",
+      "birth_date": "880424"
+    },
+    {
+      "rank": 81,
+      "name": "용은정",
+      "tier": "horse",
+      "record": "00:57:09",
+      "birth_date": "920524"
+    },
+    {
+      "rank": 82,
+      "name": "금지원",
+      "tier": "turtle",
+      "record": "00:57:11",
+      "birth_date": "941105"
+    },
+    {
+      "rank": 83,
+      "name": "오소민",
+      "tier": "horse",
+      "record": "00:57:15",
+      "birth_date": "961216"
+    },
+    {
+      "rank": 84,
+      "name": "강수현",
+      "tier": "wolf",
+      "record": "00:57:18",
+      "birth_date": "880220"
+    },
+    {
+      "rank": 85,
+      "name": "함아영",
+      "tier": "horse",
+      "record": "00:57:20",
+      "birth_date": "961216"
+    },
+    {
+      "rank": 86,
+      "name": "이민혜",
+      "tier": "horse",
+      "record": "00:57:22",
+      "birth_date": "840329"
+    },
+    {
+      "rank": 87,
+      "name": "임가현",
+      "tier": "turtle",
+      "record": "00:57:25",
+      "birth_date": "961208"
+    },
+    {
+      "rank": 88,
+      "name": "이소영",
+      "tier": "turtle",
+      "record": "00:57:37",
+      "birth_date": "890217"
+    },
+    {
+      "rank": 89,
+      "name": "이지연",
+      "tier": "wolf",
+      "record": "00:57:44",
+      "birth_date": "860215"
+    },
+    {
+      "rank": 90,
+      "name": "최효정",
+      "tier": "wolf",
+      "record": "00:57:44",
+      "birth_date": "980126"
+    },
+    {
+      "rank": 91,
+      "name": "이순우",
+      "tier": "horse",
+      "record": "00:57:46",
+      "birth_date": "851215"
+    },
+    {
+      "rank": 92,
+      "name": "강혜민",
+      "tier": "turtle",
+      "record": "00:57:50",
+      "birth_date": "861209"
+    },
+    {
+      "rank": 93,
+      "name": "윤다영",
+      "tier": "wolf",
+      "record": "00:57:53",
+      "birth_date": "940826"
+    },
+    {
+      "rank": 94,
+      "name": "박혜지",
+      "tier": "turtle",
+      "record": "00:57:57",
+      "birth_date": "880301"
+    },
+    {
+      "rank": 95,
+      "name": "홍효정",
+      "tier": "wolf",
+      "record": "00:58:00",
+      "birth_date": "901221"
+    },
+    {
+      "rank": 96,
+      "name": "김산",
+      "tier": "wolf",
+      "record": "00:58:01",
+      "birth_date": "960629"
+    },
+    {
+      "rank": 97,
+      "name": "김효경",
+      "tier": "turtle",
+      "record": "00:58:08",
+      "birth_date": "980106"
+    },
+    {
+      "rank": 98,
+      "name": "성정하",
+      "tier": "wolf",
+      "record": "00:58:11",
+      "birth_date": "900202"
+    },
+    {
+      "rank": 99,
+      "name": "황수비",
+      "tier": "turtle",
+      "record": "00:58:13",
+      "birth_date": "940512"
+    },
+    {
+      "rank": 100,
+      "name": "김예진",
+      "tier": "wolf",
+      "record": "00:58:14",
+      "birth_date": "890329"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, MapPin, Clock, Trophy } from 'lucide-react'
+import { Calendar, MapPin, Clock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { ErrorHandler } from '@/lib/errorHandler'
@@ -27,10 +27,28 @@ export default function AppMainPage() {
 
   const [upcomingCompetitions, setUpcomingCompetitions] = useState<UpcomingCompetition[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+
+  const slideImages = [
+    '/images/main_s01.png',
+    '/images/main_s02.png',
+    '/images/main_s03.png'
+  ]
 
   useEffect(() => {
     fetchUpcomingCompetitions()
   }, [])
+
+  useEffect(() => {
+    if (isPaused) return
+
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideImages.length)
+    }, 2500) // 7초마다 전환
+
+    return () => clearInterval(interval)
+  }, [isPaused, slideImages.length])
 
   const fetchUpcomingCompetitions = async () => {
     try {
@@ -119,39 +137,52 @@ export default function AppMainPage() {
             <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
               {upcomingCompetitions.length > 0 && upcomingCompetitions[0] ? (
                 <>
-                  {/* 대회 이미지 */}
-                  <div className="relative h-56">
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{
-                        backgroundImage: upcomingCompetitions[0].image_url
-                          ? `url('${upcomingCompetitions[0].image_url}')`
-                          : "url('/images/competition-bg.jpg')"
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                    </div>
+                  {/* 대회 이미지 슬라이드쇼 */}
+                  <div
+                    className="relative h-56 overflow-hidden"
+                    onTouchStart={() => setIsPaused(true)}
+                    onTouchEnd={() => setIsPaused(false)}
+                  >
+                    {/* 슬라이드 이미지들 */}
+                    {slideImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+                        style={{
+                          backgroundImage: `url('${image}')`,
+                          opacity: currentSlide === index ? 1 : 0,
+                          zIndex: currentSlide === index ? 1 : 0
+                        }}
+                      />
+                    ))}
 
-                    {/* 상태 배지 */}
-                    <div className="absolute top-5 right-5">
-                      <div className={`px-5 py-2.5 rounded-full shadow-lg ${
-                        upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
-                          ? 'bg-orange-500'
-                          : 'bg-red-600'
-                      }`}>
-                        <span className="text-sm font-black text-white">
-                          {upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
-                            ? '🔥 마감임박'
-                            : '✅ 접수중'}
-                        </span>
+                    {/* 배경 오버레이 */}
+                    <div className="absolute inset-0 z-10" style={{backgroundColor: '#000000B3'}}></div>
+
+                    {/* 대회 특장점 텍스트 */}
+                    <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 z-20">
+                      <div className="text-center space-y-3">
+                        <div className="space-y-2 text-sm sm:text-base font-medium" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
+                          <p>가족과 친구와 함께 전국 명소를 누비며</p>
+                          <p>매달 전국 각지에서 펼쳐지는 레이스</p>
+                          <p>3~4천명 규모의 적지도, 많지도 않은</p>
+                          <p>전국러닝협회 기록 인증 10km 대회</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* 대회명 */}
-                    <div className="absolute bottom-5 left-5 right-5">
-                      <h2 className="text-2xl font-black text-white leading-tight drop-shadow-lg">
-                        {upcomingCompetitions[0].title}
-                      </h2>
+                    {/* 슬라이드 인디케이터 */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
+                      {slideImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentSlide(index)}
+                          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
+                          }`}
+                          aria-label={`슬라이드 ${index + 1}`}
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -181,38 +212,12 @@ export default function AppMainPage() {
                       </span>
                     </div>
 
-                    {/* 대회 특장점 */}
-                    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-5 mt-5 border-2 border-red-100">
-                      <h3 className="text-base font-black text-gray-900 mb-3 flex items-center">
-                        <Trophy className="h-5 w-5 mr-2 text-red-600" />
-                        대회 특장점
-                      </h3>
-                      <ul className="space-y-2 text-sm text-gray-800 font-medium">
-                        <li className="flex items-start">
-                          <span className="text-red-600 mr-2 font-black">•</span>
-                          <span>평지코스 정확한 기록 인증</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-red-600 mr-2 font-black">•</span>
-                          <span>안전하고 쾌적한 자연 코스</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-red-600 mr-2 font-black">•</span>
-                          <span>100명 대상 국내 최고 경품</span>
-                        </li>
-                        <li className="flex items-start">
-                          <span className="text-red-600 mr-2 font-black">•</span>
-                          <span>수준별 출발 안정적 레이스</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* 대회 참가 버튼 */}
+                    {/* 대회 확인 버튼 */}
                     <Link
                       href={`/competitions/${upcomingCompetitions[0].id}`}
-                      className="block mt-6 bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white py-5 rounded-2xl font-black text-center text-xl shadow-xl active:shadow-lg transform active:scale-98 transition-all"
+                      className="block mt-6 bg-gradient-to-r from-red-600 to-red-700 text-white py-5 rounded-2xl font-black text-center text-xl shadow-xl active:from-red-700 active:to-red-800 active:shadow-2xl transform active:scale-95 transition-all duration-300 border-2 border-red-500"
                     >
-                      🏃 대회 신청하러 가기
+                      대회 확인하기
                     </Link>
                   </div>
                 </>

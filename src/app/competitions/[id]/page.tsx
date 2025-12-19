@@ -1465,7 +1465,7 @@ export default function CompetitionDetailPage() {
                 src={competition.image_url}
                 alt={competition.title}
                 fill
-                className="object-cover object-top"
+                className="object-cover object-center"
               />
               <div className="absolute inset-0 bg-black" style={{ opacity: 0.3 }}></div>
             </>

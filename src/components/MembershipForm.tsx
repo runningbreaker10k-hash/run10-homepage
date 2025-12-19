@@ -91,10 +91,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [idCheckStatus, setIdCheckStatus] = useState<'none' | 'checking' | 'available' | 'taken'>('none')
-  const [emailCheckStatus, setEmailCheckStatus] = useState<'none' | 'checking' | 'available' | 'taken'>('none')
   const [postCodeModalOpen, setPostCodeModalOpen] = useState(false)
   const [noRecord, setNoRecord] = useState(false)
-  const [platform, setPlatform] = useState<'web' | 'android' | 'ios'>('web')
 
   const { showError, showSuccess } = useMessageModal()
 
@@ -108,8 +106,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   } = useForm<MembershipFormData>({
     resolver: zodResolver(membershipSchema),
     defaultValues: {
-      phone_marketing_agree: false,
-      email_marketing_agree: false,
+      phone_marketing_agree: true,
+      email_marketing_agree: true,
       privacy_agree: false,
       terms_agree: false,
       gender: '',
@@ -118,57 +116,9 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   })
 
   const watchedUserId = watch('user_id')
-  const watchedEmail = watch('email')
   const watchedRecordRange = watch('record_range')
   const watchedGender = watch('gender')
   const watchedGenderDigit = watch('gender_digit')
-
-  // 플랫폼 구분 (웹 vs 앱)
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    // 테스트용: URL 쿼리 파라미터 확인 (?platform=ios 또는 ?platform=android)
-    const urlParams = new URLSearchParams(window.location.search)
-    const platformParam = urlParams.get('platform')
-
-    if (platformParam === 'android' || platformParam === 'ios') {
-      setPlatform(platformParam)
-      return
-    }
-
-    // 실제 UserAgent 확인
-    const userAgent = navigator.userAgent.toLowerCase()
-
-    if (userAgent.indexOf('androidapp') !== -1) {
-      setPlatform('android')
-    } else if (userAgent.indexOf('iosapp') !== -1) {
-      setPlatform('ios')
-    } else {
-      setPlatform('web')
-    }
-  }, [])
-
-  // 앱 접속 시 개인정보 필드 기본값 자동 설정
-  useEffect(() => {
-    if (platform === 'android' || platform === 'ios') {
-      // 개인정보 필드에 기본값 설정 (스토어 심사용)
-      setValue('name', '앱사용자')
-      setValue('postal_code', '00000')
-      setValue('address1', '주소미입력')
-      setValue('address2', '주소미입력')
-      setValue('phone', '010-0000-0000')
-      setValue('birth_date', '000000')
-      setValue('gender_digit', '1')
-      setValue('gender', 'male')
-
-      // 앱에서는 연락처 마케팅 동의 기본값을 false로 설정
-      setValue('phone_marketing_agree', false)
-      setValue('email_marketing_agree', false)
-
-      // 폼 검증 트리거
-      trigger(['name', 'postal_code', 'address1', 'address2', 'phone', 'birth_date', 'gender_digit', 'gender'])
-    }
-  }, [platform, setValue, trigger])
 
   // 기록 범위와 성별에 따른 등급 표시
   const getGradeDisplay = (recordRange?: string, gender?: string) => {
@@ -226,37 +176,6 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
       const appError = ErrorHandler.handle(error)
       ErrorHandler.logError(appError, 'MembershipForm.checkUserId')
       setIdCheckStatus('none')
-      ErrorHandler.showUserMessage(appError)
-    }
-  }
-
-  // 이메일 중복 확인
-  const checkEmail = async () => {
-    if (!watchedEmail || !watchedEmail.includes('@')) {
-      setEmailCheckStatus('none')
-      return
-    }
-
-    setEmailCheckStatus('checking')
-
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('email')
-        .eq('email', watchedEmail)
-        .single()
-
-      if (error && error.code === 'PGRST116') {
-        // 데이터가 없음 - 사용 가능
-        setEmailCheckStatus('available')
-      } else if (data) {
-        // 데이터가 있음 - 이미 사용 중
-        setEmailCheckStatus('taken')
-      }
-    } catch (error) {
-      const appError = ErrorHandler.handle(error)
-      ErrorHandler.logError(appError, 'MembershipForm.checkEmail')
-      setEmailCheckStatus('none')
       ErrorHandler.showUserMessage(appError)
     }
   }
@@ -324,53 +243,10 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   }
 
   const onSubmit = async (data: MembershipFormData) => {
-    // 웹 접속 시에만 중복 확인 검증
-    if (platform === 'web') {
-      if (idCheckStatus !== 'available') {
-        showError('아이디 중복확인을 완료해주세요')
-        return
-      }
-
-      if (emailCheckStatus !== 'available') {
-        showError('이메일 중복확인을 완료해주세요')
-        return
-      }
-    } else {
-      // 앱 접속 시에는 제출 전 자동으로 중복 확인
-      if (!data.user_id || data.user_id.length < 4) {
-        showError('아이디를 입력해주세요')
-        return
-      }
-
-      if (!data.email || !data.email.includes('@')) {
-        showError('이메일을 입력해주세요')
-        return
-      }
-
-      // 아이디 중복 확인
-      const lowerCaseUserId = data.user_id.toLowerCase()
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('user_id')
-        .eq('user_id', lowerCaseUserId)
-        .single()
-
-      if (existingUser) {
-        showError('이미 사용 중인 아이디입니다')
-        return
-      }
-
-      // 이메일 중복 확인
-      const { data: existingEmail } = await supabase
-        .from('users')
-        .select('email')
-        .eq('email', data.email)
-        .single()
-
-      if (existingEmail) {
-        showError('이미 사용 중인 이메일입니다')
-        return
-      }
+    // 아이디 중복 확인 검증
+    if (idCheckStatus !== 'available') {
+      showError('아이디 중복확인을 완료해주세요')
+      return
     }
 
     setIsLoading(true)
@@ -433,15 +309,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
       <div className="mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl font-bold text-center mb-2">회원가입</h2>
         <p className="text-gray-600 text-sm sm:text-base text-center">
-          {platform === 'web'
-            ? '런텐에 가입하여 다양한 러닝 대회에 참여해보세요!'
-            : '간편하게 가입하여 러닝 대회에 참여해보세요!'}
+          런텐에 가입하여 다양한 러닝 대회에 참여해보세요!
         </p>
-        {platform !== 'web' && (
-          <p className="text-blue-600 text-xs sm:text-sm text-center mt-2">
-            앱 사용자는 간소화된 정보만 입력하시면 됩니다.
-          </p>
-        )}
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
@@ -537,232 +406,175 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           {errors.password_confirm && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.password_confirm.message}</p>}
         </div>
 
-        {/* 성명 - 웹에서만 표시 */}
-        {platform === 'web' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              성명 <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register('name')}
-              type="text"
-              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="실명을 입력하세요"
-            />
-            {errors.name && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.name.message}</p>}
-          </div>
-        ) : (
-          <input type="hidden" {...register('name')} />
-        )}
+        {/* 성명 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            성명 <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register('name')}
+            type="text"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="실명을 입력하세요"
+          />
+          {errors.name && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.name.message}</p>}
+        </div>
 
-        {/* 주소 - 웹에서만 표시 */}
-        {platform === 'web' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              주소 <span className="text-red-500">*</span>
-            </label>
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  {...register('postal_code')}
-                  type="text"
-                  readOnly
-                  className="w-full sm:w-32 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
-                  placeholder="우편번호"
-                />
-                <button
-                  type="button"
-                  onClick={openPostCodeModal}
-                  className="px-4 py-2 sm:py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center justify-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
-                >
-                  <Search className="w-4 h-4 flex-shrink-0" />
-                  <span>우편번호 찾기</span>
-                </button>
-              </div>
+        {/* 주소 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            주소 <span className="text-red-500">*</span>
+          </label>
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
-                {...register('address1')}
+                {...register('postal_code')}
                 type="text"
                 readOnly
-                className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
-                placeholder="주소"
+                className="w-full sm:w-32 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
+                placeholder="우편번호"
               />
-              <input
-                {...register('address2')}
-                type="text"
-                className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="상세주소를 입력하세요"
-              />
+              <button
+                type="button"
+                onClick={openPostCodeModal}
+                className="px-4 py-2 sm:py-3 bg-gray-500 text-white rounded-md hover:bg-gray-600 flex items-center justify-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
+              >
+                <Search className="w-4 h-4 flex-shrink-0" />
+                <span>우편번호 찾기</span>
+              </button>
             </div>
-            {errors.postal_code && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.postal_code.message}</p>}
-            {errors.address1 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address1.message}</p>}
-            {errors.address2 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address2.message}</p>}
-          </div>
-        ) : (
-          <>
-            <input type="hidden" {...register('postal_code')} />
-            <input type="hidden" {...register('address1')} />
-            <input type="hidden" {...register('address2')} />
-          </>
-        )}
-
-        {/* 연락처 - 웹에서만 표시 */}
-        {platform === 'web' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              연락처 <span className="text-red-500">*</span>
-            </label>
             <input
-              {...register('phone')}
+              {...register('address1')}
+              type="text"
+              readOnly
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md bg-gray-50"
+              placeholder="주소"
+            />
+            <input
+              {...register('address2')}
               type="text"
               className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="010-1234-5678"
-              onChange={(e) => {
-                const formatted = formatPhoneNumber(e.target.value)
-                setValue('phone', formatted)
-              }}
+              placeholder="상세주소를 입력하세요"
             />
-            <div className="mt-2 sm:mt-3">
-              <label className="flex items-center">
-                <input
-                  {...register('phone_marketing_agree')}
-                  type="checkbox"
-                  className="mr-2 touch-manipulation"
-                  onChange={(e) => {
-                    setValue('phone_marketing_agree', e.target.checked)
-                    setValue('email_marketing_agree', e.target.checked)
-                  }}
-                />
-                <span className="text-sm text-gray-600 break-words">마케팅 정보 수신에 동의합니다</span>
-              </label>
-            </div>
-            {errors.phone && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.phone.message}</p>}
           </div>
-        ) : (
-          <input type="hidden" {...register('phone')} />
-        )}
+          {errors.postal_code && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.postal_code.message}</p>}
+          {errors.address1 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address1.message}</p>}
+          {errors.address2 && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.address2.message}</p>}
+        </div>
+
+        {/* 연락처 */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            연락처 <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register('phone')}
+            type="text"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="010-1234-5678"
+            onChange={(e) => {
+              const formatted = formatPhoneNumber(e.target.value)
+              setValue('phone', formatted)
+            }}
+          />
+          <div className="mt-2 sm:mt-3">
+            <label className="flex items-center">
+              <input
+                {...register('phone_marketing_agree')}
+                type="checkbox"
+                className="mr-2 touch-manipulation"
+                onChange={(e) => {
+                  setValue('phone_marketing_agree', e.target.checked)
+                  setValue('email_marketing_agree', e.target.checked)
+                }}
+              />
+              <span className="text-sm text-gray-600 break-words">마케팅 정보 수신에 동의합니다</span>
+            </label>
+          </div>
+          {errors.phone && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.phone.message}</p>}
+        </div>
 
         {/* 이메일 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             이메일 <span className="text-red-500">*</span>
           </label>
-          <div className="flex gap-2">
-            <input
-              {...register('email')}
-              type="email"
-              className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="example@email.com"
-              onChange={(e) => {
-                register('email').onChange(e)
-                setEmailCheckStatus('none')
-              }}
-            />
-            <button
-              type="button"
-              onClick={checkEmail}
-              disabled={!watchedEmail || !watchedEmail.includes('@') || emailCheckStatus === 'checking'}
-              className="px-4 py-2 sm:py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm sm:text-base font-medium touch-manipulation"
-            >
-              {emailCheckStatus === 'checking' ? (
-                <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-              ) : (
-                '중복확인'
-              )}
-            </button>
-          </div>
-          {emailCheckStatus === 'available' && (
-            <p className="text-green-600 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              사용 가능한 이메일입니다
-            </p>
-          )}
-          {emailCheckStatus === 'taken' && (
-            <p className="text-red-500 text-xs sm:text-sm mt-1 flex items-center gap-1 break-words">
-              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              이미 사용 중인 이메일입니다
-            </p>
-          )}
+          <input
+            {...register('email')}
+            type="email"
+            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="example@email.com"
+          />
           {errors.email && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.email.message}</p>}
         </div>
 
-        {/* 주민번호 앞자리 (생년월일 + 성별) - 웹에서만 표시 */}
-        {platform === 'web' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              주민번호(앞 7자리) <span className="text-red-500">*</span>
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                {...register('birth_date')}
-                type="text"
-                className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
-                placeholder="000000"
-                maxLength={6}
-                onChange={(e) => {
-                  const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6)
-                  setValue('birth_date', cleaned)
-                }}
-              />
-              <span className="text-lg sm:text-xl font-bold text-gray-400">-</span>
-              <input
-                {...register('gender_digit')}
-                type="text"
-                className="w-12 sm:w-14 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-medium"
-                placeholder="0"
-                maxLength={1}
-                onChange={(e) => handleGenderDigitChange(e.target.value)}
-              />
-              <div className="flex-1 flex items-center gap-1">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-300 rounded-full"></div>
-                ))}
-              </div>
+        {/* 주민번호 앞자리 (생년월일 + 성별) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            주민번호(앞 7자리) <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              {...register('birth_date')}
+              type="text"
+              className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+              placeholder="000000"
+              maxLength={6}
+              onChange={(e) => {
+                const cleaned = e.target.value.replace(/\D/g, '').slice(0, 6)
+                setValue('birth_date', cleaned)
+              }}
+            />
+            <span className="text-lg sm:text-xl font-bold text-gray-400">-</span>
+            <input
+              {...register('gender_digit')}
+              type="text"
+              className="w-12 sm:w-14 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center font-medium"
+              placeholder="0"
+              maxLength={1}
+              onChange={(e) => handleGenderDigitChange(e.target.value)}
+            />
+            <div className="flex-1 flex items-center gap-1">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="w-2 h-2 sm:w-3 sm:h-3 bg-gray-300 rounded-full"></div>
+              ))}
             </div>
-            {errors.birth_date && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.birth_date.message}</p>}
-            {errors.gender_digit && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender_digit.message}</p>}
           </div>
-        ) : (
-          <>
-            <input type="hidden" {...register('birth_date')} />
-            <input type="hidden" {...register('gender_digit')} />
-          </>
-        )}
+          {errors.birth_date && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.birth_date.message}</p>}
+          {errors.gender_digit && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender_digit.message}</p>}
+        </div>
 
-        {/* 성별 (자동 선택되지만 수정 가능) - 웹에서만 표시 */}
-        {platform === 'web' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              성별 {watchedGenderDigit && '(자동 선택됨, 수정 가능)'} <span className="text-red-500">*</span>
+        {/* 성별 (자동 선택되지만 수정 가능) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            성별 {watchedGenderDigit && '(자동 선택됨, 수정 가능)'} <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3 sm:gap-4">
+            <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
+              watchedGender === 'male' ? 'bg-blue-100 border-blue-500 font-semibold' : 'bg-white border-gray-300 hover:border-blue-300'
+            }`}>
+              <input
+                {...register('gender')}
+                type="radio"
+                value="male"
+                className="mr-2"
+              />
+              <span className="text-sm sm:text-base">남성</span>
             </label>
-            <div className="flex gap-3 sm:gap-4">
-              <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
-                watchedGender === 'male' ? 'bg-blue-100 border-blue-500 font-semibold' : 'bg-white border-gray-300 hover:border-blue-300'
-              }`}>
-                <input
-                  {...register('gender')}
-                  type="radio"
-                  value="male"
-                  className="mr-2"
-                />
-                <span className="text-sm sm:text-base">남성</span>
-              </label>
-              <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
-                watchedGender === 'female' ? 'bg-pink-100 border-pink-500 font-semibold' : 'bg-white border-gray-300 hover:border-pink-300'
-              }`}>
-                <input
-                  {...register('gender')}
-                  type="radio"
-                  value="female"
-                  className="mr-2"
-                />
-                <span className="text-sm sm:text-base">여성</span>
-              </label>
-            </div>
-            {errors.gender && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender.message}</p>}
+            <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-md transition-all cursor-pointer border-2 ${
+              watchedGender === 'female' ? 'bg-pink-100 border-pink-500 font-semibold' : 'bg-white border-gray-300 hover:border-pink-300'
+            }`}>
+              <input
+                {...register('gender')}
+                type="radio"
+                value="female"
+                className="mr-2"
+              />
+              <span className="text-sm sm:text-base">여성</span>
+            </label>
           </div>
-        ) : (
-          <input type="hidden" {...register('gender')} />
-        )}
+          {errors.gender && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.gender.message}</p>}
+        </div>
 
         {/* 기록 */}
         <div>

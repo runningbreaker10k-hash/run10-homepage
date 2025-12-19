@@ -1,66 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Trophy, MapPin, Clock, Star, Zap, Target, Award } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { Competition } from '@/types'
-import { ErrorHandler } from '@/lib/errorHandler'
-import { SectionLoading } from '@/components/LoadingSpinner'
-import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
-import { useState, useEffect } from 'react'
-import Head from 'next/head'
 import PagePopup from '@/components/PagePopup'
+import { useState, useEffect } from 'react'
 
 export default function WebMainPage() {
-  type UpcomingCompetition = {
-    id: string;
-    title: string;
-    description: string;
-    date: string;
-    location: string;
-    registration_end: string;
-    image_url?: string;
-    entry_fee: number;
-    max_participants: number;
-    current_participants: number;
-  }
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
-  const [upcomingCompetitions, setUpcomingCompetitions] = useState<UpcomingCompetition[]>([])
-  const [loading, setLoading] = useState(true)
+  const slideImages = [
+    '/images/main_s01.png',
+    '/images/main_s02.png',
+    '/images/main_s03.png'
+  ]
 
   useEffect(() => {
-    fetchUpcomingCompetitions()
-  }, [])
+    if (isPaused) return
 
-  const fetchUpcomingCompetitions = async () => {
-    try {
-      const now = new Date()
-      // 로컬 타임존으로 날짜 비교 (UTC 변환 방지)
-      const localNow = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString()
-      const { data, error } = await supabase
-        .from('competitions')
-        .select('id, title, description, date, location, registration_end, image_url, entry_fee, max_participants, current_participants')
-        .eq('status', 'published')
-        .gte('registration_end', localNow) // 신청 마감일이 현재 시점보다 나중인 것
-        .order('registration_end', { ascending: true }) // 마감일이 가까운 순서로 정렬
-        .limit(1) // 하나의 대회만 가져오기
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideImages.length)
+    }, 2500) // 7초마다 전환
 
-      if (error) {
-        const appError = ErrorHandler.handle(error)
-        ErrorHandler.logError(appError, 'Home.fetchUpcomingCompetitions')
-        setUpcomingCompetitions([])
-      } else {
-        setUpcomingCompetitions(data || [])
-      }
-    } catch (error) {
-      const appError = ErrorHandler.handle(error)
-      ErrorHandler.logError(appError, 'Home.fetchUpcomingCompetitions')
-      setUpcomingCompetitions([])
-    } finally {
-      setLoading(false)
-    }
-  }
+    return () => clearInterval(interval)
+  }, [isPaused, slideImages.length])
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -88,6 +50,11 @@ export default function WebMainPage() {
                 <p className="opacity-90">전국 러닝 협회가 인증하는</p>
                 <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
               </div>
+              <div className="mt-6 space-y-1 text-base md:text-lg font-normal leading-relaxed">
+                <p className="opacity-90">전국 10km 러닝 대회 개최</p>
+                <p className="opacity-90">전국 10km 러너 랭커 등록</p>
+                <p className="opacity-90">전국 10km 러닝 문화 확대</p>
+              </div>
             </div>
           </div>
 
@@ -99,9 +66,8 @@ export default function WebMainPage() {
                 <span className="block text-red-600">RUN10</span>
               </h1>
               <div className="space-y-1 text-base sm:text-lg md:text-xl font-light tracking-wider">
-                <p className="opacity-90">we&ensp; can RUN10</p>
-                <p className="opacity-90">we must RUN10</p>
-                <p className="opacity-90">we&ensp; like RUN10</p>
+                <p className="opacity-90">10km는 누구나 도전할 수 있는</p>
+                <p className="opacity-90">러너의 기준입니다.</p>
               </div>
             </div>
           </div>
@@ -124,119 +90,68 @@ export default function WebMainPage() {
       {/* 현재 모집중인 대회 Section - 대회 홍보 */}
       <section className="py-12 sm:py-16 lg:py-20 bg-black text-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <SectionLoading height="h-80" text="대회 정보를 불러오는 중..." />
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* 대회 이미지 */}
-              <div className="order-2 lg:order-1">
-                <div
-                  className="w-full h-64 sm:h-80 lg:h-96 bg-cover bg-center bg-no-repeat rounded-lg shadow-2xl relative"
-                  style={{
-                    backgroundImage: upcomingCompetitions.length > 0 && upcomingCompetitions[0]?.image_url
-                      ? `url('${upcomingCompetitions[0].image_url}')`
-                      : "url('/images/competition-bg.jpg')"
-                  }}
-                >
-                  {/* 배경 오버레이 */}
-                  <div className="absolute inset-0 rounded-lg" style={{backgroundColor: '#00000090'}}></div>
+          <div className="max-w-6xl mx-auto">
+            {/* 대회 이미지 슬라이드쇼 */}
+            <div className="mb-8 sm:mb-12">
+              <div
+                className="w-full h-64 sm:h-80 md:h-96 lg:h-96 xl:h-[450px] rounded-lg shadow-2xl relative border-2 border-white overflow-hidden"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+              >
+                {/* 슬라이드 이미지들 */}
+                {slideImages.map((image, index) => (
+                  <div
+                    key={index}
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+                    style={{
+                      backgroundImage: `url('${image}')`,
+                      opacity: currentSlide === index ? 1 : 0,
+                      zIndex: currentSlide === index ? 1 : 0
+                    }}
+                  />
+                ))}
 
-                  {/* 대회 특장점 텍스트 */}
-                  <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 sm:p-6">
-                    <div className="text-center space-y-4">
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-4">
-                        JUST RUN10 대회 특장점
-                      </h3>
-                      <div className="space-y-2 text-sm sm:text-base lg:text-lg">
-                        <p>1. 평지코스 정확한 기록 인증</p>
-                        <p>2. 안전하고 쾌적한 자연 코스</p>
-                        <p>3. 100명 대상 국내 최고 경품</p>
-                        <p>4. 수준별 출발 안정적 레이스</p>
-                      </div>
-                    </div>
-                  </div>
+                {/* 배경 오버레이 */}
+                <div className="absolute inset-0 rounded-lg z-10" style={{backgroundColor: '#000000B3'}}></div>
 
-                  {/* 접수중/마감임박/Coming Soon 배지 */}
-                  <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
-                    <div className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg inline-block ${
-                      upcomingCompetitions.length > 0 && upcomingCompetitions[0]
-                        ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
-                            ? 'bg-orange-600'
-                            : 'bg-red-600')
-                        : ''
-                    }`}>
-                      <span className="text-xs sm:text-sm font-bold text-white">
-                        {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
-                          ? (upcomingCompetitions[0].current_participants / upcomingCompetitions[0].max_participants >= 0.5
-                              ? '마감임박'
-                              : '접수중')
-                          : ''}
-                      </span>
+                {/* 대회 특장점 텍스트 */}
+                <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 sm:p-6 z-20">
+                  <div className="text-center space-y-4">
+                    <div className="space-y-3 text-base sm:text-lg md:text-xl lg:text-2xl font-medium" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
+                      <p>가족과 친구와 함께 전국 명소를 누비며</p>
+                      <p>매달 전국 각지에서 펼쳐지는 레이스</p>
+                      <p>3~4천명 규모의 적지도, 많지도 않은</p>
+                      <p>전국러닝협회 기록 인증 10km 대회</p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 대회 정보 */}
-              <div className="order-1 lg:order-2 text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
-                <div className="space-y-4 sm:space-y-5">
-                  {/* 대회명 */}
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-tight text-white">
-                    {upcomingCompetitions.length > 0 && upcomingCompetitions[0]
-                      ? upcomingCompetitions[0].title
-                      : 'JUST RUN10'
-                    }
-                  </h2>
-
-                  {/* 대회설명 */}
-                  {upcomingCompetitions.length > 0 && upcomingCompetitions[0] ? (
-                    <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-5 sm:p-6 border-l-4 border-red-500 shadow-lg">
-                      <div className="flex items-start text-base sm:text-lg mb-3">
-                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-3 flex-shrink-0 text-red-600 mt-1" />
-                        <div className="space-y-1">
-                          <div className="font-bold text-gray-900">
-                            {format(new Date(upcomingCompetitions[0].date), 'yyyy년 M월 d일 (E)', { locale: ko })}
-                          </div>
-                          <div className="text-red-600 font-semibold text-sm sm:text-base">
-                            시작시간: {format(new Date(upcomingCompetitions[0].date), 'HH:mm')}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-sm sm:text-base mb-2">
-                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-3 flex-shrink-0 text-red-600" />
-                        <span className="font-medium text-gray-800">{upcomingCompetitions[0].location}</span>
-                      </div>
-                      <div className="flex items-center text-sm sm:text-base">
-                        <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-3 flex-shrink-0 text-red-600" />
-                        <span className="font-medium text-gray-800">신청마감: {format(new Date(upcomingCompetitions[0].registration_end), 'M월 d일')}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 sm:p-6 border-l-4 border-gray-400">
-                      <div className="flex items-center text-base sm:text-lg">
-                        <Calendar className="h-5 w-5 sm:h-6 sm:w-6 mr-3 flex-shrink-0 text-gray-600" />
-                        <span className="font-medium text-gray-800">
-                          2025 대회 접수가 마감되었습니다.<br />
-                          새로운 2월 대회가 곧 공개됩니다.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 대회참가버튼 */}
-                  <Link
-                    href={upcomingCompetitions.length > 0 && upcomingCompetitions[0]
-                      ? `/competitions/${upcomingCompetitions[0].id}`
-                      : '/competitions'
-                    }
-                    className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-4 sm:px-5 sm:py-5 md:px-6 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl block hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500 w-full text-center"
-                  >
-                    대회 확인하기
-                  </Link>
+                {/* 슬라이드 인디케이터 */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
+                  {slideImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
+                      }`}
+                      aria-label={`슬라이드 ${index + 1}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
-          )}
+
+            {/* 대회 확인하기 버튼 */}
+            <div className="text-center">
+              <Link
+                href="/competitions"
+                className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
+              >
+                대회 확인하기
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
