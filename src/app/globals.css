@@ -1,19 +1,8 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
+  background: #ffffff;
+  color: #171717;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -28,17 +17,6 @@ input::placeholder, textarea::placeholder {
   color: #6b7280 !important;
 }
 
-/* 다크 모드에서도 입력 필드는 검은색 유지 */
-@media (prefers-color-scheme: dark) {
-  input, textarea, select {
-    color: #000000 !important;
-    background-color: #ffffff !important;
-  }
-  
-  input::placeholder, textarea::placeholder {
-    color: #6b7280 !important;
-  }
-}
 
 /* Header 최우선 표시를 위한 스타일 */
 header {

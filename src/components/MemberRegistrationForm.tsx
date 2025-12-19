@@ -20,6 +20,18 @@ const getDistanceLabel = (distance: string) => {
   return labels[distance] || distance
 }
 
+// 티셔츠 사이즈 라벨 매핑
+const getShirtSizeLabel = (size: string) => {
+  const labels: { [key: string]: string } = {
+    'S': 'S(90)',
+    'M': 'M(95)',
+    'L': 'L(100)',
+    'XL': 'XL(105)',
+    'XXL': 'XXL(110)'
+  }
+  return labels[size] || size
+}
+
 const memberRegistrationSchema = z.object({
   participation_group_id: z.string().min(1, '참가 그룹을 선택해주세요'),
   depositor_name: z.string().min(2, '입금자명을 입력해주세요'),
@@ -265,7 +277,7 @@ export default function MemberRegistrationForm({
     const selectedGroup = participationGroups.find(group => group.id === formData.participation_group_id)
 
     return (
-      <div className="max-w-2xl mx-auto px-4 sm:px-0">
+      <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
             신청 내용 확인
@@ -311,7 +323,7 @@ export default function MemberRegistrationForm({
                 <span className="text-gray-700 font-medium">참가비:</span> ₩{selectedGroup?.entry_fee.toLocaleString()}
               </div>
               <div>
-                <span className="text-gray-700 font-medium">티셔츠 사이즈:</span> {formData.shirt_size}
+                <span className="text-gray-700 font-medium">티셔츠 사이즈:</span> {getShirtSizeLabel(formData.shirt_size)}
               </div>
               <div className="break-words">
                 <span className="text-gray-700 font-medium">입금자명:</span> {formData.depositor_name}
@@ -365,7 +377,7 @@ export default function MemberRegistrationForm({
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-0">
+    <div className="max-w-4xl mx-auto">
       {/* 회원 정보 확인 */}
       <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-center space-x-2 mb-3">
@@ -444,7 +456,7 @@ export default function MemberRegistrationForm({
                   className="sr-only peer"
                 />
                 <div className="w-full py-2 sm:py-3 px-2 sm:px-3 text-center text-xs sm:text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
-                  {size}
+                  {getShirtSizeLabel(size)}
                 </div>
               </label>
             ))}

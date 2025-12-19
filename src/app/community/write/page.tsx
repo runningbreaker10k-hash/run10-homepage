@@ -177,7 +177,7 @@ export default function CommunityWritePage() {
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-12 sm:py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img
             src="/images/community-hero-bg.jpg"
@@ -188,11 +188,11 @@ export default function CommunityWritePage() {
             }}
           />
         </div>
-        <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
             <div className="mb-4 sm:mb-0">
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-2 sm:mb-6">게시글 작성</h1>
-              <p className="text-sm sm:text-xl md:text-2xl text-red-100 leading-relaxed">
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">게시글 작성</h1>
+              <p className="text-lg md:text-xl text-red-100">
                 런텐 회원들과 자유롭게 소통해보세요
               </p>
             </div>

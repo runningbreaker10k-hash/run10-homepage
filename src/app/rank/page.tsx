@@ -184,6 +184,14 @@ export default function RankPage() {
             </div>
           </div>
 
+          {/* 런텐 랭커 등록 수칙 */}
+          <div className="mb-8 max-w-4xl mx-auto bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
+            <div className="text-xs md:text-sm text-gray-700 space-y-1.5">
+              <p>• 엘리트선수(육상단체등록선수)는 랭킹에서 제외 (단, 선수 해지 후 7년 경과자는 가능)</p>
+              <p>• 매 대회마다 기록에 따라 새롭게 갱신</p>
+            </div>
+          </div>
+
           {/* 성별 필터 */}
           <div className="flex gap-3 md:gap-4 mb-8 max-w-2xl mx-auto">
             <button

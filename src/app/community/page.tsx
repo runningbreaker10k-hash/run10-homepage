@@ -136,7 +136,7 @@ export default function CommunityPage() {
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
         <div className="absolute inset-0 opacity-20">
           <img
@@ -149,8 +149,8 @@ export default function CommunityPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">자유게시판</h1>
-          <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">자유게시판</h1>
+          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             런텐 회원들과 자유롭게 소통해보세요
           </p>
         </div>

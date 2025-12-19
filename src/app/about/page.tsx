@@ -17,7 +17,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
         <div className="absolute inset-0 opacity-20">
           <Image
@@ -29,8 +29,8 @@ export default function AboutPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">런텐 RUN10</h1>
-          <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 RUN10</h1>
+          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             전국의 러너들이 함께 달리며 건강한 러닝 문화를 만들어 가겠습니다
           </p>
         </div>

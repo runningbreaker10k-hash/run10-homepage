@@ -2,10 +2,10 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-20">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">개인정보처리방침</h1>
-          <p className="text-xl md:text-2xl text-red-100 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">개인정보처리방침</h1>
+          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             RUN10(런텐) 개인정보처리방침
           </p>
         </div>
