@@ -205,7 +205,7 @@ export default function AppMainPage() {
               RUN10 랭커
             </h2>
             <p className="text-base text-white font-medium mb-8">
-              RUN10 랭커가 되겠어서요
+              RUN10 랭커에 도전하세요.
             </p>
           </div>
 
