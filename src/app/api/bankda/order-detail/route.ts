@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const orderId = body.order_id
 
-    // 3. 주문 조회 (participation_groups와 competitions 조인)
+    // 3. 주문 조회 (participation_groups를 통해 competitions 조인)
     const { data: registration, error } = await supabase
       .from('registrations')
       .select(`
@@ -83,10 +83,9 @@ export async function POST(request: NextRequest) {
         participation_groups (
           name,
           distance,
-          competition_id
-        ),
-        competitions (
-          title
+          competitions (
+            title
+          )
         )
       `)
       .eq('id', orderId)
@@ -110,7 +109,7 @@ export async function POST(request: NextRequest) {
       .replace('T', ' ')
 
     // 5. 품목명 생성 (대회명 + 참가종목)
-    const competitionTitle = registration.competitions?.title || '대회'
+    const competitionTitle = registration.participation_groups?.competitions?.title || '대회'
     const groupName = registration.participation_groups?.name || '일반부'
     const productName = `${competitionTitle} ${groupName}`
 

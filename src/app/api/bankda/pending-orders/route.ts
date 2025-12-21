@@ -40,78 +40,89 @@ interface BankdaOrder {
   }>
 }
 
-export async function GET() {
-  try {
-    // 1. payment_status='pending'인 신청 조회 (participation_groups와 competitions 조인)
-    const { data: registrations, error } = await supabase
-      .from('registrations')
-      .select(`
-        id,
+// 공통 로직 함수
+async function getPendingOrders() {
+  // 1. payment_status='pending'인 신청 조회 (participation_groups를 통해 competitions 조인)
+  const { data: registrations, error } = await supabase
+    .from('registrations')
+    .select(`
+      id,
+      name,
+      depositor_name,
+      entry_fee,
+      created_at,
+      participation_groups (
         name,
-        depositor_name,
-        entry_fee,
-        created_at,
-        participation_groups (
-          name,
-          distance,
-          competition_id
-        ),
+        distance,
         competitions (
           title
         )
-      `)
-      .eq('payment_status', 'pending')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('[뱅크다A] 미확인 주문 조회 오류:', error)
-      return NextResponse.json(
-        {
-          return_code: 401,
-          description: '인증 정보 오류',
-          orders: []
-        },
-        { status: 401 }
       )
+    `)
+    .eq('payment_status', 'pending')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('[뱅크다A] 미확인 주문 조회 오류:', error)
+    throw error
+  }
+
+  // 2. 뱅크다A 형식으로 변환
+  const orders: BankdaOrder[] = registrations.map((registration: any) => {
+    // 날짜 형식 변환 (2025-12-09T17:59:01+09:00 → 2025-12-09 17:59:01)
+    const orderDate = new Date(registration.created_at)
+      .toISOString()
+      .slice(0, 19)
+      .replace('T', ' ')
+
+    // 품목명 생성 (대회명 + 참가종목)
+    const competitionTitle = registration.participation_groups?.competitions?.title || '대회'
+    const groupName = registration.participation_groups?.name || '일반부'
+    const productName = `${competitionTitle} ${groupName}`
+
+    return {
+      order_id: registration.id,
+      buyer_name: registration.name,
+      billing_name: registration.depositor_name,
+      bank_account_no: '73491000872504', // 하나은행 734-910008-72504 (하이픈 제거)
+      bank_code_name: '하나은행',
+      order_price_amount: registration.entry_fee,
+      order_date: orderDate,
+      items: [
+        {
+          product_name: productName
+        }
+      ]
     }
+  })
 
-    // 2. 뱅크다A 형식으로 변환
-    const orders: BankdaOrder[] = registrations.map((registration: any) => {
-      // 날짜 형식 변환 (2025-12-09T17:59:01+09:00 → 2025-12-09 17:59:01)
-      const orderDate = new Date(registration.created_at)
-        .toISOString()
-        .slice(0, 19)
-        .replace('T', ' ')
+  console.log(`[뱅크다A] 미확인 주문 ${orders.length}건 조회 완료`)
+  return orders
+}
 
-      // 품목명 생성 (대회명 + 참가종목)
-      const competitionTitle = registration.competitions?.title || '대회'
-      const groupName = registration.participation_groups?.name || '일반부'
-      const productName = `${competitionTitle} ${groupName}`
+// GET 요청 처리 (뱅크다A 호출)
+export async function GET() {
+  try {
+    const orders = await getPendingOrders()
+    return NextResponse.json({ orders })
+  } catch (error) {
+    console.error('[뱅크다A] 미확인주문리스트 API 오류:', error)
+    return NextResponse.json(
+      {
+        return_code: 500,
+        description: '서버 오류',
+        orders: []
+      },
+      { status: 500 }
+    )
+  }
+}
 
-      return {
-        order_id: registration.id,
-        buyer_name: registration.name,
-        billing_name: registration.depositor_name,
-        bank_account_no: '73491000872504', // 하나은행 734-910008-72504 (하이픈 제거)
-        bank_code_name: '하나은행',
-        order_price_amount: registration.entry_fee,
-        order_date: orderDate,
-        items: [
-          {
-            product_name: productName
-          }
-        ]
-      }
-    })
-
-    // 3. 로그 출력
-    console.log(`[뱅크다A] 미확인 주문 ${orders.length}건 조회 완료`)
-
-    // 4. 응답 반환
-    return NextResponse.json({
-      orders: orders
-    })
-
+// POST 요청 처리 (뱅크다A 호출 - GET과 동일한 동작)
+export async function POST() {
+  try {
+    const orders = await getPendingOrders()
+    return NextResponse.json({ orders })
   } catch (error) {
     console.error('[뱅크다A] 미확인주문리스트 API 오류:', error)
     return NextResponse.json(

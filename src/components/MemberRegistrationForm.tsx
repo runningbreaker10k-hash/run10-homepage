@@ -486,8 +486,8 @@ export default function MemberRegistrationForm({
           </p>
         </div>
 
-        {/* 기타 사항 */}
-        <div>
+        {/* 기타 사항 - 숨김 처리 */}
+        <div className="hidden">
           <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
             <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
             <span>기타 사항 (선택)</span>

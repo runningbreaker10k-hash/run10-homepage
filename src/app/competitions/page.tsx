@@ -23,7 +23,7 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<CompetitionWithGroups[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('ongoing')
 
   useEffect(() => {
     fetchCompetitions()

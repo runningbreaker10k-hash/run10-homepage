@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react'
 export default function WebMainPage() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [currentMaleRanker, setCurrentMaleRanker] = useState(0)
+  const [currentFemaleRanker, setCurrentFemaleRanker] = useState(0)
 
   const slideImages = [
     '/images/main_s01.png',
@@ -14,15 +16,47 @@ export default function WebMainPage() {
     '/images/main_s03.png'
   ]
 
+  const maleRankers = [
+    '/images/rank/r01.png',
+    '/images/rank/r02.png',
+    '/images/rank/r03.png',
+    '/images/rank/r04.png'
+  ]
+
+  const femaleRankers = [
+    '/images/rank/r05.png',
+    '/images/rank/r06.png',
+    '/images/rank/r07.png',
+    '/images/rank/r08.png'
+  ]
+
   useEffect(() => {
     if (isPaused) return
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slideImages.length)
-    }, 2500) // 7초마다 전환
+    }, 2500) // 2.5초마다 전환
 
     return () => clearInterval(interval)
   }, [isPaused, slideImages.length])
+
+  // 남성 랭커 슬라이드 자동 전환
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMaleRanker((prev) => (prev + 1) % maleRankers.length)
+    }, 3000) // 3초마다 전환
+
+    return () => clearInterval(interval)
+  }, [maleRankers.length])
+
+  // 여성 랭커 슬라이드 자동 전환
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFemaleRanker((prev) => (prev + 1) % femaleRankers.length)
+    }, 3000) // 3초마다 전환
+
+    return () => clearInterval(interval)
+  }, [femaleRankers.length])
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -178,7 +212,7 @@ export default function WebMainPage() {
                       key={index}
                       onClick={() => setCurrentSlide(index)}
                       className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                        currentSlide === index ? 'bg-white w-6' : 'bg-white/50'
+                        currentSlide === index ? 'bg-red-600 w-6' : 'bg-white/50'
                       }`}
                       aria-label={`슬라이드 ${index + 1}`}
                     />
@@ -200,7 +234,7 @@ export default function WebMainPage() {
         </div>
       </section>
 
-      {/* RUN 10 티어 Section - 4개 부족 이미지 배치 */}
+      {/* RUN 10 티어 Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
@@ -215,8 +249,17 @@ export default function WebMainPage() {
             </p>
           </div>
 
-          {/* 4개 부족 이미지 - 반응형 그리드 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-6">
+          {/* 모바일/앱용 단일 이미지 */}
+          <div className="block md:hidden">
+            <img
+              src="/images/grades/main_m.png"
+              alt="RUN10 티어"
+              className="w-full h-auto mx-auto"
+            />
+          </div>
+
+          {/* 웹용 4개 부족 이미지 */}
+          <div className="hidden md:grid grid-cols-4 gap-6">
             {/* 치타족 */}
             <div className="text-center">
               <img
@@ -252,6 +295,184 @@ export default function WebMainPage() {
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* RUN10 랭커 Section */}
+      <section className="py-12 sm:py-16 lg:py-20 bg-black text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
+              RUN10 랭커
+            </h2>
+            <p className="text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 lg:mb-12">
+              RUN10 랭커에 도전하세요.
+            </p>
+          </div>
+
+          {/* 모바일용 슬라이드 */}
+          <div className="block md:hidden space-y-8 mb-12">
+            {/* 남성 랭커 슬라이드 */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4 text-center">남성 랭커</h3>
+              <div className="relative w-full max-w-sm mx-auto">
+                <div className="relative rounded-lg overflow-hidden shadow-xl">
+                  {maleRankers.map((image, index) => (
+                    <div
+                      key={index}
+                      className="transition-opacity duration-700"
+                      style={{
+                        opacity: currentMaleRanker === index ? 1 : 0,
+                        position: currentMaleRanker === index ? 'relative' : 'absolute',
+                        top: currentMaleRanker === index ? 'auto' : 0,
+                        left: currentMaleRanker === index ? 'auto' : 0,
+                        width: '100%',
+                        zIndex: currentMaleRanker === index ? 1 : 0
+                      }}
+                    >
+                      <img
+                        src={image}
+                        alt={`남성 랭커 ${index + 1}위`}
+                        className="w-full h-auto rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* 슬라이드 인디케이터 */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {maleRankers.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentMaleRanker(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentMaleRanker === index ? 'bg-red-600 w-6' : 'bg-white/50'
+                      }`}
+                      aria-label={`남성 랭커 ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 여성 랭커 슬라이드 */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4 text-center">여성 랭커</h3>
+              <div className="relative w-full max-w-sm mx-auto">
+                <div className="relative rounded-lg overflow-hidden shadow-xl">
+                  {femaleRankers.map((image, index) => (
+                    <div
+                      key={index}
+                      className="transition-opacity duration-700"
+                      style={{
+                        opacity: currentFemaleRanker === index ? 1 : 0,
+                        position: currentFemaleRanker === index ? 'relative' : 'absolute',
+                        top: currentFemaleRanker === index ? 'auto' : 0,
+                        left: currentFemaleRanker === index ? 'auto' : 0,
+                        width: '100%',
+                        zIndex: currentFemaleRanker === index ? 1 : 0
+                      }}
+                    >
+                      <img
+                        src={image}
+                        alt={`여성 랭커 ${index + 1}위`}
+                        className="w-full h-auto rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* 슬라이드 인디케이터 */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {femaleRankers.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentFemaleRanker(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentFemaleRanker === index ? 'bg-red-600 w-6' : 'bg-white/50'
+                      }`}
+                      aria-label={`여성 랭커 ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 웹용 2행 4열 그리드 */}
+          <div className="hidden md:block">
+            {/* 남성 랭커 */}
+            <div className="grid grid-cols-4 gap-6 mb-6">
+              <div className="text-center">
+                <img
+                  src="/images/rank/r01.png"
+                  alt="남성 랭커 1위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r02.png"
+                  alt="남성 랭커 2위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r03.png"
+                  alt="남성 랭커 3위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r04.png"
+                  alt="남성 랭커 4위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+
+            {/* 여성 랭커 */}
+            <div className="grid grid-cols-4 gap-6 mb-8 sm:mb-12">
+              <div className="text-center">
+                <img
+                  src="/images/rank/r05.png"
+                  alt="여성 랭커 1위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r06.png"
+                  alt="여성 랭커 2위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r07.png"
+                  alt="여성 랭커 3위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+              <div className="text-center">
+                <img
+                  src="/images/rank/r08.png"
+                  alt="여성 랭커 4위"
+                  className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 더보기 버튼 */}
+          <div className="text-center">
+            <Link
+              href="/rank"
+              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
+            >
+              더보기 +
+            </Link>
           </div>
         </div>
       </section>

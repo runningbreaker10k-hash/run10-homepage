@@ -702,8 +702,8 @@ export default function CompetitionDetailPage() {
               <div className="bg-white rounded-lg p-4 mb-6">
                 <div className="text-sm text-gray-600 space-y-2">
                   <div className="flex justify-between">
-                    <span>참가 그룹:</span>
-                    <span className="font-semibold">{userRegistration.participation_groups?.name || '일반부'}</span>
+                    <span>대회명:</span>
+                    <span className="font-semibold">{competition.title}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>거리:</span>
@@ -715,8 +715,8 @@ export default function CompetitionDetailPage() {
                       userRegistration.payment_status === 'confirmed' ? 'text-green-600' :
                       userRegistration.payment_status === 'pending' ? 'text-yellow-600' : 'text-red-600'
                     }`}>
-                      {userRegistration.payment_status === 'confirmed' ? '결제완료' :
-                       userRegistration.payment_status === 'pending' ? '결제대기' : '취소됨'}
+                      {userRegistration.payment_status === 'confirmed' ? '입금확인' :
+                       userRegistration.payment_status === 'pending' ? '입금대기' : '취소됨'}
                     </span>
                   </div>
                 </div>

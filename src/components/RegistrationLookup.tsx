@@ -70,6 +70,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
   const [autoSearchAttempted, setAutoSearchAttempted] = useState(false)
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   const {
     register: registerLookup,
@@ -262,6 +264,82 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
     resetUpdate()
   }
 
+  // 신청 취소 처리
+  const handleCancelRegistration = async () => {
+    if (!registration || isCancelling) return
+
+    // 입금 대기 상태가 아니면 취소 불가
+    if (registration.payment_status !== 'pending') {
+      alert('입금 대기 상태인 신청만 취소할 수 있습니다.')
+      return
+    }
+
+    setIsCancelling(true)
+
+    try {
+      // 1. 신청 정보 삭제
+      const { error: deleteError } = await supabase
+        .from('registrations')
+        .delete()
+        .eq('id', registration.id)
+
+      if (deleteError) {
+        console.error('신청 삭제 오류:', deleteError)
+        alert('신청 취소 중 오류가 발생했습니다. 다시 시도해주세요.')
+        return
+      }
+
+      // 2. 대회 참가자 수 감소
+      const { error: updateCompError } = await supabase
+        .from('competitions')
+        .update({
+          current_participants: competition.current_participants - 1
+        })
+        .eq('id', competition.id)
+
+      if (updateCompError) {
+        console.error('대회 참가자 수 업데이트 오류:', updateCompError)
+      }
+
+      // 3. 참가 그룹 참가자 수 감소 (participation_group_id가 있는 경우만)
+      if (registration.participation_group_id) {
+        // 현재 참가 그룹 정보 조회
+        const { data: groupData, error: groupFetchError } = await supabase
+          .from('participation_groups')
+          .select('current_participants')
+          .eq('id', registration.participation_group_id)
+          .single()
+
+        if (!groupFetchError && groupData) {
+          const { error: updateGroupError } = await supabase
+            .from('participation_groups')
+            .update({
+              current_participants: Math.max(0, groupData.current_participants - 1)
+            })
+            .eq('id', registration.participation_group_id)
+
+          if (updateGroupError) {
+            console.error('참가 그룹 참가자 수 업데이트 오류:', updateGroupError)
+          }
+        }
+      }
+
+      // 4. 성공 처리
+      alert('신청이 성공적으로 취소되었습니다.')
+      setShowCancelModal(false)
+      handleReset()
+
+      // 5. 페이지 새로고침 (참가자 수 업데이트 반영)
+      window.location.reload()
+
+    } catch (error) {
+      console.error('신청 취소 오류:', error)
+      alert('신청 취소 중 오류가 발생했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
   // 대회 신청 마감 여부 확인
   const isRegistrationOpen = () => {
     const now = new Date()
@@ -441,18 +519,49 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         </div>
 
         {registration.payment_status === 'pending' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-            <div className="flex items-start">
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
-                <div className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                  <p className="break-words">은행: 하나은행</p>
-                  <p className="break-all">계좌: 734-910008-72504</p>
-                  <p className="break-words">예금주: (주)러닝브레이커</p>
-                  <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
-                  <p className="font-medium break-words">입금자명: {registration.depositor_name}</p>
+          <>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 sm:p-4 mb-4">
+              <div className="flex items-start">
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400 mr-2 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
+                  <div className="text-xs sm:text-sm text-yellow-700 space-y-1">
+                    <p className="break-words">은행: 하나은행</p>
+                    <p className="break-all">계좌: 734-910008-72504</p>
+                    <p className="break-words">예금주: (주)러닝브레이커</p>
+                    <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
+                    <p className="font-medium break-words">입금자명: {registration.depositor_name}</p>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* 취소 버튼 */}
+            <div className="mb-4 sm:mb-6">
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="w-full py-3 px-4 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm sm:text-base touch-manipulation flex items-center justify-center"
+              >
+                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                신청 취소하기
+              </button>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                ⚠️ 입금 전에만 취소할 수 있습니다
+              </p>
+            </div>
+          </>
+        )}
+
+        {registration.payment_status === 'confirmed' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex items-start">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1">입금 확인 완료</h4>
+                <p className="text-xs sm:text-sm text-blue-700">
+                  입금이 확인되어 참가가 확정되었습니다.<br/>
+                  취소가 필요한 경우 대회 요청게시판을 통해 문의해주세요.
+                </p>
               </div>
             </div>
           </div>
@@ -675,6 +784,58 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
           )}
         </div>
       </div>
+
+      {/* 취소 확인 모달 */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">신청을 취소하시겠습니까?</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                취소된 신청은 복구할 수 없습니다.<br/>
+                다시 참가하시려면 새로 신청하셔야 합니다.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-left">
+                <p className="text-xs text-yellow-800">
+                  ⚠️ <strong>주의사항</strong><br/>
+                  • 입금 후에는 직접 취소할 수 없습니다<br/>
+                  • 취소 시 자리가 다른 참가자에게 제공됩니다
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                돌아가기
+              </button>
+              <button
+                onClick={handleCancelRegistration}
+                disabled={isCancelling}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+              >
+                {isCancelling ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    취소 처리 중...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="h-5 w-5 mr-2" />
+                    신청 취소
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
