@@ -36,7 +36,8 @@ interface OrderResult {
   description: string
 }
 
-export async function POST(request: NextRequest) {
+// 공통 처리 로직
+async function handleConfirmPayment(request: NextRequest) {
   try {
     // 1. JSON 파싱
     let body: BankdaRequest
@@ -167,12 +168,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// POST 요청 처리
+export async function POST(request: NextRequest) {
+  return handleConfirmPayment(request)
+}
+
+// PUT 요청 처리 (뱅크다A가 PUT으로 요청을 보냄)
+export async function PUT(request: NextRequest) {
+  return handleConfirmPayment(request)
+}
+
 // GET 요청 처리 (테스트용)
 export async function GET() {
   return NextResponse.json({
     service: '뱅크다A 자동 입금 확인',
     status: 'active',
     endpoint: '/api/bankda/confirm-payment',
-    method: 'POST'
+    method: 'POST, PUT'
   })
 }
