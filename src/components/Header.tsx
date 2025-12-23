@@ -32,10 +32,10 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
+            <a href="/" className="flex items-center space-x-3">
               <div className="flex items-center space-x-3">
                 {/* 로고 이미지 - 러너 실루엣 */}
-                <div 
+                <div
                   className="w-16 h-10"
                   style={{
                     backgroundImage: "url('/images/runner-logo.png')", // 러너 로고 이미지 경로
@@ -48,7 +48,7 @@ export default function Header() {
                 </div>
                 <span className="text-xl font-bold text-white">런텐 RUN10</span>
               </div>
-            </Link>
+            </a>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6">

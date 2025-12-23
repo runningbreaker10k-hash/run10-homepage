@@ -406,7 +406,7 @@ export default function MemberRegistrationForm({
           </div>
         </div>
         <p className="text-xs text-blue-600 mt-2">
-          💡 회원 정보가 자동으로 입력됩니다. 정보가 잘못된 경우 마이페이지에서 수정해주세요.
+          ※ 회원 정보가 자동으로 입력됩니다. 정보가 잘못된 경우 마이페이지에서 수정해주세요.
         </p>
       </div>
 
@@ -482,7 +482,7 @@ export default function MemberRegistrationForm({
             <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.depositor_name.message}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            💳 입금자명을 반드시 확인해 주세요.
+            ※ 입금자명을 반드시 확인해 주세요.
           </p>
         </div>
 
@@ -515,7 +515,7 @@ export default function MemberRegistrationForm({
             <p className="break-all"><strong>계좌번호:</strong> 하나은행 734-910008-72504</p>
             <p className="break-words"><strong>예금주:</strong> (주)러닝브레이커</p>
             <p className="text-xs mt-2">
-              ⚠️ 입금 확인 후 참가 확정됩니다.
+              ※ 입금 확인 후 참가 확정됩니다.
             </p>
           </div>
         </div>
@@ -547,8 +547,8 @@ export default function MemberRegistrationForm({
         <h4 className="text-sm font-medium text-gray-900 mb-2">📋 신청 안내사항</h4>
         <ul className="text-xs text-gray-600 space-y-1 leading-relaxed">
           <li>• 회원 신청은 마이페이지에서 조회 및 관리할 수 있습니다</li>
-          <li>• 신청 후 취소는 대회 게시판을 통해 요청해주세요</li>
-          <li>• 참가비 입금 전까지는 신청이 확정되지 않습니다</li>
+          <li>• 신청 조회 시 [입금확인]이 되면 별도 안내가 없더라도 참가 확정이 된 상태입니다. </li>
+          <li>• 신청 후 취소는 대회 요청게시판을 통해 해주세요</li>
           <li>• 개인정보는 대회 운영 목적으로만 사용됩니다</li>
         </ul>
       </div>

@@ -180,6 +180,9 @@ export default function AppMainPage() {
             <p className="text-base text-gray-700 font-medium">
               나의 RUN10 티어를 확인해 보세요
             </p>
+            <p className="text-center text-sm text-gray-600 mt-5 font-medium">
+              마이페이지에서 언제든지 수정 가능합니다
+            </p>
           </div>
 
           {/* 티어 단일 이미지 */}
@@ -191,9 +194,7 @@ export default function AppMainPage() {
             />
           </div>
 
-          <p className="text-center text-sm text-gray-600 mt-5 font-medium">
-            마이페이지에서 언제든지 수정 가능합니다
-          </p>
+          
         </div>
       </section>
 

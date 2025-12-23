@@ -3,12 +3,15 @@
 import Link from 'next/link'
 import PagePopup from '@/components/PagePopup'
 import { useState, useEffect } from 'react'
+import { X, Download } from 'lucide-react'
 
 export default function WebMainPage() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [currentMaleRanker, setCurrentMaleRanker] = useState(0)
   const [currentFemaleRanker, setCurrentFemaleRanker] = useState(0)
+  const [showAppBanner, setShowAppBanner] = useState(false)
+  const [mobileOS, setMobileOS] = useState<'ios' | 'android' | null>(null)
 
   const slideImages = [
     '/images/main_s01.png',
@@ -29,6 +32,65 @@ export default function WebMainPage() {
     '/images/rank/r07.png',
     '/images/rank/r08.png'
   ]
+
+  // 모바일 OS 감지 및 배너 표시 로직
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // 배너 숨김 시간 확인 (30분)
+    const hiddenUntil = localStorage.getItem('appBannerHiddenUntil')
+
+    if (hiddenUntil) {
+      const hiddenTime = parseInt(hiddenUntil)
+      const currentTime = new Date().getTime()
+
+      // 30분(1800000ms)이 지나지 않았으면 배너 표시 안 함
+      if (currentTime < hiddenTime) {
+        setShowAppBanner(false)
+        return
+      } else {
+        // 30분이 지났으면 localStorage에서 제거
+        localStorage.removeItem('appBannerHiddenUntil')
+      }
+    }
+
+    // 모바일 OS 감지
+    const userAgent = navigator.userAgent.toLowerCase()
+
+    if (userAgent.indexOf('iphone') !== -1 || userAgent.indexOf('ipad') !== -1 || userAgent.indexOf('ipod') !== -1) {
+      setMobileOS('ios')
+      setShowAppBanner(true)
+    } else if (userAgent.indexOf('android') !== -1) {
+      setMobileOS('android')
+      setShowAppBanner(true)
+    } else {
+      // 데스크톱은 배너 표시 안 함
+      setShowAppBanner(false)
+    }
+  }, [])
+
+  // 배너 닫기 (10분 동안 보지 않기)
+  const handleCloseBanner = () => {
+    // 현재 시간 + 10분(600000ms) 타임스탬프 저장
+    const hideUntilTime = new Date().getTime() + 600000
+    localStorage.setItem('appBannerHiddenUntil', hideUntilTime.toString())
+    setShowAppBanner(false)
+  }
+
+  // X 버튼 클릭 (단순 닫기, 저장하지 않음)
+  const handleDismiss = () => {
+    setShowAppBanner(false)
+  }
+
+  // 앱 다운로드 링크
+  const getAppStoreLink = () => {
+    if (mobileOS === 'ios') {
+      return 'https://apps.apple.com/kr/app/%EB%9F%B0%ED%85%90/id6755452057'
+    } else if (mobileOS === 'android') {
+      return 'https://play.google.com/store/apps/details?id=com.runten.app'
+    }
+    return '#'
+  }
 
   useEffect(() => {
     if (isPaused) return
@@ -476,6 +538,63 @@ export default function WebMainPage() {
           </div>
         </div>
       </section>
+
+      {/* 모바일 앱 다운로드 모달 */}
+      {showAppBanner && mobileOS && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-8" style={{ backgroundColor: '#000000d1' }}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden relative">
+            {/* X 닫기 버튼 */}
+            <button
+              onClick={handleDismiss}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+              aria-label="닫기"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* 모달 내용 */}
+            <div className="p-4 text-center">
+              {/* 아이콘 + RUN10 로고 */}
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <img
+                  src="/images/app_icon.png"
+                  alt="런텐 앱 아이콘"
+                  className="w-20 h-20 rounded-xl shadow-md"
+                />
+                <h2 className="text-3xl font-black text-red-600">런텐 RUN10</h2>
+              </div>
+
+              {/* 제목 */}
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                런텐 앱에서 더 편리하게!
+              </h3>
+
+              {/* 설명 */}
+              <h3 className="text-xl text-gray-600 mb-8">
+                더 많은 기능을 이용해보세요.
+              </h3>
+
+              {/* 앱 다운로드 버튼 */}
+              <a
+                href={getAppStoreLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-xl text-base font-bold hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-xl mb-3"
+              >
+                런텐 앱에서 보기
+              </a>
+
+              {/* 웹으로 볼게요 버튼 */}
+              <button
+                onClick={handleCloseBanner}
+                className="w-full text-sm text-gray-600 hover:text-gray-800 py-1 transition-colors"
+              >
+                괜찮습니다. 모바일 웹으로 볼게요.
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
