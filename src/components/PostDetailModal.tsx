@@ -395,8 +395,14 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   return (
     <>
       {/* 메인 모달 */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg w-full max-w-5xl mx-4 max-h-[95vh] overflow-y-auto">
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-lg w-full max-w-5xl mx-4 max-h-[95vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* 헤더 */}
           <div className="flex justify-between items-center p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -640,20 +646,26 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                       ) : (
                         comments.map((comment) => {
                           const canDeleteComment = user && (user.role === 'admin' || user.id === comment.user_id)
-                          const commenterGradeInfo = getGradeInfo(comment.users.grade)
+                          const commenterGradeInfo = comment.users ? getGradeInfo(comment.users.grade) : null
 
                           return (
                             <div key={comment.id} className="px-6 py-4">
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className="flex items-center space-x-2 mb-2">
-                                    <img
-                                      src={commenterGradeInfo.icon}
-                                      alt="등급"
-                                      className="w-5 h-5"
-                                    />
-                                    <span className="font-medium text-gray-900">{comment.users.name}</span>
-                                    <span className="text-xs text-gray-500">({commenterGradeInfo.display})</span>
+                                    {commenterGradeInfo ? (
+                                      <>
+                                        <img
+                                          src={commenterGradeInfo.icon}
+                                          alt="등급"
+                                          className="w-5 h-5"
+                                        />
+                                        <span className="font-medium text-gray-900">{comment.users.name}</span>
+                                        <span className="text-xs text-gray-500">({commenterGradeInfo.display})</span>
+                                      </>
+                                    ) : (
+                                      <span className="font-medium text-gray-900">알 수 없는 사용자</span>
+                                    )}
                                     <span className="text-sm text-gray-500">
                                       {formatDate(comment.created_at)}
                                     </span>

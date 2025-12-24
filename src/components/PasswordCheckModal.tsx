@@ -45,8 +45,14 @@ export default function PasswordCheckModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-white rounded-lg p-6 w-full max-w-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-2">
             <Lock className="h-5 w-5 text-gray-700" />

@@ -33,7 +33,7 @@ export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank'>('competitions')
-  const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants' | 'boards'>('management')
+  const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants'>('management')
   const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
 
@@ -104,8 +104,10 @@ export default function AdminPage() {
   const [showPostDetail, setShowPostDetail] = useState(false)
   const [currentPostPage, setCurrentPostPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
-  const [selectedCompetitionForPosts, setSelectedCompetitionForPosts] = useState<string>('')
   const [showOnlyReportedPosts, setShowOnlyReportedPosts] = useState(false)
+  const [boardFilter, setBoardFilter] = useState<string>('all') // 'all', 'free', competition_id
+  const [competitionsWithPosts, setCompetitionsWithPosts] = useState<any[]>([])
+  const [postSearchTerm, setPostSearchTerm] = useState('')
   const postsPerPage = 10
 
   // 댓글 관리 관련 상태
@@ -149,9 +151,6 @@ export default function AdminPage() {
         fetchCompetitions()
         if (competitionSubTab === 'participants') {
           fetchRegistrations()
-        } else if (competitionSubTab === 'boards') {
-          setCurrentPostPage(1)
-          fetchCompetitionPosts()
         }
       } else if (activeTab === 'community') {
         if (communitySubTab === 'posts') {
@@ -173,14 +172,15 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, selectedCompetitionForPosts, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
+  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
+      fetchCompetitionsWithPosts()
       fetchCommunityPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPostPage, user, activeTab, communitySubTab, showOnlyReportedPosts])
+  }, [currentPostPage, user, activeTab, communitySubTab, showOnlyReportedPosts, boardFilter, postSearchTerm])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'comments') {
@@ -188,13 +188,6 @@ export default function AdminPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyReportedComments, commentSearchTerm])
-
-  useEffect(() => {
-    if (user && user.role === 'admin' && activeTab === 'competitions' && competitionSubTab === 'boards') {
-      fetchCompetitionPosts()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPostPage, user, activeTab, competitionSubTab, selectedCompetitionForPosts])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'members') {
@@ -850,7 +843,52 @@ export default function AdminPage() {
     }
   }
 
-  // 커뮤니티 게시글 관리 함수들 (회원게시판 - competition_id가 없는 글)
+  // 게시글이 있는 대회 목록 가져오기
+  const fetchCompetitionsWithPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('competitions')
+        .select(`
+          id,
+          title,
+          status,
+          date,
+          registration_end,
+          community_posts!inner(id)
+        `)
+        .order('date', { ascending: false })
+
+      if (error) throw error
+
+      // 각 대회별 게시글 개수 가져오기
+      const competitionsWithCount = await Promise.all(
+        (data || []).map(async (comp: any) => {
+          const { count } = await supabase
+            .from('community_posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('competition_id', comp.id)
+
+          return {
+            id: comp.id,
+            title: comp.title,
+            status: comp.status,
+            date: comp.date,
+            registration_end: comp.registration_end,
+            post_count: count || 0
+          }
+        })
+      )
+
+      // 게시글이 있는 대회만 필터링
+      const filtered = competitionsWithCount.filter(comp => comp.post_count > 0)
+      setCompetitionsWithPosts(filtered)
+    } catch (error) {
+      console.error('대회 목록 로드 오류:', error)
+      setCompetitionsWithPosts([])
+    }
+  }
+
+  // 통합 게시글 관리 함수
   const fetchCommunityPosts = async () => {
     setPostsLoading(true)
     try {
@@ -859,8 +897,22 @@ export default function AdminPage() {
 
       let query = supabase
         .from('community_posts_with_author')
-        .select('*', { count: 'exact' })
-        .is('competition_id', null)  // 회원게시판: competition_id가 null인 게시글만
+        .select('*, competitions(title)', { count: 'exact' })
+
+      // 게시판 필터 적용
+      if (boardFilter === 'free') {
+        // 자유게시판만
+        query = query.is('competition_id', null)
+      } else if (boardFilter !== 'all') {
+        // 특정 대회 게시판
+        query = query.eq('competition_id', boardFilter)
+      }
+      // 'all'이면 모든 게시글 (조건 추가 안 함)
+
+      // 제목 검색 필터
+      if (postSearchTerm.trim()) {
+        query = query.ilike('title', `%${postSearchTerm}%`)
+      }
 
       // 신고된 글만 보기 필터
       if (showOnlyReportedPosts) {
@@ -883,34 +935,34 @@ export default function AdminPage() {
     }
   }
 
-  // 대회 게시글 관리 함수들 (요청게시판 - competition_id가 있는 글)
-  const fetchCompetitionPosts = async () => {
-    setPostsLoading(true)
+
+  // 게시글 상세 정보 가져오기 (users 정보 포함)
+  const fetchPostDetail = async (postId: string) => {
     try {
-      const from = (currentPostPage - 1) * postsPerPage
-      const to = from + postsPerPage - 1
+      const { data, error } = await supabase
+        .from('community_posts')
+        .select(`
+          *,
+          users (
+            id,
+            user_id,
+            name,
+            email,
+            grade,
+            role
+          ),
+          competitions (
+            title
+          )
+        `)
+        .eq('id', postId)
+        .single()
 
-      let query = supabase
-        .from('community_posts_with_author')
-        .select('*, competitions(title)', { count: 'exact' })
-        .not('competition_id', 'is', null)  // 요청게시판: competition_id가 있는 게시글만
-        .range(from, to)
-        .order('created_at', { ascending: false })
-
-      if (selectedCompetitionForPosts) {
-        query = query.eq('competition_id', selectedCompetitionForPosts)
-      }
-
-      const { data, error, count } = await query
       if (error) throw error
-      setPosts(data || [])
-      setTotalPosts(count || 0)
+      return data
     } catch (error) {
-      console.error('게시글 로드 오류:', error)
-      setPosts([])
-      setTotalPosts(0)
-    } finally {
-      setPostsLoading(false)
+      console.error('게시글 상세 조회 오류:', error)
+      return null
     }
   }
 
@@ -2103,17 +2155,6 @@ export default function AdminPage() {
                   <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
                   참가자
                 </button>
-                <button
-                  onClick={() => setCompetitionSubTab('boards')}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                    competitionSubTab === 'boards'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
-  요청게시판
-                </button>
               </nav>
             </div>
 
@@ -2772,187 +2813,6 @@ export default function AdminPage() {
                 )}
               </>
             )}
-
-            {/* 대회 게시판 관리 */}
-            {competitionSubTab === 'boards' && (
-              <>
-                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">요청게시판 관리</h2>
-                    <div className="flex items-center w-full sm:w-auto">
-                      <select
-                        value={selectedCompetitionForPosts}
-                        onChange={(e) => setSelectedCompetitionForPosts(e.target.value)}
-                        className="border border-gray-300 rounded px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white w-full sm:w-auto"
-                      >
-                        <option value="">전체 대회</option>
-                        {competitions.map((competition) => (
-                          <option key={competition.id} value={competition.id}>
-                            {competition.title}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  {postsLoading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
-                    </div>
-                  ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-full">
-                            제목
-                          </th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
-                            작성자
-                          </th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
-                            대회명
-                          </th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
-                            작성일
-                          </th>
-                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                            관리
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {posts.map((post) => (
-                          <tr key={post.id} className="hover:bg-gray-50">
-                            <td className="px-3 sm:px-6 py-4">
-                              <div className="flex flex-col space-y-1">
-                                <div className="flex items-start space-x-2">
-                                  {post.is_notice && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
-                                      <Pin className="w-3 h-3 mr-1" />
-                                      공지
-                                    </span>
-                                  )}
-                                  <button
-                                    onClick={() => {
-                                      setSelectedPost(post)
-                                      setShowPostDetail(true)
-                                    }}
-                                    className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left break-words"
-                                  >
-                                    {post.title}
-                                  </button>
-                                  {post.image_url && (
-                                    <span className="text-xs text-blue-600 flex-shrink-0">📷</span>
-                                  )}
-                                </div>
-                                {/* 모바일에서 추가 정보 표시 */}
-                                <div className="flex items-center space-x-2 text-xs text-gray-500">
-                                  <span className="sm:hidden">{post.author_name}</span>
-                                  <span className="md:hidden">• {post.competitions ? post.competitions.title : '대회명 없음'}</span>
-                                  <span className="sm:hidden">• {formatKST(post.created_at, 'MM.dd')}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                              <div className="text-sm font-medium text-gray-900">{post.author_name}</div>
-                            </td>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                              <div className="text-sm text-gray-900">
-                                {post.competitions ? post.competitions.title : '대회명 없음'}
-                              </div>
-                            </td>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                              <div className="text-sm text-gray-900">
-                                {formatKST(post.created_at, 'yyyy.MM.dd')}
-                              </div>
-                            </td>
-                            <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex flex-col sm:flex-row space-y-1 sm:space-y-0 sm:space-x-2">
-                                <button
-                                  onClick={() => toggleNotice(post.id, post.is_notice || false)}
-                                  className={`inline-flex items-center justify-center px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                    post.is_notice
-                                      ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                      : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                  }`}
-                                >
-                                  <Pin className="h-3 w-3 sm:mr-1" />
-                                  <span className="hidden sm:inline">{post.is_notice ? '공지해제' : '공지설정'}</span>
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelectedPost(post)
-                                    setShowPostDetail(true)
-                                  }}
-                                  className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded text-xs font-medium transition-colors"
-                                >
-                                  <Eye className="h-3 w-3 sm:mr-1" />
-                                  <span className="hidden sm:inline">보기</span>
-                                </button>
-                                <button
-                                  onClick={() => deletePost(post.id)}
-                                  className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200 rounded text-xs font-medium transition-colors"
-                                >
-                                  <Trash2 className="h-3 w-3 sm:mr-1" />
-                                  <span className="hidden sm:inline">삭제</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                  {posts.length === 0 && !postsLoading && (
-                    <div className="text-center py-12">
-                      <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">게시글이 없습니다.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* 페이지네이션 */}
-                {!postsLoading && totalPosts > 0 && (
-                  <div className="px-6 py-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-700">
-                        전체 {totalPosts}개 중 {((currentPostPage - 1) * postsPerPage) + 1}-{Math.min(currentPostPage * postsPerPage, totalPosts)}개 표시
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setCurrentPostPage(prev => Math.max(1, prev - 1))}
-                          disabled={currentPostPage === 1}
-                          className={`px-3 py-1 rounded ${
-                            currentPostPage === 1
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                          }`}
-                        >
-                          이전
-                        </button>
-                        <span className="text-sm text-gray-700">
-                          {currentPostPage} / {Math.ceil(totalPosts / postsPerPage)}
-                        </span>
-                        <button
-                          onClick={() => setCurrentPostPage(prev =>
-                            Math.min(Math.ceil(totalPosts / postsPerPage), prev + 1)
-                          )}
-                          disabled={currentPostPage >= Math.ceil(totalPosts / postsPerPage)}
-                          className={`px-3 py-1 rounded ${
-                            currentPostPage >= Math.ceil(totalPosts / postsPerPage)
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                          }`}
-                        >
-                          다음
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
           </div>
         )}
         {activeTab === 'community' && (
@@ -2988,24 +2848,87 @@ export default function AdminPage() {
             {/* 게시판 관리 탭 */}
             {communitySubTab === 'posts' && (
               <>
-                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">게시판 관리</h2>
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={showOnlyReportedPosts}
-                          onChange={(e) => {
-                            setShowOnlyReportedPosts(e.target.checked)
-                            setCurrentPostPage(1)
-                          }}
-                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                        />
-                        <span className="text-sm text-gray-700 whitespace-nowrap">신고된 글 모아보기</span>
-                      </label>
+                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex flex-col gap-4">
+                    {/* 제목 및 통계 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <h2 className="text-base sm:text-lg font-semibold text-gray-900">게시판 관리</h2>
                       <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
                         총 {totalPosts}개
+                      </div>
+                    </div>
+
+                    {/* 필터 영역 */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        {/* 게시판 선택 드롭다운 */}
+                        <div className="flex-1">
+                          <select
+                            value={boardFilter}
+                            onChange={(e) => {
+                              setBoardFilter(e.target.value)
+                              setCurrentPostPage(1)
+                            }}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                          >
+                            <option value="all">전체 보기</option>
+                            <option value="free">자유게시판</option>
+                            {competitionsWithPosts.length > 0 && (
+                              <>
+                                <option disabled>──────────────</option>
+                                {competitionsWithPosts.map((comp) => {
+                                  const isEnded = new Date(comp.registration_end) < new Date()
+                                  const statusText = isEnded ? '종료' : '진행중'
+                                  return (
+                                    <option key={comp.id} value={comp.id}>
+                                      [{statusText}] {comp.title} (게시글 {comp.post_count}개)
+                                    </option>
+                                  )
+                                })}
+                              </>
+                            )}
+                          </select>
+                        </div>
+
+                        {/* 신고된 글 필터 */}
+                        <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={showOnlyReportedPosts}
+                            onChange={(e) => {
+                              setShowOnlyReportedPosts(e.target.checked)
+                              setCurrentPostPage(1)
+                            }}
+                            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          />
+                          <span className="text-sm text-gray-700">신고된 글만</span>
+                        </label>
+                      </div>
+
+                      {/* 제목 검색 */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={postSearchTerm}
+                          onChange={(e) => {
+                            setPostSearchTerm(e.target.value)
+                            setCurrentPostPage(1)
+                          }}
+                          placeholder="제목으로 검색..."
+                          className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        />
+                        {postSearchTerm && (
+                          <button
+                            onClick={() => {
+                              setPostSearchTerm('')
+                              setCurrentPostPage(1)
+                            }}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3021,6 +2944,9 @@ export default function AdminPage() {
                     <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         제목
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+                        게시판
                       </th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
                         작성자
@@ -3053,9 +2979,14 @@ export default function AdminPage() {
                                   </span>
                                 )}
                                 <button
-                                  onClick={() => {
-                                    setSelectedPost(post)
-                                    setShowPostDetail(true)
+                                  onClick={async () => {
+                                    const detailPost = await fetchPostDetail(post.id)
+                                    if (detailPost) {
+                                      setSelectedPost(detailPost)
+                                      setShowPostDetail(true)
+                                    } else {
+                                      alert('게시글을 불러올 수 없습니다.')
+                                    }
                                   }}
                                   className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors text-left break-words flex-1 min-w-0"
                                 >
@@ -3064,6 +2995,16 @@ export default function AdminPage() {
                               </div>
                               {/* 모바일에서 추가 정보 표시 */}
                               <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 lg:hidden">
+                                {/* 게시판 정보 */}
+                                {postData.competition_id ? (
+                                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-medium">
+                                    {postData.competitions?.title || '대회 게시판'}
+                                  </span>
+                                ) : (
+                                  <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">
+                                    자유게시판
+                                  </span>
+                                )}
                                 {postData.author_name && (
                                   <span className="bg-gray-100 px-2 py-0.5 rounded">{postData.author_name}</span>
                                 )}
@@ -3080,6 +3021,17 @@ export default function AdminPage() {
                                 <span className="md:hidden">{formatKST(post.created_at, 'MM.dd')}</span>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden xl:table-cell">
+                            {postData.competition_id ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {postData.competitions?.title || '대회 게시판'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                자유게시판
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                             <div className="text-sm font-medium text-gray-900">{postData.author_name || '-'}</div>
