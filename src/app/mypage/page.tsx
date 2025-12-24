@@ -22,7 +22,7 @@ const profileSchema = z.object({
   email: z.string().email('올바른 이메일 주소를 입력해주세요'),
   email_marketing_agree: z.boolean(),
   birth_date: z.string().regex(/^\d{6}$/, '생년월일은 6자리 숫자로 입력해주세요'),
-  gender_digit: z.string().regex(/^[1-4]$/, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1-4)'),
+  gender_digit: z.string().regex(/^[1-8]$/, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1-8)'),
   gender: z.enum(['male', 'female']),
   record_minutes: z.number().min(1, '최소 1분은 입력해주세요').max(200, '최대 200분까지 입력 가능합니다'),
   record_seconds: z.number().min(0, '초는 0~59 사이여야 합니다').max(59, '초는 0~59 사이여야 합니다'),
@@ -125,12 +125,15 @@ export default function MyPage() {
       }
 
       if (data) {
-        // 성별에서 gender_digit 추출 (기존 데이터 호환성)
-        let genderDigit = ''
-        if (data.gender === 'male') {
-          genderDigit = '1' // 기본값
-        } else if (data.gender === 'female') {
-          genderDigit = '2' // 기본값
+        // DB에 저장된 gender_digit 사용, 없으면 성별에서 추출 (기존 데이터 호환성)
+        let genderDigit = data.gender_digit || ''
+        if (!genderDigit) {
+          // gender_digit이 없는 경우에만 기본값 사용
+          if (data.gender === 'male') {
+            genderDigit = '1' // 기본값
+          } else if (data.gender === 'female') {
+            genderDigit = '2' // 기본값
+          }
         }
 
         const formData = {
@@ -353,8 +356,10 @@ export default function MyPage() {
 
       // 데이터 다시 로드
       await loadUserDetails()
-    } catch {
-      alert('회원 정보 수정 중 오류가 발생했습니다.')
+    } catch (error) {
+      console.error('회원정보 수정 오류:', error)
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류'
+      alert(`회원 정보 수정 중 오류가 발생했습니다.\n${errorMessage}`)
     } finally {
       setIsLoading(false)
     }
@@ -655,10 +660,10 @@ export default function MyPage() {
                     const digit = e.target.value.replace(/\D/g, '').slice(0, 1)
                     profileForm.setValue('gender_digit', digit)
 
-                    if (digit === '1' || digit === '3') {
+                    if (digit === '1' || digit === '3' || digit === '5' || digit === '7') {
                       profileForm.setValue('gender', 'male')
                       profileForm.trigger('gender')
-                    } else if (digit === '2' || digit === '4') {
+                    } else if (digit === '2' || digit === '4' || digit === '6' || digit === '8') {
                       profileForm.setValue('gender', 'female')
                       profileForm.trigger('gender')
                     }

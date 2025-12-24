@@ -101,13 +101,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!user) return
 
     try {
+      console.log('업데이트할 데이터:', userData)
+
       // 데이터베이스 업데이트
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('users')
         .update(userData as any)
         .eq('id', user.id)
+        .select()
 
-      if (error) throw error
+      console.log('Supabase 응답:', { error, data })
+
+      if (error) {
+        console.error('Supabase 에러 상세:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
 
       // 일반적인 업데이트의 경우 기존 방식 사용
       const updatedUser = { ...user, ...userData }

@@ -53,8 +53,8 @@ const membershipSchema = z.object({
     .min(1, '생년월일을 입력해주세요 (6자리 숫자)')
     .regex(/^\d{6}$/, '생년월일은 6자리 숫자로 입력해주세요 (예: 901225)'),
   gender_digit: z.string()
-    .min(1, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1~4)')
-    .regex(/^[1-4]$/, '주민번호 뒷자리는 1, 2, 3, 4 중 하나를 입력해주세요'),
+    .min(1, '주민번호 뒷자리 첫 번째 숫자를 입력해주세요 (1~8)')
+    .regex(/^[1-8]$/, '주민번호 뒷자리는 1~8 중 하나를 입력해주세요'),
   gender: z.string()
     .min(1, '성별을 선택해주세요 (남성 또는 여성)')
     .refine((val) => val === 'male' || val === 'female', {
@@ -233,10 +233,10 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     const digit = value.replace(/\D/g, '').slice(0, 1)
     setValue('gender_digit', digit)
 
-    if (digit === '1' || digit === '3') {
+    if (digit === '1' || digit === '3' || digit === '5' || digit === '7') {
       setValue('gender', 'male')
       trigger('gender')
-    } else if (digit === '2' || digit === '4') {
+    } else if (digit === '2' || digit === '4' || digit === '6' || digit === '8') {
       setValue('gender', 'female')
       trigger('gender')
     }
