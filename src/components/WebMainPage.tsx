@@ -541,36 +541,36 @@ export default function WebMainPage() {
 
       {/* 모바일 앱 다운로드 모달 */}
       {showAppBanner && mobileOS && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-8" style={{ backgroundColor: '#000000d1' }}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ backgroundColor: '#000000d1' }}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-[230px] w-full overflow-hidden relative">
             {/* X 닫기 버튼 */}
             <button
               onClick={handleDismiss}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+              className="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-600 transition-colors z-10"
               aria-label="닫기"
             >
-              <X className="w-6 h-6" />
+              <X className="w-4 h-4" />
             </button>
 
             {/* 모달 내용 */}
-            <div className="p-4 text-center">
+            <div className="p-2.5 text-center">
               {/* 아이콘 + RUN10 로고 */}
-              <div className="flex items-center justify-center gap-4 mb-8">
+              <div className="flex items-center justify-center gap-2.5 mb-5">
                 <img
                   src="/images/app_icon.png"
                   alt="런텐 앱 아이콘"
-                  className="w-20 h-20 rounded-xl shadow-md"
+                  className="w-12 h-12 rounded-lg shadow-md"
                 />
-                <h2 className="text-3xl font-black text-red-600">런텐 RUN10</h2>
+                <h2 className="text-xl font-black text-red-600">런텐 RUN10</h2>
               </div>
 
               {/* 제목 */}
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              <h3 className="text-base font-bold text-gray-900 mb-1">
                 런텐 앱에서 더 편리하게!
               </h3>
 
               {/* 설명 */}
-              <h3 className="text-xl text-gray-600 mb-8">
+              <h3 className="text-sm text-gray-600 mb-5">
                 더 많은 기능을 이용해보세요.
               </h3>
 
@@ -579,7 +579,7 @@ export default function WebMainPage() {
                 href={getAppStoreLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-xl text-base font-bold hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-xl mb-3"
+                className="block w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-lg text-xs font-bold hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-lg hover:shadow-xl mb-2"
               >
                 런텐 앱에서 보기
               </a>
@@ -587,7 +587,7 @@ export default function WebMainPage() {
               {/* 웹으로 볼게요 버튼 */}
               <button
                 onClick={handleCloseBanner}
-                className="w-full text-sm text-gray-600 hover:text-gray-800 py-1 transition-colors"
+                className="w-full text-xs text-gray-600 hover:text-gray-800 py-0.5 transition-colors"
               >
                 괜찮습니다. 모바일 웹으로 볼게요.
               </button>
