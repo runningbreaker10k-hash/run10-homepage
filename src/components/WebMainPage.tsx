@@ -541,7 +541,7 @@ export default function WebMainPage() {
 
       {/* 모바일 앱 다운로드 모달 */}
       {showAppBanner && mobileOS && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ backgroundColor: '#000000d1' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ backgroundColor: '#00000031' }}>
           <div className="bg-white rounded-xl shadow-2xl max-w-[230px] w-full overflow-hidden relative">
             {/* X 닫기 버튼 */}
             <button
