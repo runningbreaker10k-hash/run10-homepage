@@ -318,9 +318,29 @@ export default function CommunityPostPage() {
   }
 
   const formatContent = (content: string) => {
+    // URL 패턴 정규식 (http, https 프로토콜 감지)
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+
     return content.split('\n').map((line, index) => (
       <span key={index}>
-        {line}
+        {line.split(urlRegex).map((part, i) => {
+          // URL인 경우 클릭 가능한 링크로 변환
+          if (part.match(urlRegex)) {
+            return (
+              <a
+                key={i}
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline break-all"
+              >
+                {part}
+              </a>
+            )
+          }
+          // 일반 텍스트는 그대로 표시
+          return part
+        })}
         {index !== content.split('\n').length - 1 && <br />}
       </span>
     ))

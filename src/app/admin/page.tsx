@@ -126,7 +126,7 @@ export default function AdminPage() {
   const [currentMemberPage, setCurrentMemberPage] = useState(1)
   const [totalMembers, setTotalMembers] = useState(0)
   const [membersPerPage, setMembersPerPage] = useState(20)
-  const [memberCompetitionFilter, setMemberCompetitionFilter] = useState<string>('all')
+  const [memberCompetitionFilter, setMemberCompetitionFilter] = useState<string[]>([])
   const [memberRegionFilter, setMemberRegionFilter] = useState<string>('all')
   const [memberAgeFilter, setMemberAgeFilter] = useState<string>('all')
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
@@ -1532,45 +1532,47 @@ export default function AdminPage() {
       }
 
       // 대회 미참가자 필터 (클라이언트 측)
-      if (memberCompetitionFilter !== 'all') {
-        // 선택된 대회의 참가자 목록 가져오기 (1000개씩 여러 번 조회)
-        let allRegistrations: any[] = []
-        let offset = 0
-        const pageSize = 1000
-        let hasMore = true
+      if (memberCompetitionFilter.length > 0) {
+        // 선택된 모든 대회의 참가자 목록 가져오기
+        const participantIds = new Set<string>()
 
-        while (hasMore) {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('user_id')
-            .eq('competition_id', memberCompetitionFilter)
-            .range(offset, offset + pageSize - 1)
+        for (const competitionId of memberCompetitionFilter) {
+          // 각 대회의 참가자 목록 가져오기 (1000개씩 여러 번 조회)
+          let offset = 0
+          const pageSize = 1000
+          let hasMore = true
 
-          if (error) {
-            console.error('참가자 조회 오류:', error)
-            break
-          }
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('user_id')
+              .eq('competition_id', competitionId)
+              .range(offset, offset + pageSize - 1)
 
-          if (data && data.length > 0) {
-            allRegistrations = [...allRegistrations, ...data]
-            offset += pageSize
+            if (error) {
+              console.error('참가자 조회 오류:', error)
+              break
+            }
 
-            if (data.length < pageSize) {
+            if (data && data.length > 0) {
+              // 참가한 회원의 UUID(id)를 Set에 추가
+              data.forEach(reg => {
+                if (reg.user_id) {
+                  participantIds.add(reg.user_id)
+                }
+              })
+              offset += pageSize
+
+              if (data.length < pageSize) {
+                hasMore = false
+              }
+            } else {
               hasMore = false
             }
-          } else {
-            hasMore = false
           }
         }
 
-        // 참가한 회원의 UUID(id) 배열
-        const participantIds = new Set(
-          allRegistrations
-            .map(reg => reg.user_id)
-            .filter(Boolean)
-        )
-
-        // 참가하지 않은 회원만 필터링 (users.id와 registrations.user_id 비교)
+        // 선택된 대회 중 하나라도 참가한 회원 제외 (미참가자만 필터링)
         filtered = filtered.filter(member => !participantIds.has(member.id))
       }
 
@@ -1718,45 +1720,47 @@ export default function AdminPage() {
       }
 
       // 대회 미참가자 필터
-      if (memberCompetitionFilter !== 'all') {
-        // 선택된 대회의 참가자 목록 가져오기 (1000개씩 여러 번 조회)
-        let allRegistrations: any[] = []
-        let regOffset = 0
-        const regPageSize = 1000
-        let regHasMore = true
+      if (memberCompetitionFilter.length > 0) {
+        // 선택된 모든 대회의 참가자 목록 가져오기
+        const participantIds = new Set<string>()
 
-        while (regHasMore) {
-          const { data, error } = await supabase
-            .from('registrations')
-            .select('user_id')
-            .eq('competition_id', memberCompetitionFilter)
-            .range(regOffset, regOffset + regPageSize - 1)
+        for (const competitionId of memberCompetitionFilter) {
+          // 각 대회의 참가자 목록 가져오기 (1000개씩 여러 번 조회)
+          let regOffset = 0
+          const regPageSize = 1000
+          let regHasMore = true
 
-          if (error) {
-            console.error('참가자 조회 오류:', error)
-            break
-          }
+          while (regHasMore) {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('user_id')
+              .eq('competition_id', competitionId)
+              .range(regOffset, regOffset + regPageSize - 1)
 
-          if (data && data.length > 0) {
-            allRegistrations = [...allRegistrations, ...data]
-            regOffset += regPageSize
+            if (error) {
+              console.error('참가자 조회 오류:', error)
+              break
+            }
 
-            if (data.length < regPageSize) {
+            if (data && data.length > 0) {
+              // 참가한 회원의 UUID(id)를 Set에 추가
+              data.forEach(reg => {
+                if (reg.user_id) {
+                  participantIds.add(reg.user_id)
+                }
+              })
+              regOffset += regPageSize
+
+              if (data.length < regPageSize) {
+                regHasMore = false
+              }
+            } else {
               regHasMore = false
             }
-          } else {
-            regHasMore = false
           }
         }
 
-        // 참가한 회원의 UUID(id) 배열
-        const participantIds = new Set(
-          allRegistrations
-            .map(reg => reg.user_id)
-            .filter(Boolean)
-        )
-
-        // 참가하지 않은 회원만 필터링 (users.id와 registrations.user_id 비교)
+        // 선택된 대회 중 하나라도 참가한 회원 제외 (미참가자만 필터링)
         filtered = filtered.filter(member => !participantIds.has(member.id))
       }
 
@@ -3523,7 +3527,7 @@ export default function AdminPage() {
                     <button
                       onClick={() => {
                         setSearchTerm('')
-                        setMemberCompetitionFilter('all')
+                        setMemberCompetitionFilter([])
                         setMemberRegionFilter('all')
                         setMemberAgeFilter('all')
                         setMemberGenderFilter('all')
@@ -3554,11 +3558,11 @@ export default function AdminPage() {
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => {
-                          setMemberCompetitionFilter('all')
+                          setMemberCompetitionFilter([])
                           setCurrentMemberPage(1)
                         }}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                          memberCompetitionFilter === 'all'
+                          memberCompetitionFilter.length === 0
                             ? 'bg-red-600 text-white'
                             : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                         }`}
@@ -3569,11 +3573,19 @@ export default function AdminPage() {
                         <button
                           key={competition.id}
                           onClick={() => {
-                            setMemberCompetitionFilter(competition.id)
+                            setMemberCompetitionFilter(prev => {
+                              if (prev.includes(competition.id)) {
+                                // 이미 선택된 경우 제거
+                                return prev.filter(id => id !== competition.id)
+                              } else {
+                                // 선택되지 않은 경우 추가
+                                return [...prev, competition.id]
+                              }
+                            })
                             setCurrentMemberPage(1)
                           }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            memberCompetitionFilter === competition.id
+                            memberCompetitionFilter.includes(competition.id)
                               ? 'bg-red-600 text-white'
                               : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
