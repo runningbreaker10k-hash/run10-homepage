@@ -110,6 +110,10 @@ export default function AdminPage() {
   const [postSearchTerm, setPostSearchTerm] = useState('')
   const postsPerPage = 10
 
+  // 게시글 작성자 정보 모달 관련 상태
+  const [selectedAuthor, setSelectedAuthor] = useState<User | null>(null)
+  const [showAuthorModal, setShowAuthorModal] = useState(false)
+
   // 댓글 관리 관련 상태
   const [comments, setComments] = useState<any[]>([])
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -963,6 +967,48 @@ export default function AdminPage() {
     } catch (error) {
       console.error('게시글 상세 조회 오류:', error)
       return null
+    }
+  }
+
+  // 작성자 정보 조회 함수
+  const fetchAuthorInfo = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('작성자 정보 조회 오류:', error)
+      return null
+    }
+  }
+
+  // 게시글 작성자 정보 보기
+  const handleViewAuthor = async (postId: string) => {
+    try {
+      // 먼저 게시글 상세 정보에서 user_id 가져오기
+      const postDetail = await fetchPostDetail(postId)
+      if (!postDetail || !postDetail.user_id) {
+        alert('작성자 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      // 작성자 정보 조회
+      const authorInfo = await fetchAuthorInfo(postDetail.user_id)
+      if (!authorInfo) {
+        alert('작성자 정보를 불러올 수 없습니다.')
+        return
+      }
+
+      setSelectedAuthor(authorInfo)
+      setShowAuthorModal(true)
+    } catch (error) {
+      console.error('작성자 정보 조회 오류:', error)
+      alert('작성자 정보를 불러오는 중 오류가 발생했습니다.')
     }
   }
 
@@ -3010,7 +3056,12 @@ export default function AdminPage() {
                                   </span>
                                 )}
                                 {postData.author_name && (
-                                  <span className="bg-gray-100 px-2 py-0.5 rounded">{postData.author_name}</span>
+                                  <button
+                                    onClick={() => handleViewAuthor(post.id)}
+                                    className="bg-gray-100 px-2 py-0.5 rounded hover:bg-gray-200 transition-colors cursor-pointer"
+                                  >
+                                    {postData.author_name}
+                                  </button>
                                 )}
                                 <span className="sm:hidden">조회 {post.views}</span>
                                 <span className="sm:hidden">•</span>
@@ -3038,7 +3089,16 @@ export default function AdminPage() {
                             )}
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                            <div className="text-sm font-medium text-gray-900">{postData.author_name || '-'}</div>
+                            {postData.author_name ? (
+                              <button
+                                onClick={() => handleViewAuthor(post.id)}
+                                className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors underline cursor-pointer"
+                              >
+                                {postData.author_name}
+                              </button>
+                            ) : (
+                              <div className="text-sm font-medium text-gray-900">-</div>
+                            )}
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                             <div className="text-sm space-y-1">
@@ -4768,6 +4828,102 @@ export default function AdminPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 {isEditingPopup ? '수정' : '등록'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 작성자 정보 모달 */}
+      {showAuthorModal && selectedAuthor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <h3 className="text-xl font-bold text-gray-900">작성자 정보</h3>
+              <button
+                onClick={() => setShowAuthorModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              {/* 기본 정보 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.name || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">아이디</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.user_id || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.email || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.phone || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.gender === 'male' ? '남성' : selectedAuthor.gender === 'female' ? '여성' : '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">생년월일</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.birth_date || '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">등급</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 flex items-center">
+                    {selectedAuthor.grade && (
+                      <>
+                        <img
+                          src={getGradeInfo(selectedAuthor.grade).icon}
+                          alt={getGradeInfo(selectedAuthor.grade).display}
+                          className="w-5 h-5 mr-2"
+                        />
+                        <span>{getGradeInfo(selectedAuthor.grade).display}</span>
+                      </>
+                    )}
+                    {!selectedAuthor.grade && '-'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">권한</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {selectedAuthor.role === 'admin' ? '관리자' : '일반회원'}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">가입일시</label>
+                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900">
+                    {formatKST(selectedAuthor.created_at, 'yyyy년 MM월 dd일 HH:mm')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => setShowAuthorModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                닫기
               </button>
             </div>
           </div>

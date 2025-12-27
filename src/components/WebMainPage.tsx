@@ -35,6 +35,7 @@ export default function WebMainPage() {
 
   // 모바일 OS 감지 및 배너 표시 로직
   useEffect(() => {
+    return // 임시로 앱 다운로드 배너/모달 비활성화
     if (typeof window === 'undefined') return
 
     // 배너 숨김 시간 확인 (30분)
