@@ -35,7 +35,9 @@ export default function WebMainPage() {
 
   // 모바일 OS 감지 및 배너 표시 로직
   useEffect(() => {
-    return // 임시로 앱 다운로드 배너/모달 비활성화
+    const enableAppBanner = false // 임시로 앱 다운로드 배너/모달 비활성화 (복구시 true로 변경)
+    if (!enableAppBanner) return
+
     if (typeof window === 'undefined') return
 
     // 배너 숨김 시간 확인 (30분)
@@ -262,8 +264,8 @@ export default function WebMainPage() {
                       <p>주말, 소중한 사람들과 전국을 누비며</p>
                       <p>도시관광도 즐기고 PB에 도전하세요!</p>
                     </div>
-                    <div className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                      <p>전국 러닝 협회 기록인증 10km 대회</p>
+                    <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
+                      <p>2026 2.28 세종에서 열립니다</p>
                     </div>
                   </div>
                 </div>

@@ -23,7 +23,7 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<CompetitionWithGroups[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('ongoing')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('all')
 
   useEffect(() => {
     fetchCompetitions()
@@ -208,7 +208,7 @@ export default function CompetitionsPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 대회</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
-            전국 각지에서 개최되는 다양한 러닝 대회에 참여하세요
+            PB(Personal Best) 달성이 쉬운 가장 확실한 공식 대회
           </p>
         </div>
       </section>
@@ -218,7 +218,7 @@ export default function CompetitionsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              PB(Personal Best) 달성이 쉬운 가장 확실한 공식 대회
+              
             </p>
           </div>
 
@@ -228,9 +228,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Flag className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">병목 없는 레이스</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">병목 없는</h3>
               <p className="text-sm text-gray-600">
-                티어별 스타트
+                티어 출발
               </p>
             </div>
 
@@ -239,9 +239,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Minus className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">언덕 없는</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">업힐 없는</h3>
               <p className="text-sm text-gray-600">
-                국내 최고의 평지 코스
+                평지 코스
               </p>
             </div>
 
@@ -250,9 +250,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">차량통제 필요없는</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">차량 없는</h3>
               <p className="text-sm text-gray-600">
-                안전한 코스
+                안전 코스
               </p>
             </div>
 
@@ -261,9 +261,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Waves className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">전국 하천을 따라</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">전국 강변</h3>
               <p className="text-sm text-gray-600">
-                달리는 힐링 코스
+                힐링 코스
               </p>
             </div>
 
@@ -272,9 +272,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Gift className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">100명 이상의 경품</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">100명 이상</h3>
               <p className="text-sm text-gray-600">
-                최고 수준의 상금
+                경품 당첨
               </p>
             </div>
 
@@ -283,9 +283,9 @@ export default function CompetitionsPage() {
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-8 w-8 text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">5km 러너에게도</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-3">5km 러너</h3>
               <p className="text-sm text-gray-600">
-                기록칩 완벽 지원
+                기록칩 제공
               </p>
             </div>
           </div>
@@ -296,9 +296,13 @@ export default function CompetitionsPage() {
       <section className="pt-8 pb-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정</h2>
-            <p className="text-lg text-gray-600">현재 신청 가능한 대회와 지난 대회의 정보와</p>
-            <p className="text-lg text-gray-600">예정인 대회의 일정을 확인 할 수 있습니다.</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인법</h2>
+            
+            <div className="text-base text-gray-600 space-y-1">
+              <p><span className="font-bold text-red-600">진행</span>: 현재 접수중 대회</p>
+              <p><span className="font-bold text-gray-800">종료</span>: 이미 마감된 대회</p>
+              <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
+            </div>
           </div>
 
         {/* Search and Filter */}

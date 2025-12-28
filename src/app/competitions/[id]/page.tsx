@@ -822,11 +822,10 @@ export default function CompetitionDetailPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
                   <Users className="h-16 w-16 text-blue-400 mx-auto mb-6" />
                   <h4 className="text-2xl font-bold text-blue-900 mb-4">
-                    회원만 참가 신청이 가능합니다
+                    대회 참가를 위해 아주 간단한 회원가입이 필요합니다.
                   </h4>
-                  <p className="text-blue-700 text-lg mb-6">
-                    대회 참가를 위해서는 회원가입이 필요합니다.<br />
-                    회원가입 후 간편하게 대회에 참가하실 수 있습니다.
+                  <p className="text-blue-700 text-lg mb-6">                    
+                    정보(주소,전화번호 등)를 정확히 기재되어야 기록칩과 사전 기념품이 발송됩니다.
                   </p>
 
                   <div className="bg-white rounded-lg p-6 mb-6">
@@ -834,19 +833,19 @@ export default function CompetitionDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div className="flex items-center text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        기본정보 자동입력으로 간편한 신청
+                        간편한 대회 신청
                       </div>
                       <div className="flex items-center text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        마이페이지에서 신청내역 관리
+                        마이페이지 관리
                       </div>
                       <div className="flex items-center text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        커뮤니티 게시판 이용
+                        문의 게시판 이용
                       </div>
                       <div className="flex items-center text-gray-700">
                         <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        등급별 맞춤 서비스
+                        대회 일정 공유
                       </div>
                     </div>
                   </div>
