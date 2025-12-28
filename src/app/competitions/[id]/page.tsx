@@ -825,7 +825,7 @@ export default function CompetitionDetailPage() {
                     대회 참가를 위해 아주 간단한 회원가입이 필요합니다.
                   </h4>
                   <p className="text-blue-700 text-lg mb-6">                    
-                    정보(주소,전화번호 등)를 정확히 기재되어야 기록칩과 사전 기념품이 발송됩니다.
+                    주소와 전번이 정확히 기재되어야 기록칩과 사전 기념품이 발송됩니다.
                   </p>
 
                   <div className="bg-white rounded-lg p-6 mb-6">
