@@ -137,7 +137,7 @@ export default function AppMainPage() {
                     <p>도시관광도 즐기고 PB에 도전하세요!</p>
                   </div>
                   <div className="text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>전국 러닝 협회 기록인증 10km 대회</p>
+                    <p>2026 2.28 세종에서 열립니다</p>
                   </div>
                 </div>
               </div>

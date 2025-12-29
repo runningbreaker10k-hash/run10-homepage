@@ -299,8 +299,8 @@ export default function CompetitionsPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인법</h2>
             
             <div className="text-base text-gray-600 space-y-1">
-              <p><span className="font-bold text-red-600">진행</span>: 현재 접수중 대회</p>
               <p><span className="font-bold text-gray-800">종료</span>: 이미 마감된 대회</p>
+              <p><span className="font-bold text-red-600">진행</span>: 현재 접수중 대회</p>
               <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
             </div>
           </div>
@@ -387,8 +387,12 @@ export default function CompetitionsPage() {
 
               const cardContent = (
                 <>
-                  {/* 빨간 헤더 - 대회번호 */}
-                  <div className="bg-red-600 text-white py-2.5 px-4 text-center">
+                  {/* 헤더 - 대회번호 (상태별 배경색) */}
+                  <div className={`text-white py-2.5 px-4 text-center ${
+                    isClosed ? 'bg-black' :
+                    isOngoing ? 'bg-red-600' :
+                    'bg-blue-600'
+                  }`}>
                     <h4 className="text-base font-bold">
                       대회넘버 No. {getCompetitionNumber(competition.date)}
                     </h4>
