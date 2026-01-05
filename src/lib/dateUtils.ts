@@ -3,20 +3,23 @@ import { ko } from 'date-fns/locale'
 
 /**
  * UTC 시간을 한국 시간(KST, UTC+9)으로 변환
- * Supabase는 이미 올바른 UTC 시간을 반환하므로, 브라우저의 로컬 시간대로 표시
+ * Supabase는 이미 올바른 UTC 시간을 반환하므로, +9시간 추가
  */
 export function toKST(utcDate: string | Date): Date {
   const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate
-  // Date 객체는 이미 로컬 시간대를 고려하므로 변환 없이 반환
-  return date
+  // UTC 시간에 9시간(한국 시간대) 추가
+  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000))
+  return kstDate
 }
 
 /**
- * UTC 시간을 KST로 변환하고 포맷팅
+ * UTC 시간을 KST로 변환하고 포맷팅 (서버/클라이언트 모두 사용 가능)
  */
 export function formatKST(utcDate: string | Date, formatStr: string = 'yyyy.MM.dd HH:mm'): string {
-  const date = toKST(utcDate)
-  return dateFnsFormat(date, formatStr, { locale: ko })
+  const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate
+  // UTC 시간에 9시간 추가하여 KST로 변환
+  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000))
+  return dateFnsFormat(kstDate, formatStr, { locale: ko })
 }
 
 /**
