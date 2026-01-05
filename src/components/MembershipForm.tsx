@@ -18,38 +18,54 @@ declare global {
 }
 
 const membershipSchema = z.object({
+  nationality: z.enum(['domestic', 'foreigner']),
   user_id: z.string()
+    .trim()
     .min(1, '아이디를 입력해주세요')
     .min(4, '아이디는 최소 4자 이상이어야 합니다')
     .max(15, '아이디는 최대 15자까지 가능합니다')
     .regex(/^[a-z][a-z0-9]*$/, '아이디는 영문 소문자로 시작하고, 영문 소문자와 숫자만 사용 가능합니다')
+    .refine(val => !val.includes(' '), {
+      message: '아이디에 공백을 포함할 수 없습니다'
+    })
     .transform(val => val.toLowerCase()),
   password: z.string()
+    .trim()
     .min(1, '비밀번호를 입력해주세요')
     .min(8, '비밀번호는 최소 8자 이상이어야 합니다')
-    .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, '비밀번호는 영문과 숫자를 모두 포함해야 합니다'),
+    .regex(/^(?=.*[a-zA-Z])(?=.*\d)/, '비밀번호는 영문과 숫자를 모두 포함해야 합니다')
+    .refine(val => !val.includes(' '), {
+      message: '비밀번호에 공백을 포함할 수 없습니다'
+    }),
   password_confirm: z.string()
     .min(1, '비밀번호 확인을 입력해주세요'),
   name: z.string()
+    .trim()
     .min(1, '성명을 입력해주세요')
     .min(2, '성명은 최소 2자 이상이어야 합니다')
     .max(10, '성명은 최대 10자까지 가능합니다'),
   postal_code: z.string()
+    .trim()
     .min(1, '우편번호 찾기 버튼을 클릭하여 주소를 입력해주세요')
     .min(5, '올바른 우편번호를 입력해주세요 (5자리)'),
   address1: z.string()
+    .trim()
     .min(1, '우편번호 찾기 버튼을 클릭하여 주소를 입력해주세요'),
   address2: z.string()
+    .trim()
     .min(1, '상세주소를 입력해주세요 (예: 101동 101호)'),
   phone: z.string()
+    .trim()
     .min(1, '연락처를 입력해주세요')
     .regex(/^010-\d{4}-\d{4}$/, '연락처는 010-0000-0000 형식으로 입력해주세요 (하이픈 포함)'),
   phone_marketing_agree: z.boolean(),
   email: z.string()
+    .trim()
     .min(1, '이메일을 입력해주세요')
     .email('올바른 이메일 주소를 입력해주세요 (예: example@email.com)'),
   email_marketing_agree: z.boolean(),
   birth_date: z.string()
+    .trim()
     .min(1, '생년월일을 입력해주세요 (6자리 숫자)')
     .regex(/^\d{6}$/, '생년월일은 6자리 숫자로 입력해주세요 (예: 901225)'),
   gender_digit: z.string()
@@ -77,6 +93,24 @@ const membershipSchema = z.object({
 }).refine((data) => data.password === data.password_confirm, {
   message: '비밀번호가 일치하지 않습니다. 동일한 비밀번호를 입력해주세요',
   path: ['password_confirm']
+}).refine((data) => {
+  // 내국인: 공백 완전 차단
+  if (data.nationality === 'domestic') {
+    return !data.name.includes(' ')
+  }
+  return true
+}, {
+  message: '성명에 공백을 포함할 수 없습니다',
+  path: ['name']
+}).refine((data) => {
+  // 외국인: 연속 공백 차단
+  if (data.nationality === 'foreigner') {
+    return !/\s{2,}/.test(data.name)
+  }
+  return true
+}, {
+  message: '연속된 공백은 사용할 수 없습니다',
+  path: ['name']
 })
 
 type MembershipFormData = z.infer<typeof membershipSchema>
@@ -106,6 +140,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   } = useForm<MembershipFormData>({
     resolver: zodResolver(membershipSchema),
     defaultValues: {
+      nationality: 'domestic',
       phone_marketing_agree: true,
       email_marketing_agree: true,
       privacy_agree: false,
@@ -410,6 +445,29 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             성명 <span className="text-red-500">*</span>
+            <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
+              [
+              <label className="inline-flex items-center cursor-pointer mr-2 sm:mr-3">
+                <input
+                  {...register('nationality')}
+                  type="radio"
+                  value="domestic"
+                  defaultChecked
+                  className="mr-1"
+                />
+                <span>내국인</span>
+              </label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input
+                  {...register('nationality')}
+                  type="radio"
+                  value="foreigner"
+                  className="mr-1"
+                />
+                <span>외국인</span>
+              </label>
+              ]
+            </span>
           </label>
           <input
             {...register('name')}

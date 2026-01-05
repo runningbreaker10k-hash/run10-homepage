@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { formatKST } from '@/lib/dateUtils'
 
 /**
  * 뱅크다A 미확인주문리스트 API
@@ -69,11 +70,8 @@ async function getPendingOrders() {
 
   // 2. 뱅크다A 형식으로 변환
   const orders: BankdaOrder[] = registrations.map((registration: any) => {
-    // 날짜 형식 변환 (2025-12-09T17:59:01+09:00 → 2025-12-09 17:59:01)
-    const orderDate = new Date(registration.created_at)
-      .toISOString()
-      .slice(0, 19)
-      .replace('T', ' ')
+    // 날짜 형식 변환 (KST 기준, 2025-12-09T17:59:01+09:00 → 2025-12-09 17:59:01)
+    const orderDate = formatKST(registration.created_at, 'yyyy-MM-dd HH:mm:ss')
 
     // 품목명 생성 (대회명 + 참가종목)
     const competitionTitle = registration.participation_groups?.competitions?.title || '대회'

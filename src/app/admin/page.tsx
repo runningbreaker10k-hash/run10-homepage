@@ -761,7 +761,15 @@ export default function AdminPage() {
       }
 
       // 결제 상태 필터
-      if (paymentStatusFilter !== 'all') {
+      if (paymentStatusFilter === 'expired') {
+        // 만료 예정: 7일 이상 입금 대기 중
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        filtered = filtered.filter(reg =>
+          reg.payment_status === 'pending' &&
+          new Date(reg.created_at) < sevenDaysAgo
+        )
+      } else if (paymentStatusFilter !== 'all') {
         filtered = filtered.filter(reg => reg.payment_status === paymentStatusFilter)
       }
 
@@ -1225,6 +1233,118 @@ export default function AdminPage() {
     } catch (error) {
       console.error('참가 신청 취소 오류:', error)
       alert('참가 신청 취소 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 만료된 신청 일괄 삭제
+  const handleDeleteExpiredRegistrations = async () => {
+    // 확인 모달
+    const confirmed = confirm(
+      `만료된 신청 ${totalRegistrations}건을 삭제하시겠습니까?\n\n` +
+      `7일 이상 입금 대기 중인 신청이 모두 삭제됩니다.\n` +
+      `이 작업은 되돌릴 수 없습니다.`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setRegistrationsLoading(true)
+
+      // 7일 이상 경과한 입금 대기 신청 조회
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      const { data: expiredRegs, error: fetchError } = await supabase
+        .from('registrations')
+        .select('id, competition_id, participation_group_id, payment_status')
+        .eq('payment_status', 'pending')
+        .lt('created_at', sevenDaysAgo.toISOString())
+
+      if (fetchError) throw fetchError
+
+      if (!expiredRegs || expiredRegs.length === 0) {
+        alert('삭제할 만료 신청이 없습니다.')
+        setRegistrationsLoading(false)
+        return
+      }
+
+      // 삭제 실행
+      const { error: deleteError } = await supabase
+        .from('registrations')
+        .delete()
+        .eq('payment_status', 'pending')
+        .lt('created_at', sevenDaysAgo.toISOString())
+
+      if (deleteError) throw deleteError
+
+      // 각 대회 및 그룹의 참가자 수 조정
+      const competitionCounts = new Map<string, number>()
+      const groupCounts = new Map<string, number>()
+
+      expiredRegs.forEach(reg => {
+        if (reg.competition_id) {
+          competitionCounts.set(
+            reg.competition_id,
+            (competitionCounts.get(reg.competition_id) || 0) + 1
+          )
+        }
+        if (reg.participation_group_id) {
+          groupCounts.set(
+            reg.participation_group_id,
+            (groupCounts.get(reg.participation_group_id) || 0) + 1
+          )
+        }
+      })
+
+      // 대회 참가자 수 감소
+      for (const [compId, count] of competitionCounts) {
+        const { data: comp } = await supabase
+          .from('competitions')
+          .select('current_participants')
+          .eq('id', compId)
+          .single()
+
+        if (comp) {
+          await supabase
+            .from('competitions')
+            .update({
+              current_participants: Math.max(0, comp.current_participants - count)
+            })
+            .eq('id', compId)
+        }
+      }
+
+      // 그룹 참가자 수 감소
+      for (const [groupId, count] of groupCounts) {
+        const { data: group } = await supabase
+          .from('participation_groups')
+          .select('current_participants')
+          .eq('id', groupId)
+          .single()
+
+        if (group) {
+          await supabase
+            .from('participation_groups')
+            .update({
+              current_participants: Math.max(0, group.current_participants - count)
+            })
+            .eq('id', groupId)
+        }
+      }
+
+      alert(`만료된 신청 ${expiredRegs.length}건을 삭제했습니다.`)
+
+      // 필터 초기화 및 목록 새로고침
+      setPaymentStatusFilter('all')
+      setCurrentRegistrationPage(1)
+      fetchRegistrations()
+      fetchCompetitions()
+
+    } catch (error) {
+      console.error('만료 신청 삭제 오류:', error)
+      alert('만료 신청 삭제 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationsLoading(false)
     }
   }
 
@@ -2353,6 +2473,16 @@ export default function AdminPage() {
                         <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         <span>CSV 내보내기</span>
                       </button>
+                      {paymentStatusFilter === 'expired' && totalRegistrations > 0 && (
+                        <button
+                          onClick={handleDeleteExpiredRegistrations}
+                          disabled={registrationsLoading}
+                          className="flex items-center space-x-1.5 sm:space-x-2 bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          <span>만료 신청 삭제 ({totalRegistrations}건)</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setShowFilters(!showFilters)}
                         className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 flex items-center gap-1 px-2 sm:px-0"
@@ -2472,7 +2602,8 @@ export default function AdminPage() {
                               { value: 'all', label: '전체' },
                               { value: 'pending', label: '입금대기' },
                               { value: 'confirmed', label: '입금확인' },
-                              { value: 'cancelled', label: '취소' }
+                              { value: 'cancelled', label: '취소' },
+                              { value: 'expired', label: '만료예정 (7일+)' }
                             ].map((status) => (
                               <button
                                 key={status.value}
