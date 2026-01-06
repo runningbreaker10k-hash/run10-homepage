@@ -651,11 +651,14 @@ export default function CompetitionDetailPage() {
               <Route className="h-6 w-6 text-blue-600 mr-2" />
               <h3 className="text-xl font-semibold text-gray-900">코스 안내</h3>
             </div>
-            <div className="w-full max-w-4xl mx-auto">
-              <img
+            <div className="w-full max-w-4xl mx-auto relative aspect-video">
+              <Image
                 src={competition.course_image_url}
                 alt="코스 이미지"
-                className="w-full h-auto object-contain rounded-lg shadow-md"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                quality={85}
+                className="object-contain rounded-lg shadow-md"
               />
             </div>
           </div>
@@ -668,11 +671,14 @@ export default function CompetitionDetailPage() {
               <Award className="h-6 w-6 text-blue-600 mr-2" />
               <h3 className="text-xl font-semibold text-gray-900">시상 내역</h3>
             </div>
-            <div className="w-full max-w-4xl mx-auto">
-              <img
+            <div className="w-full max-w-4xl mx-auto relative aspect-video">
+              <Image
                 src={competition.prizes_image_url}
                 alt="시상품 이미지"
-                className="w-full h-auto object-contain rounded-lg shadow-md"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                quality={85}
+                className="object-contain rounded-lg shadow-md"
               />
             </div>
           </div>
@@ -1175,9 +1181,11 @@ export default function CompetitionDetailPage() {
                           <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
                             <div className="flex items-center space-x-1">
                               {post.users?.grade && (
-                                <img
+                                <Image
                                   src={getGradeInfo(post.users.grade).icon}
                                   alt="등급"
+                                  width={12}
+                                  height={12}
                                   className="w-3 h-3"
                                 />
                               )}
@@ -1195,9 +1203,11 @@ export default function CompetitionDetailPage() {
                       <div className="col-span-2 text-center hidden sm:block">
                         <div className="flex items-center justify-center space-x-2">
                           {post.users?.grade && (
-                            <img
+                            <Image
                               src={getGradeInfo(post.users.grade).icon}
                               alt="등급"
+                              width={16}
+                              height={16}
                               className="w-4 h-4"
                             />
                           )}
@@ -1359,14 +1369,14 @@ export default function CompetitionDetailPage() {
                       }}
                       className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
                     >
-                      <img
-                        src={`${photo.image_url}?width=400&height=400&quality=80&resize=cover`}
+                      <Image
+                        src={photo.image_url}
                         alt={photo.caption || `대회 사진 ${actualIndex + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        quality={75}
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
-                        onError={(e) => {
-                          console.error('Image load error:', photo.image_url)
-                        }}
                       />
                       {showRanking && (
                         <div className="absolute top-1 left-1 sm:top-2 sm:left-2 z-10">
@@ -1542,10 +1552,13 @@ export default function CompetitionDetailPage() {
             >
               <X className="h-6 w-6" />
             </button>
-            <img
+            <Image
               src={selectedImage.url}
               alt={selectedImage.alt}
-              className="max-w-full max-h-full object-contain rounded-lg"
+              width={1920}
+              height={1080}
+              quality={90}
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -1587,10 +1600,14 @@ export default function CompetitionDetailPage() {
               className="max-w-full max-h-full flex flex-col items-center px-8 sm:px-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <img
+              <Image
                 src={galleryPhotos[currentPhotoIndex].image_url}
                 alt={galleryPhotos[currentPhotoIndex].caption || `대회 사진 ${currentPhotoIndex + 1}`}
-                className="max-w-full max-h-[calc(100vh-140px)] sm:max-h-[70vh] object-contain"
+                width={1920}
+                height={1080}
+                quality={90}
+                className="max-w-full max-h-[calc(100vh-140px)] sm:max-h-[70vh] w-auto h-auto object-contain"
+                priority
               />
               {galleryPhotos[currentPhotoIndex].caption && (
                 <div className="mt-3 sm:mt-4 bg-black bg-opacity-75 rounded-lg px-3 sm:px-6 py-2 sm:py-3 max-w-full sm:max-w-2xl">
@@ -1648,10 +1665,13 @@ export default function CompetitionDetailPage() {
                             : 'opacity-50 hover:opacity-100'
                         }`}
                       >
-                        <img
-                          src={`${photo.image_url}?width=100&height=100&quality=70&resize=cover`}
+                        <Image
+                          src={photo.image_url}
                           alt={`썸네일 ${actualIndex + 1}`}
-                          className="w-full h-full object-cover"
+                          fill
+                          sizes="80px"
+                          quality={60}
+                          className="object-cover"
                         />
                       </button>
                     )

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter, Flag, Shield, Waves, Gift, Zap, Minus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
@@ -196,13 +197,13 @@ export default function CompetitionsPage() {
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
         <div className="absolute inset-0 opacity-20">
-          <img
+          <Image
             src="/images/competitions-hero-bg.jpg"
             alt="런텐 대회 배경"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
+            fill
+            quality={60}
+            className="object-cover"
+            priority
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -401,10 +402,13 @@ export default function CompetitionsPage() {
                   {/* 대회 이미지 */}
                   <div className="relative h-48">
                     {competition.image_url ? (
-                      <img
+                      <Image
                         src={competition.image_url}
                         alt={competition.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        quality={80}
+                        className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500">
