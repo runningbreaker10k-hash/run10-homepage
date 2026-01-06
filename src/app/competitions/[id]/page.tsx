@@ -651,14 +651,11 @@ export default function CompetitionDetailPage() {
               <Route className="h-6 w-6 text-blue-600 mr-2" />
               <h3 className="text-xl font-semibold text-gray-900">코스 안내</h3>
             </div>
-            <div className="w-full max-w-4xl mx-auto relative aspect-video">
-              <Image
+            <div className="w-full max-w-4xl mx-auto">
+              <img
                 src={competition.course_image_url}
                 alt="코스 이미지"
-                fill
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                quality={85}
-                className="object-contain rounded-lg shadow-md"
+                className="w-full h-auto object-contain rounded-lg shadow-md"
               />
             </div>
           </div>
@@ -671,14 +668,11 @@ export default function CompetitionDetailPage() {
               <Award className="h-6 w-6 text-blue-600 mr-2" />
               <h3 className="text-xl font-semibold text-gray-900">시상 내역</h3>
             </div>
-            <div className="w-full max-w-4xl mx-auto relative aspect-video">
-              <Image
+            <div className="w-full max-w-4xl mx-auto">
+              <img
                 src={competition.prizes_image_url}
                 alt="시상품 이미지"
-                fill
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                quality={85}
-                className="object-contain rounded-lg shadow-md"
+                className="w-full h-auto object-contain rounded-lg shadow-md"
               />
             </div>
           </div>

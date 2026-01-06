@@ -17,9 +17,18 @@ export function toKST(utcDate: string | Date): Date {
  */
 export function formatKST(utcDate: string | Date, formatStr: string = 'yyyy.MM.dd HH:mm'): string {
   const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate
-  // UTC 시간에 9시간 추가하여 KST로 변환
-  const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000))
-  return dateFnsFormat(kstDate, formatStr, { locale: ko })
+
+  // 서버 환경인지 확인 (Node.js 환경)
+  const isServer = typeof window === 'undefined'
+
+  if (isServer) {
+    // 서버(UTC 환경): +9시간 추가 필요
+    const kstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000))
+    return dateFnsFormat(kstDate, formatStr, { locale: ko })
+  } else {
+    // 브라우저(KST 환경): 자동 변환에 의존
+    return dateFnsFormat(date, formatStr, { locale: ko })
+  }
 }
 
 /**
