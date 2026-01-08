@@ -403,9 +403,11 @@ export default function CompetitionDetailPage() {
 
   const getStatusBadge = (competition: Competition) => {
     const now = new Date()
+    const registrationStart = new Date(competition.registration_start)
     const registrationEnd = new Date(competition.registration_end)
     const competitionDate = new Date(competition.date)
 
+    // 대회 종료
     if (competition.status === 'closed' || competitionDate < now) {
       return (
         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
@@ -414,7 +416,17 @@ export default function CompetitionDetailPage() {
       )
     }
 
-    if (registrationEnd < now) {
+    // 신청 시작 전
+    if (registrationStart > now) {
+      return (
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+          신청 예정
+        </span>
+      )
+    }
+
+    // 정원 마감 또는 기한 마감
+    if (registrationEnd < now || competition.current_participants >= competition.max_participants) {
       return (
         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
           접수 마감
@@ -422,16 +434,17 @@ export default function CompetitionDetailPage() {
       )
     }
 
-    // 등록률이 50% 이상이면 마감임박
-    const registrationRate = competition.current_participants / competition.max_participants
-    if (registrationRate >= 0.5) {
+    // 마감 임박 (7일 이내)
+    const hoursUntilEnd = (registrationEnd.getTime() - now.getTime()) / (1000 * 60 * 60)
+    if (hoursUntilEnd <= 168 && hoursUntilEnd > 0) {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
-          마감임박
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+          마감 임박
         </span>
       )
     }
 
+    // 접수 중
     return (
       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
         접수 중

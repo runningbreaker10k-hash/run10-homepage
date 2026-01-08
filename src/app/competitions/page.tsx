@@ -109,6 +109,12 @@ export default function CompetitionsPage() {
       return 'registration_closed'
     }
 
+    // 마감 임박 (7일 이내)
+    const hoursUntilEnd = (registrationEnd.getTime() - now.getTime()) / (1000 * 60 * 60)
+    if (hoursUntilEnd <= 168 && hoursUntilEnd > 0) {
+      return 'deadline_approaching'
+    }
+
     // 신청 진행 중
     return 'ongoing'
   }
@@ -126,7 +132,7 @@ export default function CompetitionsPage() {
     const actualStatus = getActualCompetitionStatus(competition)
 
     if (statusFilter === 'ongoing') {
-      return actualStatus === 'ongoing' || actualStatus === 'registration_closed'
+      return actualStatus === 'ongoing' || actualStatus === 'deadline_approaching' || actualStatus === 'registration_closed'
     }
 
     if (statusFilter === 'closed') {
@@ -161,6 +167,15 @@ export default function CompetitionsPage() {
       return (
         <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-blue-600 shadow-md">
           예정
+        </span>
+      )
+    }
+
+    // 마감 임박
+    if (actualStatus === 'deadline_approaching') {
+      return (
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-amber-600 shadow-md">
+          마감 임박
         </span>
       )
     }
@@ -383,7 +398,7 @@ export default function CompetitionsPage() {
             {filteredCompetitions.map((competition) => {
               const actualStatus = getActualCompetitionStatus(competition)
               const isUpcoming = actualStatus === 'upcoming'
-              const isOngoing = actualStatus === 'ongoing' || actualStatus === 'registration_closed'
+              const isOngoing = actualStatus === 'ongoing' || actualStatus === 'deadline_approaching' || actualStatus === 'registration_closed'
               const isClosed = actualStatus === 'closed'
 
               const cardContent = (

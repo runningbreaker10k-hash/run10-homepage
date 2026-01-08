@@ -23,3 +23,36 @@ export type UserUpdate = Database['public']['Tables']['users']['Update']
 export type Popup = Database['public']['Tables']['popups']['Row']
 export type PopupInsert = Database['public']['Tables']['popups']['Insert']
 export type PopupUpdate = Database['public']['Tables']['popups']['Update']
+
+// Extended types with joined table data (for Supabase joins)
+
+// Registration with joined tables
+export interface RegistrationWithCompetition extends Registration {
+  competitions?: {
+    title: string
+    date: string
+  }
+  users?: {
+    grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
+  }
+  participation_groups?: {
+    name: string
+    distance: string
+    entry_fee: number
+  }
+}
+
+// CommunityPost with joined tables
+export interface CommunityPostWithRelations extends CommunityPost {
+  users?: {
+    id: string
+    user_id: string
+    name: string
+    email: string
+    grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
+    role: 'admin' | 'user'
+  }
+  competitions?: {
+    title: string
+  }
+}

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
-import { Registration, Competition } from '@/types'
+import { Registration, Competition, RegistrationWithCompetition } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { 
   Search, 
@@ -41,19 +41,6 @@ const updateSchema = z.object({
 
 type LookupFormData = z.infer<typeof lookupSchema>
 type UpdateFormData = z.infer<typeof updateSchema>
-
-interface RegistrationWithCompetition extends Registration {
-  competitions?: {
-    title: string
-    entry_fee: number
-    date: string
-  }
-  participation_groups?: {
-    name: string
-    distance: string
-    entry_fee: number
-  }
-}
 
 interface RegistrationLookupProps {
   competition: Competition

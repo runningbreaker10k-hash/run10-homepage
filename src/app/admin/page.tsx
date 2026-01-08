@@ -21,7 +21,7 @@ import {
   X
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Competition, Registration, CompetitionPost, User, Popup } from '@/types'
+import { Competition, Registration, CompetitionPost, User, Popup, RegistrationWithCompetition, CommunityPostWithRelations } from '@/types'
 import { format } from 'date-fns'
 import { formatKST, toDatetimeLocal, fromDatetimeLocal } from '@/lib/dateUtils'
 import PostDetailModal from '@/components/PostDetailModal'
@@ -68,7 +68,7 @@ export default function AdminPage() {
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
 
   // 참가자 관리 관련 상태
-  const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [registrations, setRegistrations] = useState<RegistrationWithCompetition[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [selectedCompetitionForParticipants, setSelectedCompetitionForParticipants] = useState<string>('')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
@@ -80,10 +80,10 @@ export default function AdminPage() {
   const [shirtSizeFilter, setShirtSizeFilter] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'created_at' | 'distance'>('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [selectedParticipant, setSelectedParticipant] = useState<Registration | null>(null)
+  const [selectedParticipant, setSelectedParticipant] = useState<RegistrationWithCompetition | null>(null)
   const [showParticipantModal, setShowParticipantModal] = useState(false)
   const [isEditingParticipant, setIsEditingParticipant] = useState(false)
-  const [editedParticipant, setEditedParticipant] = useState<Registration | null>(null)
+  const [editedParticipant, setEditedParticipant] = useState<RegistrationWithCompetition | null>(null)
   const [currentRegistrationPage, setCurrentRegistrationPage] = useState(1)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
@@ -98,9 +98,9 @@ export default function AdminPage() {
   const [editedMember, setEditedMember] = useState<User | null>(null)
 
   // 게시글 관리 관련 상태
-  const [posts, setPosts] = useState<CompetitionPost[]>([])
+  const [posts, setPosts] = useState<CommunityPostWithRelations[]>([])
   const [postsLoading, setPostsLoading] = useState(false)
-  const [selectedPost, setSelectedPost] = useState<CompetitionPost | null>(null)
+  const [selectedPost, setSelectedPost] = useState<CommunityPostWithRelations | null>(null)
   const [showPostDetail, setShowPostDetail] = useState(false)
   const [currentPostPage, setCurrentPostPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
@@ -1042,7 +1042,7 @@ export default function AdminPage() {
       if (activeTab === 'community') {
         fetchCommunityPosts()
       } else {
-        fetchCompetitionPosts()
+        fetchCommunityPosts()
       }
       alert('게시글이 삭제되었습니다.')
     } catch (error) {
@@ -1069,7 +1069,7 @@ export default function AdminPage() {
       if (activeTab === 'community') {
         fetchCommunityPosts()
       } else {
-        fetchCompetitionPosts()
+        fetchCommunityPosts()
       }
       alert(`${!currentStatus ? '공지글로 설정' : '일반글로 변경'}되었습니다.`)
     } catch (error) {
@@ -1612,6 +1612,31 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error updating member:', error)
       alert('회원 정보 수정 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 회원 비밀번호 초기화
+  const resetMemberPassword = async () => {
+    if (!editedMember) return
+
+    // 확인 모달
+    if (!confirm('비밀번호를 \'123456789\'로 초기화하시겠습니까?')) return
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          password: '123456789',
+        })
+        .eq('id', editedMember.id)
+
+      if (error) throw error
+
+      alert('비밀번호가 초기화되었습니다.')
+      fetchMembers() // 목록 새로고침
+    } catch (error) {
+      console.error('Error resetting password:', error)
+      alert('비밀번호 초기화 중 오류가 발생했습니다.')
     }
   }
 
@@ -4205,14 +4230,14 @@ export default function AdminPage() {
           if (activeTab === 'community') {
             fetchCommunityPosts()
           } else {
-            fetchCompetitionPosts()
+            fetchCommunityPosts()
           }
         }}
         onPostDeleted={() => {
           if (activeTab === 'community') {
             fetchCommunityPosts()
           } else {
-            fetchCompetitionPosts()
+            fetchCommunityPosts()
           }
         }}
         isAdminView={true}
@@ -4303,7 +4328,7 @@ export default function AdminPage() {
                     {isEditingMember && editedMember ? (
                       <select
                         value={editedMember.gender}
-                        onChange={(e) => setEditedMember({...editedMember, gender: e.target.value})}
+                        onChange={(e) => setEditedMember({...editedMember, gender: e.target.value as 'male' | 'female'})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       >
                         <option value="male">남성</option>
@@ -4371,17 +4396,26 @@ export default function AdminPage() {
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
               {isEditingMember ? (
                 <>
+                  {/* 비밀번호 초기화 버튼 (왼쪽) */}
                   <button
-                    onClick={cancelEditingMember}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                    onClick={resetMemberPassword}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium mr-auto"
                   >
-                    취소
+                    비밀번호 초기화
                   </button>
+
+                  {/* 취소/저장 버튼 (오른쪽) */}
                   <button
                     onClick={saveMemberChanges}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     저장
+                  </button>
+                  <button
+                    onClick={cancelEditingMember}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    취소
                   </button>
                 </>
               ) : (
@@ -4491,7 +4525,7 @@ export default function AdminPage() {
                     {isEditingParticipant && editedParticipant ? (
                       <select
                         value={editedParticipant.gender}
-                        onChange={(e) => setEditedParticipant({...editedParticipant, gender: e.target.value})}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, gender: e.target.value as 'male' | 'female'})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       >
                         <option value="male">남성</option>
@@ -4574,15 +4608,15 @@ export default function AdminPage() {
                     {isEditingParticipant && editedParticipant ? (
                       <select
                         value={editedParticipant.shirt_size || ''}
-                        onChange={(e) => setEditedParticipant({...editedParticipant, shirt_size: e.target.value})}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, shirt_size: e.target.value as 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'})}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       >
-                        <option value="">선택 안함</option>
+                        <option value="XS">XS</option>
                         <option value="S">S</option>
                         <option value="M">M</option>
                         <option value="L">L</option>
                         <option value="XL">XL</option>
-                        <option value="2XL">2XL</option>
+                        <option value="XXL">XXL</option>
                       </select>
                     ) : (
                       <p className="text-base text-gray-900">{selectedParticipant.shirt_size || '-'}</p>
