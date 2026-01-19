@@ -756,15 +756,15 @@ export default function CompetitionDetailPage() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">은행</span>
-                    <span className="font-semibold text-gray-900">하나은행</span>
+                    <span className="font-semibold text-gray-900">{competition.bank_name || '하나은행'}</span>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">계좌번호</span>
-                    <span className="font-semibold text-gray-900">734-910008-72504</span>
+                    <span className="font-semibold text-gray-900">{competition.bank_account || '734-910008-72504'}</span>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-600 font-medium">예금주</span>
-                    <span className="font-semibold text-gray-900">(주)러닝브레이커</span>
+                    <span className="font-semibold text-gray-900">{competition.account_holder || '(주)러닝브레이커'}</span>
                   </div>
                   <div className="py-2">
                     <span className="text-gray-600 font-medium block mb-2">입금액</span>

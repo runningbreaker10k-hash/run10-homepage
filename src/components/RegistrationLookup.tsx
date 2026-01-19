@@ -513,9 +513,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 <div>
                   <h4 className="text-xs sm:text-sm font-medium text-yellow-800 mb-2">입금 안내</h4>
                   <div className="text-xs sm:text-sm text-yellow-700 space-y-1">
-                    <p className="break-words">은행: 하나은행</p>
-                    <p className="break-all">계좌: 734-910008-72504</p>
-                    <p className="break-words">예금주: (주)러닝브레이커</p>
+                    <p className="break-words">은행: {competition.bank_name || '하나은행'}</p>
+                    <p className="break-all">계좌: {competition.bank_account || '734-910008-72504'}</p>
+                    <p className="break-words">예금주: {competition.account_holder || '(주)러닝브레이커'}</p>
                     <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
                     <p className="font-medium break-words">입금자명: {registration.depositor_name}</p>
                   </div>

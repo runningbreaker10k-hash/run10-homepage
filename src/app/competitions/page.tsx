@@ -410,7 +410,7 @@ export default function CompetitionsPage() {
                     'bg-blue-600'
                   }`}>
                     <h4 className="text-base font-bold">
-                      대회넘버 No. {getCompetitionNumber(competition.date)}
+                      런텐대회 No. {getCompetitionNumber(competition.date)}
                     </h4>
                   </div>
 

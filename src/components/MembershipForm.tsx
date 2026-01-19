@@ -128,6 +128,15 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
   const [postCodeModalOpen, setPostCodeModalOpen] = useState(false)
   const [noRecord, setNoRecord] = useState(false)
 
+  // 핸드폰 인증 관련 상태
+  const [phoneVerificationStep, setPhoneVerificationStep] = useState<'idle' | 'sent' | 'verified'>('idle')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [remainingTime, setRemainingTime] = useState(0)
+  const [verificationToken, setVerificationToken] = useState('')
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [phoneVerificationEnabled, setPhoneVerificationEnabled] = useState(true) // 핸드폰 인증 활성화 여부
+
   const { showError, showSuccess } = useMessageModal()
 
   const {
@@ -215,6 +224,114 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     }
   }
 
+  // 핸드폰 인증 활성화 여부 확인
+  useEffect(() => {
+    const fetchSmsSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('sms_settings')
+          .select('enabled')
+          .eq('feature_name', 'phone_verification')
+          .single()
+
+        if (!error && data) {
+          setPhoneVerificationEnabled(data.enabled)
+        } else {
+          setPhoneVerificationEnabled(true)
+        }
+      } catch (error) {
+        console.error('SMS 설정 조회 오류:', error)
+        setPhoneVerificationEnabled(true)
+      }
+    }
+    fetchSmsSettings()
+  }, [])
+
+  // 타이머 카운트다운
+  useEffect(() => {
+    if (remainingTime > 0) {
+      const timer = setTimeout(() => setRemainingTime(remainingTime - 1), 1000)
+      return () => clearTimeout(timer)
+    } else if (remainingTime === 0 && phoneVerificationStep === 'sent') {
+      showError('인증 시간이 만료되었습니다. 인증번호를 다시 받아주세요.')
+      setPhoneVerificationStep('idle')
+    }
+  }, [remainingTime, phoneVerificationStep, showError])
+
+  // 인증번호 발송
+  const handleSendVerificationCode = async () => {
+    const phone = watch('phone')
+
+    if (!phone || !/^010-\d{4}-\d{4}$/.test(phone)) {
+      showError('올바른 휴대폰 번호를 입력해주세요')
+      return
+    }
+
+    setIsSendingCode(true)
+
+    try {
+      const response = await fetch('/api/sms/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showError(data.error || 'SMS 발송에 실패했습니다')
+        return
+      }
+
+      showSuccess('인증번호가 발송되었습니다')
+      setPhoneVerificationStep('sent')
+      setRemainingTime(300) // 5분
+      setVerificationCode('')
+    } catch (error) {
+      console.error('인증번호 발송 오류:', error)
+      showError('SMS 발송 중 오류가 발생했습니다')
+    } finally {
+      setIsSendingCode(false)
+    }
+  }
+
+  // 인증번호 검증
+  const handleVerifyCode = async () => {
+    const phone = watch('phone')
+
+    if (!verificationCode || !/^\d{6}$/.test(verificationCode)) {
+      showError('6자리 인증번호를 입력해주세요')
+      return
+    }
+
+    setIsVerifying(true)
+
+    try {
+      const response = await fetch('/api/sms/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code: verificationCode }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showError(data.error || '인증에 실패했습니다')
+        return
+      }
+
+      showSuccess('인증이 완료되었습니다')
+      setPhoneVerificationStep('verified')
+      setVerificationToken(data.verificationToken)
+      setRemainingTime(0)
+    } catch (error) {
+      console.error('인증번호 검증 오류:', error)
+      showError('인증 중 오류가 발생했습니다')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
   // 우편번호 찾기
   const openPostCodeModal = () => {
     if (typeof window === 'undefined') return
@@ -284,6 +401,12 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
       return
     }
 
+    // 핸드폰 인증 검증 (인증이 활성화된 경우에만)
+    if (phoneVerificationEnabled && phoneVerificationStep !== 'verified') {
+      showError('휴대폰 본인인증을 완료해주세요')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -307,6 +430,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         address1: data.address1,
         address2: data.address2,
         phone: data.phone,
+        phone_verified: phoneVerificationEnabled ? true : false, // 인증 활성화 시에만 true
         phone_marketing_agree: !!data.phone_marketing_agree,
         email: data.email,
         email_marketing_agree: !!data.email_marketing_agree,
@@ -327,7 +451,32 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
 
       if (error) throw error
 
-      showSuccess('회원가입이 완료되었습니다!')
+      // 회원가입 완료 알림톡 발송
+      try {
+        const alimtalkResponse = await fetch('/api/alimtalk/signup-complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: data.phone,
+            name: data.name,
+            userId: data.user_id.toLowerCase(),
+            grade: grade,
+          }),
+        });
+
+        if (!alimtalkResponse.ok) {
+          const errorData = await alimtalkResponse.json();
+          console.error('알림톡 발송 실패:', errorData);
+        } else {
+          const successData = await alimtalkResponse.json();
+          console.log('알림톡 발송 성공:', successData);
+        }
+      } catch (alimtalkError) {
+        // 알림톡 발송 실패해도 회원가입은 성공으로 처리
+        console.error('알림톡 발송 중 오류:', alimtalkError);
+      }
+
+      // 성공 메시지는 부모 컴포넌트(AuthModal)에서 표시
       onSuccess()
     } catch (error) {
       const appError = ErrorHandler.handle(error)
@@ -525,16 +674,97 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           <label className="block text-sm font-medium text-gray-700 mb-2">
             연락처 <span className="text-red-500">*</span>
           </label>
-          <input
-            {...register('phone')}
-            type="text"
-            className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="010-1234-5678"
-            onChange={(e) => {
-              const formatted = formatPhoneNumber(e.target.value)
-              setValue('phone', formatted)
-            }}
-          />
+
+          {phoneVerificationEnabled ? (
+            /* 인증이 활성화된 경우: 인증 버튼 표시 */
+            <>
+              <div className="flex gap-2">
+                <input
+                  {...register('phone')}
+                  type="text"
+                  disabled={phoneVerificationStep === 'verified'}
+                  className="flex-1 px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  placeholder="010-1234-5678"
+                  onChange={(e) => {
+                    const formatted = formatPhoneNumber(e.target.value)
+                    setValue('phone', formatted)
+                    if (phoneVerificationStep !== 'idle') {
+                      setPhoneVerificationStep('idle')
+                      setVerificationCode('')
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSendVerificationCode}
+                  disabled={phoneVerificationStep === 'verified' || isSendingCode}
+                  className="whitespace-nowrap px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm sm:text-base"
+                >
+                  {isSendingCode ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : phoneVerificationStep === 'idle' ? (
+                    '인증번호 받기'
+                  ) : phoneVerificationStep === 'sent' ? (
+                    '재전송'
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      인증완료
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* 인증번호 입력 (발송 후에만 표시) */}
+              {phoneVerificationStep === 'sent' && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6자리 숫자"
+                      maxLength={6}
+                      className="flex-1 px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyCode}
+                      disabled={isVerifying}
+                      className="whitespace-nowrap px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 text-sm sm:text-base"
+                    >
+                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : '인증 확인'}
+                    </button>
+                    <span className="flex items-center text-red-500 font-mono text-sm sm:text-base">
+                      {Math.floor(remainingTime / 60)}:{(remainingTime % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-600">5분 이내에 인증번호를 입력해주세요</p>
+                </div>
+              )}
+
+              {/* 인증 완료 표시 */}
+              {phoneVerificationStep === 'verified' && (
+                <div className="mt-2 flex items-center gap-2 text-green-600 text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>휴대폰 본인인증이 완료되었습니다</span>
+                </div>
+              )}
+            </>
+          ) : (
+            /* 인증이 비활성화된 경우: 일반 입력 필드만 표시 */
+            <input
+              {...register('phone')}
+              type="text"
+              className="w-full px-3 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="010-1234-5678"
+              onChange={(e) => {
+                const formatted = formatPhoneNumber(e.target.value)
+                setValue('phone', formatted)
+              }}
+            />
+          )}
+
           <div className="mt-2 sm:mt-3">
             <label className="flex items-center">
               <input

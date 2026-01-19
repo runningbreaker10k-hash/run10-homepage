@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { sendPaymentConfirmAlimtalk } from '@/lib/ppurio'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 
 /**
  * 뱅크다A 자동 입금 확인 API
@@ -74,10 +77,26 @@ async function handleConfirmPayment(request: NextRequest) {
       const orderId = item.order_id
 
       try {
-        // 3-1. 주문 조회
+        // 3-1. 주문 조회 (대회 정보 포함)
         const { data: registration, error: selectError } = await supabase
           .from('registrations')
-          .select('id, payment_status, name, entry_fee')
+          .select(`
+            id,
+            payment_status,
+            name,
+            phone,
+            entry_fee,
+            distance,
+            participation_groups (
+              name,
+              distance,
+              competitions (
+                title,
+                date,
+                location
+              )
+            )
+          `)
           .eq('id', orderId)
           .single()
 
@@ -129,6 +148,40 @@ async function handleConfirmPayment(request: NextRequest) {
 
         // 로그 출력 (Vercel 로그에서 확인 가능)
         console.log(`[뱅크다A] 입금 확인 완료: ${registration.name} (${orderId}), 금액: ${registration.entry_fee}원`)
+
+        // 3-5. 입금 확인 완료 알림톡 발송 (설정이 활성화된 경우에만)
+        try {
+          // 알림톡 설정 확인
+          const { data: smsSettings } = await supabase
+            .from('sms_settings')
+            .select('enabled')
+            .eq('feature_name', 'payment_confirm')
+            .single()
+
+          if (smsSettings?.enabled) {
+            const competition = registration.participation_groups?.competitions
+            if (competition && registration.phone) {
+              // 날짜 형식 변환 (예: 2025년 3월 15일 09:00)
+              const eventDate = format(new Date(competition.date), 'yyyy년 M월 d일 HH:mm', { locale: ko })
+              const distance = registration.participation_groups?.distance || registration.distance || ''
+
+              await sendPaymentConfirmAlimtalk(
+                registration.phone,
+                registration.name,
+                eventDate,
+                competition.location,
+                distance,
+                registration.entry_fee.toLocaleString()
+              )
+              console.log(`[뱅크다A] 입금 확인 알림톡 발송 성공: ${registration.name}`)
+            }
+          } else {
+            console.log(`[뱅크다A] 입금 확인 알림톡 비활성화 상태: ${registration.name}`)
+          }
+        } catch (alimtalkError) {
+          // 알림톡 발송 실패해도 입금 확인은 성공으로 처리
+          console.error(`[뱅크다A] 입금 확인 알림톡 발송 실패:`, alimtalkError)
+        }
 
       } catch (error) {
         console.error(`주문 처리 오류 (${orderId}):`, error)

@@ -36,7 +36,10 @@ const competitionSchema = z.object({
   organizer: z.string().optional(),
   supervisor: z.string().optional(),
   sponsor: z.string().optional(),
-  status: z.enum(['draft', 'published'])
+  status: z.enum(['draft', 'published']),
+  bank_name: z.string().optional(),
+  bank_account: z.string().optional(),
+  account_holder: z.string().optional()
 })
 
 type CompetitionFormData = z.infer<typeof competitionSchema>
@@ -69,7 +72,10 @@ export default function NewCompetitionPage() {
     resolver: zodResolver(competitionSchema),
     defaultValues: {
       status: 'draft',
-      entry_fee: 30000
+      entry_fee: 30000,
+      bank_name: '하나은행',
+      bank_account: '734-910008-72504',
+      account_holder: '(주)러닝브레이커'
     }
   })
 
@@ -324,6 +330,50 @@ export default function NewCompetitionPage() {
                   type="text"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="예: 나이키, 아디다스"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 입금 계좌 정보 */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">입금 계좌 정보</h2>
+            <p className="text-sm text-gray-500 mb-4">대회 참가비 입금 계좌를 설정합니다. 비워두면 기본값이 사용됩니다.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label htmlFor="bank_name" className="block text-sm font-medium text-gray-700 mb-2">
+                  은행명
+                </label>
+                <input
+                  {...register('bank_name')}
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 하나은행"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="bank_account" className="block text-sm font-medium text-gray-700 mb-2">
+                  계좌번호
+                </label>
+                <input
+                  {...register('bank_account')}
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: 734-910008-72504"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="account_holder" className="block text-sm font-medium text-gray-700 mb-2">
+                  예금주
+                </label>
+                <input
+                  {...register('account_holder')}
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="예: (주)러닝브레이커"
                 />
               </div>
             </div>

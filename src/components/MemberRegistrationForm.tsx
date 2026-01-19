@@ -52,6 +52,9 @@ interface Competition {
   distances?: string[]
   max_participants: number
   current_participants: number
+  bank_name?: string
+  bank_account?: string
+  account_holder?: string
 }
 
 interface MemberRegistrationFormProps {
@@ -240,6 +243,35 @@ export default function MemberRegistrationForm({
 
       if (updateGroupError) throw updateGroupError
 
+      // 대회 신청 완료 알림톡 발송
+      try {
+        const bankAccount = `${competition.bank_name || '하나은행'} ${competition.bank_account || '734-910008-72504'}`
+        const alimtalkResponse = await fetch('/api/alimtalk/competition-registration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: userDetails.phone,
+            name: userDetails.name,
+            competitionName: competition.title,
+            distance: selectedGroup.distance,
+            fee: selectedGroup.entry_fee.toLocaleString(),
+            bankAccount: bankAccount,
+            accountHolder: competition.account_holder || '(주)러닝브레이커',
+            depositorName: formData.depositor_name,
+          }),
+        });
+
+        if (!alimtalkResponse.ok) {
+          const errorData = await alimtalkResponse.json();
+          console.error('대회 신청 알림톡 발송 실패:', errorData);
+        } else {
+          const successData = await alimtalkResponse.json();
+          console.log('대회 신청 알림톡 발송 성공:', successData);
+        }
+      } catch (alimtalkError) {
+        console.error('대회 신청 알림톡 발송 중 오류:', alimtalkError);
+      }
+
       reset()
       onSuccess()
     } catch (error) {
@@ -329,10 +361,10 @@ export default function MemberRegistrationForm({
                 <span className="text-gray-700 font-medium">입금자명:</span> {formData.depositor_name}
               </div>
               <div className="break-all">
-                <span className="text-gray-700 font-medium">계좌번호:</span> 하나은행 734-910008-72504
+                <span className="text-gray-700 font-medium">계좌번호:</span> {competition.bank_name || '하나은행'} {competition.bank_account || '734-910008-72504'}
               </div>
               <div className="break-words">
-                <span className="text-gray-700 font-medium">예금주:</span> (주)러닝브레이커
+                <span className="text-gray-700 font-medium">예금주:</span> {competition.account_holder || '(주)러닝브레이커'}
               </div>
               {formData.notes && (
                 <div className="break-words">
@@ -512,8 +544,8 @@ export default function MemberRegistrationForm({
             ) : (
               <p><strong>참가비:</strong> 종목 선택 후 확인 가능</p>
             )}
-            <p className="break-all"><strong>계좌번호:</strong> 하나은행 734-910008-72504</p>
-            <p className="break-words"><strong>예금주:</strong> (주)러닝브레이커</p>
+            <p className="break-all"><strong>계좌번호:</strong> {competition.bank_name || '하나은행'} {competition.bank_account || '734-910008-72504'}</p>
+            <p className="break-words"><strong>예금주:</strong> {competition.account_holder || '(주)러닝브레이커'}</p>
             <p className="text-xs mt-2">
               ※ 입금 확인 후 참가 확정됩니다.
             </p>

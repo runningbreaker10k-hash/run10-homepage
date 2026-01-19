@@ -99,7 +99,7 @@ export default function AboutPage() {
             <div className="mb-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="order-2 lg:order-1">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">JUST RUN 10 대회</h3>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">RUN10 대회</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">
                     전국 러닝 협회가 인증하는 공식 10km 대회를 개최합니다.
                     정확한 기록 측정과 함께 최고의 러닝 경험을 제공합니다.

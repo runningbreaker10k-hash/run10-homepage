@@ -85,7 +85,10 @@ export async function POST(request: NextRequest) {
           name,
           distance,
           competitions (
-            title
+            title,
+            bank_name,
+            bank_account,
+            account_holder
           )
         )
       `)
@@ -111,13 +114,18 @@ export async function POST(request: NextRequest) {
     const groupName = registration.participation_groups?.name || '일반부'
     const productName = `${competitionTitle} ${groupName}`
 
-    // 6. 응답 데이터 생성
+    // 6. 대회별 계좌 정보 조회
+    const competition = registration.participation_groups?.competitions
+    const bankAccount = (competition?.bank_account || '734-910008-72504').replace(/-/g, '')
+    const bankName = competition?.bank_name || '하나은행'
+
+    // 7. 응답 데이터 생성
     const orderDetail: BankdaOrderDetail = {
       order_id: registration.id,
       buyer_name: registration.name,
       billing_name: registration.depositor_name,
-      bank_account_no: '73491000872504', // 하나은행 734-910008-72504 (하이픈 제거)
-      bank_code_name: '하나은행',
+      bank_account_no: bankAccount,
+      bank_code_name: bankName,
       order_price_amount: registration.entry_fee,
       order_date: orderDate,
       items: [
@@ -127,10 +135,10 @@ export async function POST(request: NextRequest) {
       ]
     }
 
-    // 7. 로그 출력
+    // 8. 로그 출력
     console.log(`[뱅크다A] 주문 상세 조회: ${registration.name} (${orderId})`)
 
-    // 8. 응답 반환
+    // 9. 응답 반환
     return NextResponse.json({
       order: orderDetail
     })

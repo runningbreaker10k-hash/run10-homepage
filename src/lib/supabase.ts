@@ -113,6 +113,9 @@ export type Database = {
           updated_at: string
           status: 'draft' | 'published' | 'closed'
           shipping_status: 'pending' | 'completed'
+          bank_name: string
+          bank_account: string
+          account_holder: string
         }
         Insert: {
           id?: string
@@ -139,6 +142,9 @@ export type Database = {
           updated_at?: string
           status?: 'draft' | 'published' | 'closed'
           shipping_status?: 'pending' | 'completed'
+          bank_name?: string
+          bank_account?: string
+          account_holder?: string
         }
         Update: {
           id?: string
@@ -165,6 +171,9 @@ export type Database = {
           updated_at?: string
           status?: 'draft' | 'published' | 'closed'
           shipping_status?: 'pending' | 'completed'
+          bank_name?: string
+          bank_account?: string
+          account_holder?: string
         }
       }
       participation_groups: {

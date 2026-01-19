@@ -56,7 +56,10 @@ async function getPendingOrders() {
         name,
         distance,
         competitions (
-          title
+          title,
+          bank_name,
+          bank_account,
+          account_holder
         )
       )
     `)
@@ -74,16 +77,21 @@ async function getPendingOrders() {
     const orderDate = formatKST(registration.created_at, 'yyyy-MM-dd HH:mm:ss')
 
     // 품목명 생성 (대회명 + 참가종목)
-    const competitionTitle = registration.participation_groups?.competitions?.title || '대회'
+    const competition = registration.participation_groups?.competitions
+    const competitionTitle = competition?.title || '대회'
     const groupName = registration.participation_groups?.name || '일반부'
     const productName = `${competitionTitle} ${groupName}`
+
+    // 대회별 계좌 정보
+    const bankAccount = (competition?.bank_account || '734-910008-72504').replace(/-/g, '')
+    const bankName = competition?.bank_name || '하나은행'
 
     return {
       order_id: registration.id,
       buyer_name: registration.name,
       billing_name: registration.depositor_name,
-      bank_account_no: '73491000872504', // 하나은행 734-910008-72504 (하이픈 제거)
-      bank_code_name: '하나은행',
+      bank_account_no: bankAccount,
+      bank_code_name: bankName,
       order_price_amount: registration.entry_fee,
       order_date: orderDate,
       items: [

@@ -18,7 +18,10 @@ import {
   Pin,
   MessageSquare,
   Download,
-  X
+  X,
+  Bell,
+  BellOff,
+  Loader2
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User, Popup, RegistrationWithCompetition, CommunityPostWithRelations } from '@/types'
@@ -32,7 +35,7 @@ import PopupImageUpload from '@/components/PopupImageUpload'
 export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank'>('competitions')
+  const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank' | 'sms'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants'>('management')
   const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -136,6 +139,13 @@ export default function AdminPage() {
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
   const [memberGradeFilter, setMemberGradeFilter] = useState<string>('all')
 
+  // SMS 관리 관련 상태
+  const [smsSettings, setSmsSettings] = useState<any[]>([])
+  const [smsSettingsLoading, setSmsSettingsLoading] = useState(false)
+  const [updatingSmsId, setUpdatingSmsId] = useState<string | null>(null)
+  const [smsError, setSmsError] = useState<string | null>(null)
+  const [smsSuccessMessage, setSmsSuccessMessage] = useState<string | null>(null)
+
   useEffect(() => {
     if (!user) {
       setLoading(false)
@@ -205,6 +215,86 @@ export default function AdminPage() {
       fetchRankUpdatedDates()
     }
   }, [user, activeTab])
+
+  useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'sms') {
+      fetchSmsSettings()
+    }
+  }, [user, activeTab])
+
+  // SMS 관리 함수들
+  const fetchSmsSettings = async () => {
+    try {
+      setSmsSettingsLoading(true)
+      setSmsError(null)
+
+      const { data, error: fetchError } = await supabase
+        .from('sms_settings')
+        .select('*')
+        .order('created_at', { ascending: true })
+
+      if (fetchError) {
+        console.error('SMS 설정 조회 오류:', fetchError)
+        setSmsError('SMS 설정을 불러오는데 실패했습니다')
+        return
+      }
+
+      setSmsSettings(data || [])
+    } catch (error) {
+      console.error('SMS 설정 조회 중 오류:', error)
+      setSmsError('SMS 설정을 불러오는데 실패했습니다')
+    } finally {
+      setSmsSettingsLoading(false)
+    }
+  }
+
+  const toggleSmsSetting = async (id: string, currentEnabled: boolean, featureName: string) => {
+    try {
+      setUpdatingSmsId(id)
+      setSmsError(null)
+      setSmsSuccessMessage(null)
+
+      const newEnabled = !currentEnabled
+
+      const { error: updateError } = await supabase
+        .from('sms_settings')
+        .update({
+          enabled: newEnabled,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+
+      if (updateError) {
+        console.error('SMS 설정 업데이트 오류:', updateError)
+        setSmsError('설정 업데이트에 실패했습니다')
+        return
+      }
+
+      // 로컬 상태 업데이트
+      setSmsSettings(prev =>
+        prev.map(setting =>
+          setting.id === id
+            ? { ...setting, enabled: newEnabled, updated_at: new Date().toISOString() }
+            : setting
+        )
+      )
+
+      const FEATURE_LABELS: Record<string, string> = {
+        'phone_verification': '핸드폰 인증',
+        'signup_complete': '회원가입 완료 알림톡',
+        'competition_registration': '대회 신청 완료 알림톡',
+        'payment_confirm': '입금 확인 완료 알림톡'
+      }
+      const label = FEATURE_LABELS[featureName] || featureName
+      setSmsSuccessMessage(`${label} 기능이 ${newEnabled ? '활성화' : '비활성화'}되었습니다`)
+      setTimeout(() => setSmsSuccessMessage(null), 3000)
+    } catch (error) {
+      console.error('SMS 설정 업데이트 중 오류:', error)
+      setSmsError('설정 업데이트에 실패했습니다')
+    } finally {
+      setUpdatingSmsId(null)
+    }
+  }
 
   // 랭커 관리 함수들
   const fetchRankUpdatedDates = async () => {
@@ -1141,12 +1231,61 @@ export default function AdminPage() {
   // 참가자 결제 상태 변경
   const updatePaymentStatus = async (registrationId: string, newStatus: string) => {
     try {
+      // 먼저 기존 상태와 참가자 정보 조회
+      const { data: registration, error: fetchError } = await supabase
+        .from('registrations')
+        .select(`
+          id,
+          payment_status,
+          name,
+          phone,
+          entry_fee,
+          distance,
+          participation_groups (
+            name,
+            distance,
+            competitions (
+              title,
+              date,
+              location
+            )
+          )
+        `)
+        .eq('id', registrationId)
+        .single()
+
+      if (fetchError) throw fetchError
+
       const { error } = await supabase
         .from('registrations')
         .update({ payment_status: newStatus })
         .eq('id', registrationId)
 
       if (error) throw error
+
+      // pending → confirmed로 변경될 때만 알림톡 발송
+      if (registration.payment_status === 'pending' && newStatus === 'confirmed') {
+        try {
+          const competition = registration.participation_groups?.competitions
+          if (competition && registration.phone) {
+            await fetch('/api/alimtalk/payment-confirm', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: registration.phone,
+                name: registration.name,
+                eventDate: competition.date,
+                location: competition.location,
+                distance: registration.participation_groups?.distance || registration.distance || '',
+                fee: registration.entry_fee?.toLocaleString() || '0',
+              }),
+            })
+          }
+        } catch (alimtalkError) {
+          console.error('입금 확인 알림톡 발송 실패:', alimtalkError)
+        }
+      }
+
       fetchRegistrations()
       alert('결제 상태가 변경되었습니다.')
     } catch (error) {
@@ -2262,62 +2401,73 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow mb-6">
-          <div className="border-b border-gray-200 overflow-x-auto">
-            <nav className="-mb-px flex space-x-4 sm:space-x-8 px-4 sm:px-6 min-w-max sm:min-w-0">
+          <div className="border-b border-gray-200 overflow-x-auto scrollbar-hide">
+            <nav className="-mb-px flex space-x-2 sm:space-x-6 px-3 sm:px-6">
               <button
                 onClick={() => setActiveTab('competitions')}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
                   activeTab === 'competitions'
                     ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 대회 관리
               </button>
               <button
                 onClick={() => setActiveTab('community')}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
                   activeTab === 'community'
                     ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 게시판 관리
               </button>
               <button
                 onClick={() => setActiveTab('members')}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
                   activeTab === 'members'
                     ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 회원 관리
               </button>
               <button
                 onClick={() => setActiveTab('popups')}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
                   activeTab === 'popups'
                     ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 팝업 관리
               </button>
               <button
                 onClick={() => setActiveTab('rank')}
-                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
                   activeTab === 'rank'
                     ? 'border-red-500 text-red-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 랭커 관리
+              </button>
+              <button
+                onClick={() => setActiveTab('sms')}
+                className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm flex items-center whitespace-nowrap ${
+                  activeTab === 'sms'
+                    ? 'border-red-500 text-red-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                문자 관리
               </button>
             </nav>
           </div>
@@ -4214,6 +4364,117 @@ export default function AdminPage() {
                   <li>업로드 시 기존 데이터를 덮어씁니다</li>
                 </ul>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'sms' && (
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-6">
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-gray-900">문자 관리</h2>
+                <p className="mt-2 text-gray-600">SMS 및 알림톡 기능을 관리합니다</p>
+              </div>
+
+              {/* Error Message */}
+              {smsError && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800">{smsError}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {smsSuccessMessage && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800">{smsSuccessMessage}</p>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {smsSettingsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <span className="ml-3 text-gray-600">설정 불러오는 중...</span>
+                </div>
+              ) : (
+                <>
+                  {/* Settings List */}
+                  <div className="bg-white rounded-lg border border-gray-200">
+                    <div className="divide-y divide-gray-200">
+                      {smsSettings.length === 0 ? (
+                        <div className="p-8 text-center text-gray-500">
+                          등록된 SMS 설정이 없습니다
+                        </div>
+                      ) : (
+                        smsSettings.map((setting) => {
+                          const FEATURE_LABELS: Record<string, string> = {
+                            'phone_verification': '[핸드폰 인증] 알림톡',
+                            'signup_complete': '[회원가입 완료] 알림톡',
+                            'competition_registration': '[대회신청 완료] 알림톡',
+                            'payment_confirm': '[입금확인 완료] 알림톡'
+                          }
+                          const label = FEATURE_LABELS[setting.feature_name] || setting.feature_name
+                          const isUpdating = updatingSmsId === setting.id
+
+                          return (
+                            <div
+                              key={setting.id}
+                              className="p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className={`p-2 rounded-lg ${setting.enabled ? 'bg-green-100' : 'bg-gray-100'}`}>
+                                  {setting.enabled ? (
+                                    <Bell className="w-6 h-6 text-green-600" />
+                                  ) : (
+                                    <BellOff className="w-6 h-6 text-gray-400" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-900">{label}</h3>
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {setting.enabled ? '현재 활성화 상태입니다' : '현재 비활성화 상태입니다'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => toggleSmsSetting(setting.id, setting.enabled, setting.feature_name)}
+                                disabled={isUpdating}
+                                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  setting.enabled ? 'bg-green-600' : 'bg-gray-300'
+                                }`}
+                              >
+                                {isUpdating ? (
+                                  <Loader2 className="w-4 h-4 absolute left-1/2 -translate-x-1/2 animate-spin text-white" />
+                                ) : (
+                                  <span
+                                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                                      setting.enabled ? 'translate-x-7' : 'translate-x-1'
+                                    }`}
+                                  />
+                                )}
+                              </button>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">💡 안내</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• 핸드폰 인증: 회원가입 시 카카오톡 알림톡 본인인증 기능을 활성화/비활성화합니다</li>
+                      <li>• 회원가입 완료 알림톡: 회원가입 완료 시 자동으로 카카오톡 알림톡을 발송합니다</li>
+                      <li>• 대회 신청 완료 알림톡: 대회 신청 완료 시 자동으로 카카오톡 알림톡을 발송합니다</li>
+                      <li>• 입금 확인 완료 알림톡: 입금 확인 시 자동으로 카카오톡 알림톡을 발송합니다</li>
+                      <li>• 기능을 비활성화하면 해당 알림톡 발송이 차단됩니다</li>
+                      <li>• 설정 변경은 즉시 적용됩니다</li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
