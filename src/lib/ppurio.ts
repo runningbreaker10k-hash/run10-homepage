@@ -1,4 +1,4 @@
-// 뿌리오 API 유틸리티 (Cloudflare Workers 프록시 사용)
+// 뿌리오 API 유틸리티 (GAS 프록시 사용)
 
 interface PpurioSMSResponse {
   status: string;
@@ -6,9 +6,16 @@ interface PpurioSMSResponse {
   message?: string;
 }
 
+interface GASProxyResponse {
+  success: boolean;
+  detected_google_ip?: string;
+  ppurio_response?: any;
+  error?: string;
+}
+
 /**
- * Cloudflare Workers 프록시를 통해 뿌리오 API 호출
- * API Key는 Cloudflare Secret에 저장되어 있으므로 클라이언트에서 전송하지 않음
+ * GAS(Google Apps Script) 프록시를 통해 뿌리오 API 호출
+ * API Key는 GAS 스크립트에 저장되어 있으므로 클라이언트에서 전송하지 않음
  */
 async function callPpurioProxy(
   endpoint: string,
@@ -20,7 +27,7 @@ async function callPpurioProxy(
     throw new Error('NEXT_PUBLIC_PROXY_URL 환경 변수가 설정되지 않았습니다');
   }
 
-  console.log('Cloudflare 프록시를 통해 뿌리오 API 호출:', endpoint);
+  console.log('GAS 프록시를 통해 뿌리오 API 호출:', endpoint);
 
   const response = await fetch(proxyUrl, {
     method: 'POST',
@@ -43,7 +50,27 @@ async function callPpurioProxy(
     throw new Error(`프록시 호출 실패: ${response.statusText} - ${errorText}`);
   }
 
-  return await response.json();
+  const gasResponse: GASProxyResponse = await response.json();
+
+  // detected_google_ip 값을 크게 로그에 출력 (뿌리오 IP 등록용)
+  if (gasResponse.detected_google_ip) {
+    console.log('');
+    console.log('╔════════════════════════════════════════════════════════════╗');
+    console.log('║                                                            ║');
+    console.log('║   🌐 GAS DETECTED IP (뿌리오에 등록 필요!)                 ║');
+    console.log('║                                                            ║');
+    console.log(`║   IP: ${gasResponse.detected_google_ip.padEnd(50)}║`);
+    console.log('║                                                            ║');
+    console.log('╚════════════════════════════════════════════════════════════╝');
+    console.log('');
+  }
+
+  if (!gasResponse.success) {
+    console.error('GAS 프록시 에러:', gasResponse.error);
+    throw new Error(`GAS 프록시 에러: ${gasResponse.error}`);
+  }
+
+  return gasResponse.ppurio_response;
 }
 
 /**
