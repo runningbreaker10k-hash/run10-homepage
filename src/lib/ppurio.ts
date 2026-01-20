@@ -1,11 +1,4 @@
-// 뿌리오 API 유틸리티
-
-const PPURIO_BASE_URL = 'https://message.ppurio.com';
-
-interface PpurioTokenResponse {
-  token: string;
-  expires_in: number;
-}
+// 뿌리오 API 유틸리티 (Cloudflare Workers 프록시 사용)
 
 interface PpurioSMSResponse {
   status: string;
@@ -14,43 +7,43 @@ interface PpurioSMSResponse {
 }
 
 /**
- * 뿌리오 액세스 토큰 발급 (24시간 유효)
+ * Cloudflare Workers 프록시를 통해 뿌리오 API 호출
+ * API Key는 Cloudflare Secret에 저장되어 있으므로 클라이언트에서 전송하지 않음
  */
-async function getAccessToken(): Promise<string> {
-  const account = process.env.PPURIO_ACCOUNT;
-  const apiKey = process.env.PPURIO_API_KEY;
+async function callPpurioProxy(
+  endpoint: string,
+  body?: any
+): Promise<any> {
+  const proxyUrl = process.env.NEXT_PUBLIC_PROXY_URL;
 
-  if (!account || !apiKey) {
-    console.error('환경 변수 누락:', { account: !!account, apiKey: !!apiKey });
-    throw new Error('뿌리오 환경 변수가 설정되지 않았습니다');
+  if (!proxyUrl) {
+    throw new Error('NEXT_PUBLIC_PROXY_URL 환경 변수가 설정되지 않았습니다');
   }
 
-  console.log('토큰 발급 시도:', { account, apiKeyLength: apiKey.length });
+  console.log('Cloudflare 프록시를 통해 뿌리오 API 호출:', endpoint);
 
-  const credentials = `${account}:${apiKey}`;
-  const base64Credentials = Buffer.from(credentials).toString('base64');
-
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/token`, {
+  const response = await fetch(proxyUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${base64Credentials}`,
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      endpoint,
+      body,
+    }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('토큰 발급 실패 응답:', {
+    console.error('프록시 호출 실패:', {
       status: response.status,
       statusText: response.statusText,
       body: errorText
     });
-    throw new Error(`토큰 발급 실패: ${response.statusText} - ${errorText}`);
+    throw new Error(`프록시 호출 실패: ${response.statusText} - ${errorText}`);
   }
 
-  const data: PpurioTokenResponse = await response.json();
-  console.log('토큰 발급 성공');
-  return data.token;
+  return await response.json();
 }
 
 /**
@@ -73,44 +66,28 @@ export async function sendVerificationSMS(
   // 하이픈 제거
   const cleanPhone = phone.replace(/-/g, '');
 
-  // 토큰 발급
-  const token = await getAccessToken();
-
-  // 알림톡 발송
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/kakao`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      account,
-      messageType: 'alt',
-      senderProfile,
-      templateCode,
-      duplicateFlag: 'Y',
-      isResend: 'N',
-      targetCount: 1,
-      targets: [
-        {
-          to: cleanPhone,
-          name: '고객',
-          changeWord: {
-            'var1': code,
-          },
+  // 알림톡 발송 요청
+  const requestBody = {
+    account,
+    messageType: 'alt',
+    senderProfile,
+    templateCode,
+    duplicateFlag: 'Y',
+    isResend: 'N',
+    targetCount: 1,
+    targets: [
+      {
+        to: cleanPhone,
+        name: '고객',
+        changeWord: {
+          'var1': code,
         },
-      ],
-      refKey: `verify_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-    }),
-  });
+      },
+    ],
+    refKey: `verify_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('알림톡 발송 실패:', errorText);
-    throw new Error(`알림톡 발송 실패: ${errorText}`);
-  }
-
-  const result = await response.json();
+  const result = await callPpurioProxy('/v1/kakao', requestBody);
   console.log('알림톡 발송 성공:', result);
   return result;
 }
@@ -147,46 +124,30 @@ export async function sendSignupCompleteAlimtalk(
   // 하이픈 제거
   const cleanPhone = phone.replace(/-/g, '');
 
-  // 토큰 발급
-  const token = await getAccessToken();
-
-  // 알림톡 발송
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/kakao`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      account,
-      messageType: 'ali',  // 이미지형 알림톡
-      senderProfile,
-      templateCode,
-      duplicateFlag: 'Y',
-      isResend: 'N',
-      targetCount: 1,
-      targets: [
-        {
-          to: cleanPhone,
-          name: '고객',
-          changeWord: {
-            'var1': name,
-            'var2': userId,
-            'var3': gradeName,
-          },
+  // 알림톡 발송 요청
+  const requestBody = {
+    account,
+    messageType: 'ali',
+    senderProfile,
+    templateCode,
+    duplicateFlag: 'Y',
+    isResend: 'N',
+    targetCount: 1,
+    targets: [
+      {
+        to: cleanPhone,
+        name: '고객',
+        changeWord: {
+          'var1': name,
+          'var2': userId,
+          'var3': gradeName,
         },
-      ],
-      refKey: `signup_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-    }),
-  });
+      },
+    ],
+    refKey: `signup_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('회원가입 완료 알림톡 발송 실패:', errorText);
-    throw new Error(`알림톡 발송 실패: ${errorText}`);
-  }
-
-  const result = await response.json();
+  const result = await callPpurioProxy('/v1/kakao', requestBody);
   console.log('회원가입 완료 알림톡 발송 성공:', result);
   return result;
 }
@@ -217,50 +178,34 @@ export async function sendCompetitionRegistrationAlimtalk(
   // 하이픈 제거
   const cleanPhone = phone.replace(/-/g, '');
 
-  // 토큰 발급
-  const token = await getAccessToken();
-
-  // 알림톡 발송
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/kakao`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      account,
-      messageType: 'ali',  // 이미지형 알림톡
-      senderProfile,
-      templateCode,
-      duplicateFlag: 'Y',
-      isResend: 'N',
-      targetCount: 1,
-      targets: [
-        {
-          to: cleanPhone,
-          name: '고객',
-          changeWord: {
-            'var1': name,
-            'var2': competitionName,
-            'var3': distance,
-            'var4': fee,
-            'var5': bankAccount,
-            'var6': accountHolder,
-            'var7': depositorName,
-          },
+  // 알림톡 발송 요청
+  const requestBody = {
+    account,
+    messageType: 'ali',
+    senderProfile,
+    templateCode,
+    duplicateFlag: 'Y',
+    isResend: 'N',
+    targetCount: 1,
+    targets: [
+      {
+        to: cleanPhone,
+        name: '고객',
+        changeWord: {
+          'var1': name,
+          'var2': competitionName,
+          'var3': distance,
+          'var4': fee,
+          'var5': bankAccount,
+          'var6': accountHolder,
+          'var7': depositorName,
         },
-      ],
-      refKey: `comp_${Date.now()}`,
-    }),
-  });
+      },
+    ],
+    refKey: `comp_${Date.now()}`,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('대회 신청 완료 알림톡 발송 실패:', errorText);
-    throw new Error(`알림톡 발송 실패: ${errorText}`);
-  }
-
-  const result = await response.json();
+  const result = await callPpurioProxy('/v1/kakao', requestBody);
   console.log('대회 신청 완료 알림톡 발송 성공:', result);
   return result;
 }
@@ -289,48 +234,32 @@ export async function sendPaymentConfirmAlimtalk(
   // 하이픈 제거
   const cleanPhone = phone.replace(/-/g, '');
 
-  // 토큰 발급
-  const token = await getAccessToken();
-
-  // 알림톡 발송
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/kakao`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      account,
-      messageType: 'ali',  // 이미지형 알림톡
-      senderProfile,
-      templateCode,
-      duplicateFlag: 'Y',
-      isResend: 'N',
-      targetCount: 1,
-      targets: [
-        {
-          to: cleanPhone,
-          name: '고객',
-          changeWord: {
-            'var1': name,
-            'var2': eventDate,
-            'var3': location,
-            'var4': distance,
-            'var5': fee,
-          },
+  // 알림톡 발송 요청
+  const requestBody = {
+    account,
+    messageType: 'ali',
+    senderProfile,
+    templateCode,
+    duplicateFlag: 'Y',
+    isResend: 'N',
+    targetCount: 1,
+    targets: [
+      {
+        to: cleanPhone,
+        name: '고객',
+        changeWord: {
+          'var1': name,
+          'var2': eventDate,
+          'var3': location,
+          'var4': distance,
+          'var5': fee,
         },
-      ],
-      refKey: `pay_${Date.now()}`,
-    }),
-  });
+      },
+    ],
+    refKey: `pay_${Date.now()}`,
+  };
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('입금 확인 완료 알림톡 발송 실패:', errorText);
-    throw new Error(`알림톡 발송 실패: ${errorText}`);
-  }
-
-  const result = await response.json();
+  const result = await callPpurioProxy('/v1/kakao', requestBody);
   console.log('입금 확인 완료 알림톡 발송 성공:', result);
   return result;
 }
@@ -353,39 +282,25 @@ export async function sendKakaoAlimtalk(
   // 하이픈 제거
   const cleanPhone = phone.replace(/-/g, '');
 
-  // 토큰 발급
-  const token = await getAccessToken();
+  // 알림톡 발송 요청
+  const requestBody = {
+    account,
+    messageType: 'alt',
+    senderProfile,
+    templateCode,
+    duplicateFlag: 'Y',
+    isResend: 'N',
+    targetCount: 1,
+    targets: [
+      {
+        to: cleanPhone,
+        name: '고객',
+        changeWord: variables,
+      },
+    ],
+    refKey: `alimtalk_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+  };
 
-  // 알림톡 발송
-  const response = await fetch(`${PPURIO_BASE_URL}/v1/kakao`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      account,
-      messageType: 'alt',
-      senderProfile,
-      templateCode,
-      duplicateFlag: 'Y',
-      isResend: 'N',
-      targetCount: 1,
-      targets: [
-        {
-          to: cleanPhone,
-          name: '고객',
-          changeWord: variables,
-        },
-      ],
-      refKey: `alimtalk_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`알림톡 발송 실패: ${errorText}`);
-  }
-
-  return await response.json();
+  const result = await callPpurioProxy('/v1/kakao', requestBody);
+  return result;
 }

@@ -1651,23 +1651,29 @@ export default function AdminPage() {
         }
       }
 
-      // 참가자 정보 업데이트
+      // 참가자 정보 업데이트 (회원 신청인 경우 회원정보 필드 제외)
+      const updateData: Record<string, any> = {
+        shirt_size: editedParticipant.shirt_size,
+        depositor_name: editedParticipant.depositor_name,
+        notes: editedParticipant.notes,
+        participation_group_id: editedParticipant.participation_group_id,
+        entry_fee: editedParticipant.entry_fee,
+        distance: editedParticipant.distance
+      }
+
+      // 비회원 신청인 경우에만 회원정보 필드도 업데이트
+      if (!selectedParticipant.is_member_registration) {
+        updateData.email = editedParticipant.email
+        updateData.phone = editedParticipant.phone
+        updateData.birth_date = editedParticipant.birth_date
+        updateData.age = editedParticipant.age
+        updateData.gender = editedParticipant.gender
+        updateData.address = editedParticipant.address
+      }
+
       const { error } = await supabase
         .from('registrations')
-        .update({
-          email: editedParticipant.email,
-          phone: editedParticipant.phone,
-          birth_date: editedParticipant.birth_date,
-          age: editedParticipant.age,
-          gender: editedParticipant.gender,
-          address: editedParticipant.address,
-          shirt_size: editedParticipant.shirt_size,
-          depositor_name: editedParticipant.depositor_name,
-          notes: editedParticipant.notes,
-          participation_group_id: editedParticipant.participation_group_id,
-          entry_fee: editedParticipant.entry_fee,
-          distance: editedParticipant.distance
-        })
+        .update(updateData)
         .eq('id', editedParticipant.id)
 
       if (error) throw error
@@ -1729,9 +1735,11 @@ export default function AdminPage() {
     if (!editedMember) return
 
     try {
+      // 1. 회원 정보 업데이트
       const { error } = await supabase
         .from('users')
         .update({
+          name: editedMember.name,
           email: editedMember.email,
           phone: editedMember.phone,
           birth_date: editedMember.birth_date,
@@ -1744,7 +1752,28 @@ export default function AdminPage() {
 
       if (error) throw error
 
-      alert('회원 정보가 수정되었습니다.')
+      // 2. 해당 회원의 대회 신청 정보도 동기화 (회원 신청 건만)
+      const fullAddress = `${editedMember.address1} ${editedMember.address2 || ''}`.trim()
+      const { error: registrationError } = await supabase
+        .from('registrations')
+        .update({
+          name: editedMember.name,
+          email: editedMember.email,
+          phone: editedMember.phone,
+          birth_date: editedMember.birth_date,
+          gender: editedMember.gender,
+          address: fullAddress,
+        })
+        .eq('user_id', editedMember.id)
+
+      if (registrationError) {
+        console.error('대회 신청 정보 동기화 오류:', registrationError)
+        // 회원 정보는 수정되었으므로 경고만 표시
+        alert('회원 정보는 수정되었으나, 대회 신청 정보 동기화 중 오류가 발생했습니다.')
+      } else {
+        alert('회원 정보가 수정되었습니다.')
+      }
+
       setSelectedMember(editedMember)
       setIsEditingMember(false)
       fetchMembers() // 목록 새로고침
@@ -4537,7 +4566,16 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">이름</label>
-                    <p className="text-base text-gray-900">{selectedMember.name}</p>
+                    {isEditingMember && editedMember ? (
+                      <input
+                        type="text"
+                        value={editedMember.name}
+                        onChange={(e) => setEditedMember({...editedMember, name: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900">{selectedMember.name}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">아이디</label>
@@ -4721,7 +4759,12 @@ export default function AdminPage() {
             <div className="p-6 space-y-6">
               {/* 기본 정보 */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">기본 정보</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                  기본 정보
+                  {selectedParticipant.is_member_registration && (
+                    <span className="ml-2 text-xs font-normal text-blue-600">(회원정보는 회원관리에서 수정)</span>
+                  )}
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">이름</label>
@@ -4729,7 +4772,7 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
-                    {isEditingParticipant && editedParticipant ? (
+                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
                       <input
                         type="email"
                         value={editedParticipant.email}
@@ -4742,7 +4785,7 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">연락처</label>
-                    {isEditingParticipant && editedParticipant ? (
+                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
                       <input
                         type="tel"
                         value={editedParticipant.phone}
@@ -4755,7 +4798,7 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">생년월일</label>
-                    {isEditingParticipant && editedParticipant ? (
+                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
                       <div>
                         <input
                           type="text"
@@ -4775,15 +4818,11 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">나이</label>
-                    {isEditingParticipant && editedParticipant ? (
-                      <p className="text-base text-gray-900 font-medium text-blue-600">{editedParticipant.age}세</p>
-                    ) : (
-                      <p className="text-base text-gray-900">{selectedParticipant.age}세</p>
-                    )}
+                    <p className="text-base text-gray-900">{selectedParticipant.age}세</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">성별</label>
-                    {isEditingParticipant && editedParticipant ? (
+                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
                       <select
                         value={editedParticipant.gender}
                         onChange={(e) => setEditedParticipant({...editedParticipant, gender: e.target.value as 'male' | 'female'})}
@@ -4806,7 +4845,7 @@ export default function AdminPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">주소</h3>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">주소</label>
-                  {isEditingParticipant && editedParticipant ? (
+                  {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
                     <textarea
                       value={editedParticipant.address || ''}
                       onChange={(e) => setEditedParticipant({...editedParticipant, address: e.target.value})}
@@ -4953,17 +4992,18 @@ export default function AdminPage() {
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
               {isEditingParticipant ? (
                 <>
-                  <button
-                    onClick={cancelEditingParticipant}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                  >
-                    취소
-                  </button>
+
                   <button
                     onClick={saveParticipantChanges}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     저장
+                  </button>
+                  <button
+                    onClick={cancelEditingParticipant}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  >
+                    취소
                   </button>
                 </>
               ) : (
