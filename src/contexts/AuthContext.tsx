@@ -30,7 +30,7 @@ interface AuthContextType {
   logout: () => void
   isLoading: boolean
   updateUser: (userData: Partial<User> | Record<string, any>) => void
-  getGradeInfo: (grade: string) => { display: string; icon: string; color: string }
+  getGradeInfo: (grade: string, role?: string) => { display: string; icon: string; color: string }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -51,8 +51,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // 등급 정보 반환 함수
-  const getGradeInfo = (grade: string) => {
+  // 등급 정보 반환 함수 (role 파라미터 추가: admin이면 자동으로 bolt)
+  const getGradeInfo = (grade: string, role?: string) => {
+    // 관리자인 경우 항상 bolt 아이콘 표시
+    if (role === 'admin') {
+      return { display: '관리자', icon: '/images/grades/bolt.png', color: 'text-purple-600' }
+    }
+
     switch (grade) {
       case 'cheetah':
         return { display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }

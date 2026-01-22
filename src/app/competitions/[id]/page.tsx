@@ -1189,7 +1189,7 @@ export default function CompetitionDetailPage() {
                             <div className="flex items-center space-x-1">
                               {post.users?.grade && (
                                 <Image
-                                  src={getGradeInfo(post.users.grade).icon}
+                                  src={getGradeInfo(post.users.grade, post.users.role).icon}
                                   alt="등급"
                                   width={12}
                                   height={12}
@@ -1211,7 +1211,7 @@ export default function CompetitionDetailPage() {
                         <div className="flex items-center justify-center space-x-2">
                           {post.users?.grade && (
                             <Image
-                              src={getGradeInfo(post.users.grade).icon}
+                              src={getGradeInfo(post.users.grade, post.users.role).icon}
                               alt="등급"
                               width={16}
                               height={16}

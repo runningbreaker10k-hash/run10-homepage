@@ -271,7 +271,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
     }
   }
 
-  const gradeInfo = user ? getGradeInfo(user.grade) : null
+  const gradeInfo = user ? getGradeInfo(user.grade, user.role) : null
   const isAdmin = user?.role === 'admin'
 
   return (

@@ -8,7 +8,6 @@ import { User, Calendar, Settings, Eye, EyeOff, Trash2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { format } from 'date-fns'
 import { formatKST } from '@/lib/dateUtils'
 
 // 회원 정보 수정 스키마
@@ -244,14 +243,18 @@ export default function MyPage() {
   const getGradeDisplayLocal = (minutes: number, seconds: number = 0, gender?: string) => {
     const totalMinutes = minutes + (seconds / 60)
 
+    // 범위 벗어남 처리 (성별 무관)
+    if (totalMinutes < 30) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+    if (totalMinutes >= 70) return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+
     if (gender === 'male') {
-      // 남성 기준
+      // 남성 기준 (30분~69분)
       if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
       if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
       if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
       return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
     } else if (gender === 'female') {
-      // 여성 기준
+      // 여성 기준 (30분~69분)
       if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
       if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
       if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
@@ -326,18 +329,22 @@ export default function MyPage() {
 
       let grade = 'turtle'
 
-      if (data.gender === 'male') {
-        // 남성 기준
-        if (totalMinutes < 40) grade = 'cheetah'          // 00:00~39:59
+      // 범위 벗어남 처리 (성별 무관)
+      if (totalMinutes < 30) {
+        grade = 'cheetah'  // 30분 미만 = 치타
+      } else if (totalMinutes >= 70) {
+        grade = 'turtle'   // 70분 이상 = 터틀
+      } else if (data.gender === 'male') {
+        // 남성 기준 (30분~69분)
+        if (totalMinutes < 40) grade = 'cheetah'          // 30:00~39:59
         else if (totalMinutes < 50) grade = 'horse'       // 40:00~49:59
         else if (totalMinutes < 60) grade = 'wolf'        // 50:00~59:59
-        else grade = 'turtle'                             // 60:00 이상
+        else grade = 'turtle'                             // 60:00~69:59
       } else {
-        // 여성 기준
-        if (totalMinutes < 50) grade = 'cheetah'          // 00:00~49:59
+        // 여성 기준 (30분~69분)
+        if (totalMinutes < 50) grade = 'cheetah'          // 30:00~49:59
         else if (totalMinutes < 60) grade = 'horse'       // 50:00~59:59
-        else if (totalMinutes < 70) grade = 'wolf'        // 60:00~69:59
-        else grade = 'turtle'                             // 70:00 이상
+        else grade = 'wolf'                               // 60:00~69:59
       }
 
       // 분과 초를 초 단위로 변환하고 등급 포함

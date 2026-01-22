@@ -302,7 +302,7 @@ export default function MemberRegistrationForm({
     )
   }
 
-  const gradeInfo = getGradeInfo(user.grade)
+  const gradeInfo = getGradeInfo(user.grade, user.role)
 
   // 확인 단계 UI
   if (showConfirmation && formData) {

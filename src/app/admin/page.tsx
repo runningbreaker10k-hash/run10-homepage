@@ -5365,11 +5365,11 @@ export default function AdminPage() {
                     {selectedAuthor.grade && (
                       <>
                         <img
-                          src={getGradeInfo(selectedAuthor.grade).icon}
-                          alt={getGradeInfo(selectedAuthor.grade).display}
+                          src={getGradeInfo(selectedAuthor.grade, selectedAuthor.role).icon}
+                          alt={getGradeInfo(selectedAuthor.grade, selectedAuthor.role).display}
                           className="w-5 h-5 mr-2"
                         />
-                        <span>{getGradeInfo(selectedAuthor.grade).display}</span>
+                        <span>{getGradeInfo(selectedAuthor.grade, selectedAuthor.role).display}</span>
                       </>
                     )}
                     {!selectedAuthor.grade && '-'}

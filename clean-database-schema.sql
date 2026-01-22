@@ -268,7 +268,9 @@ SELECT
     cp.updated_at,
     u.name as author_name,
     u.grade as author_grade,
+    u.role as author_role,
     CASE
+      WHEN u.role = 'admin' THEN '/images/grades/bolt.png'
       WHEN u.grade = 'cheetah' THEN '/images/grades/cheetah.png'
       WHEN u.grade = 'horse' THEN '/images/grades/horse.png'
       WHEN u.grade = 'wolf' THEN '/images/grades/wolf.png'
@@ -294,7 +296,9 @@ SELECT
     pc.updated_at,
     u.name as author_name,
     u.grade as author_grade,
+    u.role as author_role,
     CASE
+      WHEN u.role = 'admin' THEN '/images/grades/bolt.png'
       WHEN u.grade = 'cheetah' THEN '/images/grades/cheetah.png'
       WHEN u.grade = 'horse' THEN '/images/grades/horse.png'
       WHEN u.grade = 'wolf' THEN '/images/grades/wolf.png'

@@ -378,7 +378,7 @@ export default function CommunityPostPage() {
   }
 
   const canEditPost = user && (user.role === 'admin' || user.id === post.user_id)
-  const authorGradeInfo = getGradeInfo(post.users.grade)
+  const authorGradeInfo = getGradeInfo(post.users.grade, post.users.role)
 
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
@@ -550,7 +550,7 @@ export default function CommunityPostPage() {
               ) : (
                 comments.map((comment) => {
                   const canDeleteComment = user && (user.role === 'admin' || user.id === comment.user_id)
-                  const commenterGradeInfo = getGradeInfo(comment.users.grade)
+                  const commenterGradeInfo = getGradeInfo(comment.users.grade, comment.users.role)
 
                   return (
                     <div key={comment.id} className="px-3 sm:px-6 py-3 sm:py-4">
@@ -634,7 +634,7 @@ export default function CommunityPostPage() {
                 <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3 sm:space-y-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <img
-                      src={getGradeInfo(user.grade).icon}
+                      src={getGradeInfo(user.grade, user.role).icon}
                       alt="등급"
                       className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
                     />

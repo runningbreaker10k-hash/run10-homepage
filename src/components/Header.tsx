@@ -24,7 +24,7 @@ export default function Header() {
     setIsMenuOpen(false)
   }
 
-  const gradeInfo = user ? getGradeInfo(user.grade) : null
+  const gradeInfo = user ? getGradeInfo(user.grade, user.role) : null
 
   return (
     <>

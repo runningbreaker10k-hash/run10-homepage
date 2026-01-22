@@ -22,6 +22,7 @@ interface Post {
   author_id: string
   author_name: string
   author_grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
+  author_role: 'admin' | 'user'
   author_grade_icon: string
   comment_count: number
 }
@@ -330,7 +331,7 @@ export default function CommunityPage() {
                                 <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
                                   <div className="flex items-center space-x-1">
                                     <img
-                                      src={getGradeInfo(post.author_grade).icon}
+                                      src={getGradeInfo(post.author_grade, post.author_role).icon}
                                       alt="등급"
                                       className="w-3 h-3"
                                     />
@@ -348,7 +349,7 @@ export default function CommunityPage() {
                             <div className="col-span-2 text-center hidden sm:block">
                               <div className="flex items-center justify-center space-x-2">
                                 <img
-                                  src={getGradeInfo(post.author_grade).icon}
+                                  src={getGradeInfo(post.author_grade, post.author_role).icon}
                                   alt="등급"
                                   className="w-4 h-4 flex-shrink-0"
                                 />

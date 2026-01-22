@@ -584,12 +584,12 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                           {post.users ? (
                             <>
                               <img
-                                src={getGradeInfo(post.users.grade).icon}
+                                src={getGradeInfo(post.users.grade, post.users.role).icon}
                                 alt="등급"
                                 className="w-5 h-5"
                               />
                               <span className="font-medium">{post.users.name}</span>
-                              <span className="text-xs opacity-75">({getGradeInfo(post.users.grade).display})</span>
+                              <span className="text-xs opacity-75">({getGradeInfo(post.users.grade, post.users.role).display})</span>
                             </>
                           ) : (
                             <span className="font-medium">알 수 없는 사용자</span>
@@ -646,7 +646,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                       ) : (
                         comments.map((comment) => {
                           const canDeleteComment = user && (user.role === 'admin' || user.id === comment.user_id)
-                          const commenterGradeInfo = comment.users ? getGradeInfo(comment.users.grade) : null
+                          const commenterGradeInfo = comment.users ? getGradeInfo(comment.users.grade, comment.users.role) : null
 
                           return (
                             <div key={comment.id} className="px-6 py-4">
@@ -696,7 +696,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                         <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3">
                           <div className="flex items-center space-x-2 mb-2">
                             <img
-                              src={getGradeInfo(user.grade).icon}
+                              src={getGradeInfo(user.grade, user.role).icon}
                               alt="등급"
                               className="w-5 h-5"
                             />

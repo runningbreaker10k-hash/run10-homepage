@@ -867,7 +867,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
         {/* 기록 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            10K 기록 (마이페이지에서 정확한 기록 수정가능) <span className="text-red-500">*</span>
+            10K 기록 (마이페이지 수정 가능) <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <label className="flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all hover:border-blue-400 touch-manipulation">

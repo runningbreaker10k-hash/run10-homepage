@@ -172,7 +172,7 @@ export default function CommunityWritePage() {
     return null
   }
 
-  const gradeInfo = getGradeInfo(user.grade)
+  const gradeInfo = getGradeInfo(user.grade, user.role)
 
   return (
     <div className="min-h-screen pt-16 bg-gray-50">
