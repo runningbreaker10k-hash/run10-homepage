@@ -480,7 +480,7 @@ export default function CompetitionsPage() {
                         {format(new Date(competition.registration_start), 'yyyy. M. d (E)', { locale: ko })}
                         {' ~ '}
                         {isOngoing && '※ 선착순 '}
-                        {competition.max_participants > 0 && isOngoing && `${competition.max_participants.toLocaleString()}명 `}
+                        {competition.max_participants > 0 && isOngoing && `3,500명 `}
                         {isClosed ? '마감 종료' : isOngoing ? '모집' : isUpcoming ? '선착순 접수' : '마감'}
                       </span>
                     </div>
