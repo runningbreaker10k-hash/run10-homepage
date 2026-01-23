@@ -435,6 +435,7 @@ export type Database = {
           author_id: string
           author_name: string
           author_grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
+          author_role: 'admin' | 'user'
           author_grade_icon: string
           comment_count: number
         }

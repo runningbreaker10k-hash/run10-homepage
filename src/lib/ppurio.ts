@@ -1,4 +1,4 @@
-// 뿌리오 API 유틸리티 (GAS 프록시 사용)
+// 뿌리오 API 유틸리티 (프록시 서버 사용)
 
 interface PpurioSMSResponse {
   status: string;
@@ -6,16 +6,14 @@ interface PpurioSMSResponse {
   message?: string;
 }
 
-interface GASProxyResponse {
+interface ProxyResponse {
   success: boolean;
-  detected_google_ip?: string;
   ppurio_response?: any;
   error?: string;
 }
 
 /**
- * GAS(Google Apps Script) 프록시를 통해 뿌리오 API 호출
- * API Key는 GAS 스크립트에 저장되어 있으므로 클라이언트에서 전송하지 않음
+ * 프록시 서버를 통해 뿌리오 API 호출
  */
 async function callPpurioProxy(
   endpoint: string,
@@ -27,7 +25,7 @@ async function callPpurioProxy(
     throw new Error('NEXT_PUBLIC_PROXY_URL 환경 변수가 설정되지 않았습니다');
   }
 
-  console.log('GAS 프록시를 통해 뿌리오 API 호출:', endpoint);
+  console.log('프록시를 통해 뿌리오 API 호출:', endpoint);
 
   const response = await fetch(proxyUrl, {
     method: 'POST',
@@ -50,27 +48,14 @@ async function callPpurioProxy(
     throw new Error(`프록시 호출 실패: ${response.statusText} - ${errorText}`);
   }
 
-  const gasResponse: GASProxyResponse = await response.json();
+  const proxyResponse: ProxyResponse = await response.json();
 
-  // detected_google_ip 값을 크게 로그에 출력 (뿌리오 IP 등록용)
-  if (gasResponse.detected_google_ip) {
-    console.log('');
-    console.log('╔════════════════════════════════════════════════════════════╗');
-    console.log('║                                                            ║');
-    console.log('║   🌐 GAS DETECTED IP (뿌리오에 등록 필요!)                 ║');
-    console.log('║                                                            ║');
-    console.log(`║   IP: ${gasResponse.detected_google_ip.padEnd(50)}║`);
-    console.log('║                                                            ║');
-    console.log('╚════════════════════════════════════════════════════════════╝');
-    console.log('');
+  if (!proxyResponse.success) {
+    console.error('프록시 에러:', proxyResponse.error);
+    throw new Error(`프록시 에러: ${proxyResponse.error}`);
   }
 
-  if (!gasResponse.success) {
-    console.error('GAS 프록시 에러:', gasResponse.error);
-    throw new Error(`GAS 프록시 에러: ${gasResponse.error}`);
-  }
-
-  return gasResponse.ppurio_response;
+  return proxyResponse.ppurio_response;
 }
 
 /**
@@ -138,13 +123,13 @@ export async function sendSignupCompleteAlimtalk(
 
   console.log('회원가입 완료 알림톡 발송 시도:', { phone, name, userId, grade });
 
-  // 등급 변환
+  // 등급 영어 표기 (첫 글자 대문자)
   const gradeLabels: Record<string, string> = {
-    'cheetah': '치타',
-    'horse': '말',
-    'wolf': '늑대',
-    'turtle': '거북',
-    'bolt': '볼트'
+    'cheetah': '치타(Cheetah)',
+    'horse': '홀스(Horse)',
+    'wolf': '울프(Wolf)',
+    'turtle': '터틀(Turtle)',
+    'bolt': 'Bolt'
   };
   const gradeName = gradeLabels[grade] || grade;
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Calendar, MapPin, Users, Clock, Trophy, Search, Filter, Flag, Shield, Waves, Gift, Zap, Minus } from 'lucide-react'
+import { Trophy, Search } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition } from '@/types'
 import { format } from 'date-fns'
@@ -229,17 +229,17 @@ export default function CompetitionsPage() {
         </div>
       </section>
 
-      {/* 대회 소개 섹션 */}
+      {/* 대회 소개 섹션 - 주석 처리 */}
+      {/*
       <section className="py-8 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              
+
             </p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {/* 1. 병목 없는 레이스 - 티어별 스타트 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Flag className="h-8 w-8 text-red-600" />
@@ -250,7 +250,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
 
-            {/* 2. 언덕 없는 국내 최고의 평지 코스 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Minus className="h-8 w-8 text-red-600" />
@@ -261,7 +260,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
 
-            {/* 3. 차량통제 필요없는 안전한 코스 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-8 w-8 text-red-600" />
@@ -272,7 +270,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
 
-            {/* 4. 전국 하천을 따라 달리는 힐링 코스 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Waves className="h-8 w-8 text-red-600" />
@@ -283,7 +280,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
 
-            {/* 5. 100명 이상의 경품 최고 수준의 상금 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Gift className="h-8 w-8 text-red-600" />
@@ -294,7 +290,6 @@ export default function CompetitionsPage() {
               </p>
             </div>
 
-            {/* 6. 5km 러너에게도 기록칩 완벽 지원 */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
               <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-8 w-8 text-red-600" />
@@ -307,6 +302,7 @@ export default function CompetitionsPage() {
           </div>
         </div>
       </section>
+      */}
 
       {/* 대회 목록 섹션 */}
       <section className="pt-8 pb-16 bg-gray-50">
@@ -477,11 +473,14 @@ export default function CompetitionsPage() {
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-medium text-gray-700 w-12">신청</span>
                       <span className={`flex-1 ${isOngoing ? 'text-red-600 font-medium' : ''}`}>
-                        {format(new Date(competition.registration_start), 'yyyy. M. d (E)', { locale: ko })}
-                        {' ~ '}
-                        {isOngoing && '※ 선착순 '}
-                        {competition.max_participants > 0 && isOngoing && `3,500명 `}
-                        {isClosed ? '마감 종료' : isOngoing ? '모집' : isUpcoming ? '선착순 접수' : '마감'}
+                        {isUpcoming && (
+                          <>
+                            {format(new Date(competition.registration_start), 'yyyy. M. d (E)', { locale: ko })}
+                            {' ~ 선착순 접수'}
+                          </>
+                        )}
+                        {isClosed && '마감 종료'}
+                        {isOngoing && '※ 선착순 3,500명 모집'}
                       </span>
                     </div>
                   </div>

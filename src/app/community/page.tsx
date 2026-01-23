@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { MessageCircle, Search, Plus, Eye, MessageSquare, Pin, Edit, Trash2, Lock } from 'lucide-react'
-import Link from 'next/link'
+import { MessageCircle, Search, Plus, MessageSquare, Pin } from 'lucide-react'
 import { format } from 'date-fns'
 import { toKST } from '@/lib/dateUtils'
 import AuthModal from '@/components/AuthModal'
@@ -19,12 +18,13 @@ interface Post {
   is_notice: boolean
   created_at: string
   updated_at: string
-  author_id: string
-  author_name: string
-  author_grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
-  author_role: 'admin' | 'user'
-  author_grade_icon: string
-  comment_count: number
+  user_id: string
+  users: {
+    name: string
+    grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
+    role: 'admin' | 'user'
+  }
+  post_comments: { id: string }[]
 }
 
 export default function CommunityPage() {
@@ -45,16 +45,24 @@ export default function CommunityPage() {
 
   const loadPosts = async () => {
     setIsLoading(true)
-    
+
     try {
       let query = supabase
-        .from('community_posts_with_author')
-        .select('*', { count: 'exact' })
+        .from('community_posts')
+        .select(`
+          *,
+          users (
+            name,
+            grade,
+            role
+          ),
+          post_comments (id)
+        `, { count: 'exact' })
         .is('competition_id', null)  // 대회 ID가 없는 글만 표시 (회원게시판)
 
       // 검색 필터
       if (searchTerm) {
-        query = query.or(`title.ilike.%${searchTerm}%,author_name.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
+        query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)
       }
 
       // 페이지네이션
@@ -317,10 +325,10 @@ export default function CommunityPage() {
                                   <span className="font-medium text-gray-900 hover:text-red-600 text-sm sm:text-base truncate">
                                     {post.title}
                                   </span>
-                                  {post.comment_count > 0 && (
+                                  {post.post_comments?.length > 0 && (
                                     <span className="flex items-center text-xs text-red-600 flex-shrink-0">
                                       <MessageSquare className="w-3 h-3 mr-0.5" />
-                                      {post.comment_count}
+                                      {post.post_comments.length}
                                     </span>
                                   )}
                                   {post.image_url && (
@@ -331,11 +339,11 @@ export default function CommunityPage() {
                                 <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
                                   <div className="flex items-center space-x-1">
                                     <img
-                                      src={getGradeInfo(post.author_grade, post.author_role).icon}
+                                      src={getGradeInfo(post.users?.grade || 'turtle', post.users?.role).icon}
                                       alt="등급"
                                       className="w-3 h-3"
                                     />
-                                    <span>{maskName(post.author_name)}</span>
+                                    <span>{maskName(post.users?.name || '')}</span>
                                   </div>
                                   <span>•</span>
                                   <span>{formatDate(post.created_at)}</span>
@@ -349,12 +357,12 @@ export default function CommunityPage() {
                             <div className="col-span-2 text-center hidden sm:block">
                               <div className="flex items-center justify-center space-x-2">
                                 <img
-                                  src={getGradeInfo(post.author_grade, post.author_role).icon}
+                                  src={getGradeInfo(post.users?.grade || 'turtle', post.users?.role).icon}
                                   alt="등급"
                                   className="w-4 h-4 flex-shrink-0"
                                 />
                                 <span className="text-sm text-gray-700 break-words">
-                                  {maskName(post.author_name)}
+                                  {maskName(post.users?.name || '')}
                                 </span>
                               </div>
                             </div>
