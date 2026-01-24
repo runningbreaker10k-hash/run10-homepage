@@ -754,7 +754,8 @@ export default function MyPage() {
               )}
             </div>
 
-            {/* 기타 */}
+            {/* 기타 - 숨김 처리 */}
+            {/*
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">기타</label>
               <textarea
@@ -764,6 +765,7 @@ export default function MyPage() {
                 placeholder="추가 정보가 있다면 입력하세요"
               />
             </div>
+            */}
 
             <button
               type="submit"

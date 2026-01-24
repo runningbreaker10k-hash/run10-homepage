@@ -77,7 +77,7 @@ export default function AppMainPage() {
         {/* 중앙 텍스트 */}
         <div className="relative z-10 text-center text-white px-6">
           <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">
-            <span className="block">RUN10</span>
+            <span className="block">런텐 RUN10</span>
           </h1>
           <p className="text-base sm:text-lg font-medium opacity-90 mb-2">
             전국 러닝 협회 인증
@@ -137,7 +137,7 @@ export default function AppMainPage() {
                     <p>도시관광도 즐기고 PB에 도전하세요!</p>
                   </div>
                   <div className="text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>2026 2.28 세종에서 열립니다</p>
+                    <p>2026.3.21 청주에서 열립니다</p>
                   </div>
                 </div>
               </div>
@@ -175,10 +175,10 @@ export default function AppMainPage() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-red-600 mb-2">
-              RUN10 티어
+              런텐 티어
             </h2>
             <p className="text-base text-gray-700 font-medium">
-              나의 RUN10 티어를 확인해 보세요
+              나의 런텐 티어를 확인해 보세요
             </p>
             <p className="text-center text-sm text-gray-600 mt-5 font-medium">
               마이페이지에서 언제든지 수정 가능합니다
@@ -203,10 +203,10 @@ export default function AppMainPage() {
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-red-600 mb-2">
-              RUN10 랭커
+              런텐 랭커
             </h2>
             <p className="text-base text-white font-medium mb-8">
-              RUN10 랭커에 도전하세요.
+              런텐 랭커에 도전하세요.
             </p>
           </div>
 

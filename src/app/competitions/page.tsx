@@ -184,15 +184,15 @@ export default function CompetitionsPage() {
     if (actualStatus === 'registration_closed') {
       return (
         <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-orange-600 shadow-md">
-          접수마감
+          접수 마감
         </span>
       )
     }
 
-    // 진행중
+    // 접수중
     return (
       <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-red-600 shadow-md">
-        진행
+        접수중
       </span>
     )
   }
@@ -311,8 +311,8 @@ export default function CompetitionsPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인법</h2>
             
             <div className="text-base text-gray-600 space-y-1">
-              <p><span className="font-bold text-gray-800">종료</span>: 이미 마감된 대회</p>
-              <p><span className="font-bold text-red-600">진행</span>: 현재 접수중 대회</p>
+              <p><span className="font-bold text-gray-800">종료</span>: 이미 종료된 대회</p>
+              <p><span className="font-bold text-red-600">진행</span>: 현재 진행중 대회</p>
               <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
             </div>
           </div>
@@ -480,7 +480,13 @@ export default function CompetitionsPage() {
                           </>
                         )}
                         {isClosed && '마감 종료'}
-                        {isOngoing && '※ 선착순 3,500명 모집'}
+                        {isOngoing && (
+                          competition.title.includes('청주')
+                            ? '※ 선착순 3,000명 모집'
+                            : competition.title.includes('세종')
+                              ? '※ 선착순 3,500명 모집'
+                              : '※ 선착순 2,500명 모집'
+                        )}
                       </span>
                     </div>
                   </div>

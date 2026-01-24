@@ -99,7 +99,7 @@ export default function AboutPage() {
             <div className="mb-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="order-2 lg:order-1">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">RUN10 대회</h3>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">런텐 RUN10 대회</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">
                     전국 러닝 협회가 인증하는 공식 10km 대회를 개최합니다.
                     정확한 기록 측정과 함께 최고의 러닝 경험을 제공합니다.
@@ -140,10 +140,10 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <div className="order-2">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">RUN10 티어 시스템</h3>
+                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">런텐 RUN10 티어 시스템</h3>
                   <p className="text-gray-600 mb-4 leading-relaxed">
                     개인 기록에 따른 체계적인 등급 시스템을 운영합니다.
-                    나의 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
+                    나의 런텐 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
                   </p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
                     <li>치타족 (남성 30-39분59초 / 여성 40-49분59초)</li>
@@ -158,7 +158,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
     </div>
   )
 }

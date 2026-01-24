@@ -155,8 +155,8 @@ export default function WebMainPage() {
             {/* 2. we are RUN10 */}
             <div className="mb-10">
               <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
-                <span className="block mb-2">we are</span>
-                <span className="block text-red-600">RUN10</span>
+                
+                <span className="block text-red-600">런텐 RUN10</span>
               </h1>
             </div>
 
@@ -265,7 +265,7 @@ export default function WebMainPage() {
                       <p>도시관광도 즐기고 PB에 도전하세요!</p>
                     </div>
                     <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                      <p>2026 2.28 세종에서 열립니다</p>
+                      <p>2026.3.21 청주에서 열립니다</p>
                     </div>
                   </div>
                 </div>
@@ -304,10 +304,10 @@ export default function WebMainPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-              RUN10 티어
+              런텐 티어
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl text-black mb-2 sm:mb-3">
-              나의 RUN10 티어를 확인해 보세요.
+              나의 런텐 티어를 확인해 보세요.
             </p>
             <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 lg:mb-12">
               마이페이지에서 언제든지 수정 가능합니다.
@@ -369,10 +369,10 @@ export default function WebMainPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-              RUN10 랭커
+              런텐 랭커
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 lg:mb-12">
-              RUN10 랭커에 도전하세요.
+              런텐 랭커에 도전하세요.
             </p>
           </div>
 

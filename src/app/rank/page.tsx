@@ -82,7 +82,7 @@ export default function RankPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">RUN10 랭크</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 랭커</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             전국 러닝 협회 공식 인증 10km 랭커
           </p>

@@ -941,7 +941,8 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
           )}
         </div>
 
-        {/* 기타 */}
+        {/* 기타 - 숨김 처리 (UI만 숨기고 DB에는 null 저장) */}
+        {/*
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">기타</label>
           <textarea
@@ -951,6 +952,7 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
             placeholder="추가로 전달하고 싶은 내용이 있다면 입력하세요"
           />
         </div>
+        */}
 
         {/* 약관 동의 */}
         <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 border border-gray-200 rounded-md bg-gray-50">
