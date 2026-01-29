@@ -2,7 +2,7 @@ import { Shield, AlertTriangle, Heart, Droplets, Thermometer, Users, Phone, Acti
 
 export default function SafetyPage() {
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* 히어로 섹션 */}
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

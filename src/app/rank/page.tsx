@@ -67,7 +67,7 @@ export default function RankPage() {
   }
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* 히어로 섹션 */}
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 */}

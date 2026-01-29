@@ -77,7 +77,7 @@ export default function AppMainPage() {
         {/* 중앙 텍스트 */}
         <div className="relative z-10 text-center text-white px-6">
           <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">
-            <span className="block">런텐 RUN10</span>
+            <span className="block">RUN10</span>
           </h1>
           <p className="text-base sm:text-lg font-medium opacity-90 mb-2">
             전국 러닝 협회 인증
@@ -178,7 +178,7 @@ export default function AppMainPage() {
               런텐 티어
             </h2>
             <p className="text-base text-gray-700 font-medium">
-              나의 런텐 티어를 확인해 보세요
+              나의 RUN10 티어를 확인해 보세요
             </p>
             <p className="text-center text-sm text-gray-600 mt-5 font-medium">
               마이페이지에서 언제든지 수정 가능합니다
@@ -206,7 +206,7 @@ export default function AppMainPage() {
               런텐 랭커
             </h2>
             <p className="text-base text-white font-medium mb-8">
-              런텐 랭커에 도전하세요.
+              RUN10 랭커에 도전하세요.
             </p>
           </div>
 

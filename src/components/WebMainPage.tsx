@@ -307,7 +307,7 @@ export default function WebMainPage() {
               런텐 티어
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl text-black mb-2 sm:mb-3">
-              나의 런텐 티어를 확인해 보세요.
+              나의 RUN10 티어를 확인해 보세요.
             </p>
             <p className="text-base sm:text-lg text-gray-600 mb-6 sm:mb-8 lg:mb-12">
               마이페이지에서 언제든지 수정 가능합니다.
@@ -372,7 +372,7 @@ export default function WebMainPage() {
               런텐 랭커
             </h2>
             <p className="text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 lg:mb-12">
-              런텐 랭커에 도전하세요.
+              RUN10 랭커에 도전하세요.
             </p>
           </div>
 
