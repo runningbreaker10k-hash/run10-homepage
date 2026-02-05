@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Eye, EyeOff, UserPlus, Search, Key } from 'lucide-react'
+import { savePushIdFromApp } from '@/lib/pushBridge'
 
 const loginSchema = z.object({
   user_id: z.string().min(1, '아이디를 입력해주세요'),
@@ -51,6 +52,7 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
   const [currentView, setCurrentView] = useState<'login' | 'find-id' | 'find-password' | 'change-password'>('login')
   const [findResult, setFindResult] = useState('')
   const [verifiedUserId, setVerifiedUserId] = useState('')
+  const [autoLogin, setAutoLogin] = useState(false)
 
   const {
     register,
@@ -114,9 +116,19 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
         return
       }
 
-      // 로그인 성공 - 세션 저장
-      sessionStorage.setItem('user', JSON.stringify(user))
-      
+      // 로그인 성공 - 자동 로그인 여부에 따라 저장소 선택
+      if (autoLogin) {
+        localStorage.setItem('user', JSON.stringify(user))
+        localStorage.setItem('autoLogin', 'true')
+      } else {
+        sessionStorage.setItem('user', JSON.stringify(user))
+      }
+
+      // 앱 환경인 경우 push_id 저장 (비동기로 처리, 실패해도 로그인 진행)
+      savePushIdFromApp(user.id).catch(err => {
+        console.error('push_id 저장 실패:', err)
+      })
+
       onSuccess(user)
     } catch (error) {
       console.error('로그인 오류:', error)
@@ -518,6 +530,20 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
             </button>
           </div>
           {errors.password && <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.password.message}</p>}
+        </div>
+
+        {/* 자동 로그인 체크박스 */}
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="autoLogin"
+            checked={autoLogin}
+            onChange={(e) => setAutoLogin(e.target.checked)}
+            className="w-4 h-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+          />
+          <label htmlFor="autoLogin" className="ml-2 text-sm text-gray-600 cursor-pointer select-none">
+            자동 로그인
+          </label>
         </div>
 
         {/* 로그인 오류 메시지 */}

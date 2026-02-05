@@ -74,8 +74,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }
 
-  // 컴포넌트 마운트 시 세션에서 사용자 정보 복원
+  // 컴포넌트 마운트 시 저장된 사용자 정보 복원
+  // 우선순위: localStorage (자동 로그인) → sessionStorage
   useEffect(() => {
+    // 1. 자동 로그인 확인 (localStorage)
+    const autoLoginUser = localStorage.getItem('user')
+    if (autoLoginUser) {
+      try {
+        const userData = JSON.parse(autoLoginUser)
+        setUser(userData)
+        setIsLoading(false)
+        return
+      } catch (error) {
+        console.error('자동 로그인 복원 오류:', error)
+        localStorage.removeItem('user')
+        localStorage.removeItem('autoLogin')
+      }
+    }
+
+    // 2. 일반 세션 확인 (sessionStorage)
     const savedUser = sessionStorage.getItem('user')
     if (savedUser) {
       try {
@@ -89,16 +106,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false)
   }, [])
 
-  // 로그인 함수
+  // 로그인 함수 (저장소 저장은 LoginForm에서 처리)
   const login = (userData: User) => {
     setUser(userData)
-    sessionStorage.setItem('user', JSON.stringify(userData))
   }
 
   // 로그아웃 함수
   const logout = () => {
     setUser(null)
+    // 모든 저장소에서 사용자 정보 삭제
     sessionStorage.removeItem('user')
+    localStorage.removeItem('user')
+    localStorage.removeItem('autoLogin')
   }
 
   // 사용자 정보 업데이트 함수

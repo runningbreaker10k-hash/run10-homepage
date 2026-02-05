@@ -75,7 +75,7 @@
 | 심플함 | 지도/GPS 없이 드롭다운만으로 동작 |
 | 명확한 기준 | "구/군" = 누구나 아는 행정구역 |
 | 개인화 | 즐겨찾기로 관심 지역만 확인 |
-| 확장성 | 알림톡 연동 용이 |
+| 확장성 | 푸시알림/알림톡 연동 용이 |
 
 ---
 
@@ -610,16 +610,541 @@ MVP 완료 후 사용자 피드백 기반 추가 기능
 
 | 기능 | 설명 | 우선순위 |
 |------|------|----------|
-| **알림톡** | 즐겨찾기 지역에 새 모임 등록 시 알림 | 높음 |
+| **앱 푸시알림** | 즐겨찾기 지역에 새 모임 등록 시 푸시 (OneSignal) | 높음 |
+| 알림톡 병행 | 중요 알림만 카카오 알림톡으로 추가 발송 (선택) | 중간 |
 | 지도 보기 | 카카오맵으로 모임 위치 표시 | 중간 |
 | 댓글 | 모임 상세에 댓글 기능 | 중간 |
 | 후기 | 완료된 모임 후기 작성 | 낮음 |
 
 ---
 
-## 10. 성공 지표
+## 10. Run-Mileage 시스템 (게이미피케이션)
 
-### 10.1 핵심 지표
+### 10.1 개요
+
+Flash 모임 참여를 장려하고 적극적인 회원을 눈에 띄게 하기 위한 **Run-Mileage** 시스템입니다.
+포인트 대신 **km(킬로미터)** 단위를 사용하여 러닝과 직관적으로 연결합니다.
+
+**핵심 원칙**
+- 긍정적인 참여를 격려 (페널티 최소화)
+- 적극적인 회원이 눈에 띄도록
+- 러닝 컨셉에 맞는 km 단위 사용
+
+### 10.2 마일리지 획득 규칙
+
+| 행동 | 마일리지 | 설명 |
+|------|----------|------|
+| 모임 주최 | +5km | 모임 완료 후 자동 지급 |
+| 모임 참여 | +3km | 모임 완료 후 자동 지급 |
+| 좋은 평가 받음 | +2km | 모임 후 상호 평가에서 긍정 평가 |
+
+### 10.3 페널티 규칙
+
+| 행동 | 마일리지 | 설명 |
+|------|----------|------|
+| 노쇼 (무단 불참) | -5km | 참여 신청 후 연락 없이 불참 |
+| 당일 취소 | -2km | 모임 당일에 취소 |
+
+> **주의**: 노쇼/당일취소 외의 패널티는 없습니다.
+> 사전 취소(모임 하루 전까지)는 페널티 없음
+
+### 10.4 등급 시스템
+
+마일리지 누적에 따라 등급이 자동으로 변경됩니다.
+
+| 등급 | 아이콘 | 기준 마일리지 |
+|------|--------|---------------|
+| 새싹러너 | 🌱 | 0km ~ |
+| 루키러너 | 🚶 | 30km ~ |
+| 프로러너 | 🏃‍♂️ | 100km ~ |
+| 엘리트러너 | 🏅 | 300km ~ |
+| 레전드러너 | 👑 | 500km ~ |
+
+**표시 위치**
+- 모임 참여자 목록에서 이름 옆에 아이콘 표시
+- 마이페이지 프로필에 등급 표시
+- 모임 상세 페이지 주최자 정보에 표시
+
+### 10.5 모임 후 상호 평가
+
+모임 완료 후 참여자들이 서로를 평가합니다.
+
+**평가 플로우**
+```
+모임 시간 종료
+    ↓
+(30분 후) 알림 발송
+"오늘 모임은 어떠셨나요? 참여자를 평가해주세요!"
+    ↓
+평가 페이지 접속
+    ↓
+각 참여자에 대해:
+  ✅ 좋았어요 (+2km 지급)
+  ➖ 참여 안 함 (노쇼 처리 → -5km)
+    ↓
+평가 완료 → 마일리지 정산
+```
+
+**평가 방식**
+```
+┌────────────────────────────────────────────────────────────┐
+│  오늘 모임은 어떠셨나요?                                     │
+├────────────────────────────────────────────────────────────┤
+│                                                            │
+│  함께 뛴 러너를 평가해주세요                                │
+│                                                            │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │ 👤 박조깅 🏃                                        │   │
+│  │ [✅ 좋았어요]  [➖ 참여 안 함]                       │   │
+│  └────────────────────────────────────────────────────┘   │
+│                                                            │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │ 👤 이달리기 🚶                                      │   │
+│  │ [✅ 좋았어요]  [➖ 참여 안 함]                       │   │
+│  └────────────────────────────────────────────────────┘   │
+│                                                            │
+│  ┌──────────────────────────────────────────────────────┐ │
+│  │                     평가 완료                         │ │
+│  └──────────────────────────────────────────────────────┘ │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+```
+
+**노쇼 판정**
+- 참여자 과반수 이상이 "참여 안 함"으로 평가한 경우 → 노쇼 처리
+- 노쇼 처리 시 해당 회원에게 -5km 적용
+- 주최자가 평가하지 않으면 주최자 마일리지 미지급
+
+### 10.6 푸시알림 시스템
+
+Flash 모임 관련 알림을 앱 푸시로 발송합니다.
+
+#### 10.6.1 푸시알림 발송 시점
+
+| 이벤트 | 발송 대상 | 메시지 |
+|--------|----------|--------|
+| 새 모임 등록 | 해당 지역 즐겨찾기 회원 | "유성구에 새 모임이 등록되었어요!" |
+| 모임 참여 신청 | 주최자 | "한강 야경 러닝에 새 참여자가 있어요!" |
+| 모임 시간 1시간 전 | 참여자 전원 | "오늘 19:00 한강 야경 러닝, 잊지 마세요!" |
+| 모임 완료 후 30분 | 참여자 전원 | "모임이 끝났어요! 함께 뛴 러너를 평가해주세요" |
+
+#### 10.6.2 푸시알림 메시지 예시
+
+**새 모임 등록 알림**
+```
+제목: 새 모임이 등록되었어요! 🏃
+내용: 유성구 - 갑천 새벽 러닝 (내일 06:00)
+클릭 시 이동: /flash/{모임ID}
+```
+
+**모임 완료 평가 알림**
+```
+제목: 오늘 모임은 어떠셨나요?
+내용: "한강 야경 러닝" 참여자를 평가해주세요!
+클릭 시 이동: /flash/{모임ID}/evaluate
+```
+
+---
+
+## 11. 앱 푸시 연동 (OneSignal)
+
+### 11.1 개요
+
+런텐 앱의 푸시알림은 **OneSignal** 서비스를 통해 발송합니다.
+앱케이크(하이브리드 앱 빌더)에서 OneSignal SDK가 이미 연동되어 있으며,
+**기존 브릿지**를 활용하여 push_id를 가져와 DB에 저장하고 푸시를 발송합니다.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        푸시 연동 흐름                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   [1] 앱 로그인 시 push_id 저장                                  │
+│   ─────────────────────────────                                 │
+│   사용자가 앱에서 로그인                                         │
+│       ↓                                                         │
+│   웹에서 브릿지 호출 (getpushid)                                 │
+│       ↓                                                         │
+│   앱이 push_id 반환                                             │
+│       ↓                                                         │
+│   users 테이블에 push_id 저장                                    │
+│                                                                 │
+│   [2] 푸시 발송                                                  │
+│   ─────────────                                                 │
+│   이벤트 발생 (새 모임 등록 등)                                   │
+│       ↓                                                         │
+│   대상 회원의 push_id 조회                                       │
+│       ↓                                                         │
+│   런텐 서버 → OneSignal API 호출                                 │
+│       ↓                                                         │
+│   📱 푸시 도착!                                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 OneSignal vs 기존 방식 비교
+
+| 구분 | 뿌리오 (SMS) | 카카오 알림톡 | **OneSignal (앱 푸시)** |
+|------|-------------|--------------|------------------------|
+| 식별자 | 전화번호 | 전화번호 | **push_id** (player_id) |
+| 비용 | 건당 유료 | 건당 유료 | **무료** (모바일 무제한) |
+| 도달 | 앱 없어도 가능 | 앱 없어도 가능 | 앱 설치 필수 |
+| 속도 | 빠름 | 빠름 | 즉시 |
+| 용도 | 중요 알림 | 중요 알림 | **일반 알림** |
+
+> **권장**: 일반 알림은 무료인 앱 푸시 사용, 중요한 알림만 알림톡 병행
+
+### 11.3 push_id 저장 방식
+
+앱케이크에서 제공하는 **기존 브릿지**를 사용하여 push_id를 가져옵니다.
+앱케이크에 추가 요청 없이 바로 구현 가능합니다.
+
+**브릿지 호출 코드 (웹에서 실행)**
+```javascript
+// 앱 환경에서만 실행
+function getPushIdFromApp() {
+  // 브릿지 준비 확인
+  function waitForCallHandler(callback, attempts = 0) {
+    if (window.webkit && window.webkit.messageHandlers) {
+      callback()
+    } else if (attempts < 100) {
+      setTimeout(() => waitForCallHandler(callback, attempts + 1), 100)
+    }
+  }
+
+  // push_id 수신 콜백
+  window.receivePushId = async (pushId) => {
+    if (pushId) {
+      // API 호출하여 DB에 저장
+      await fetch('/api/user/update-push-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ push_id: pushId })
+      })
+    }
+  }
+
+  // 브릿지 호출
+  waitForCallHandler(() => {
+    window.webkit.messageHandlers.cordova_iab.postMessage(
+      JSON.stringify({
+        action: 'getpushid',
+        callback: 'receivePushId'
+      })
+    )
+  })
+}
+```
+
+**호출 시점**
+- 앱에서 로그인 성공 직후
+- 앱 재설치 후 첫 로그인 시 (push_id가 변경될 수 있음)
+
+### 11.4 DB 스키마 변경
+
+**users 테이블에 push_id 컬럼 추가**
+```sql
+ALTER TABLE users
+ADD COLUMN push_id VARCHAR(64);
+
+CREATE INDEX idx_users_push_id ON users(push_id);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| push_id | VARCHAR(64) | OneSignal player_id (nullable) |
+
+> **참고**: 웹 사용자나 푸시 미동의 사용자는 push_id가 NULL
+
+### 11.5 푸시 발송 코드
+
+```typescript
+// src/lib/onesignal.ts
+
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID!
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY!
+
+interface PushPayload {
+  pushIds: string[]           // 수신 대상 push_id 목록
+  title: string               // 푸시 제목
+  content: string             // 푸시 내용
+  url?: string                // 클릭 시 이동 URL
+  imageUrl?: string           // 이미지 URL (선택)
+}
+
+export async function sendPush(payload: PushPayload) {
+  const { pushIds, title, content, url, imageUrl } = payload
+
+  // push_id가 없는 항목 제외
+  const validPushIds = pushIds.filter(id => id && id.length > 0)
+
+  if (validPushIds.length === 0) {
+    return { success: false, reason: 'no_valid_push_ids' }
+  }
+
+  const response = await fetch('https://onesignal.com/api/v1/notifications', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      app_id: ONESIGNAL_APP_ID,
+      include_player_ids: validPushIds,  // push_id 배열로 발송
+      headings: { en: title },
+      contents: { en: content },
+      ...(url && { data: { custom_url: url } }),
+      ...(imageUrl && { big_picture: imageUrl })
+    })
+  })
+
+  const result = await response.json()
+  return { success: response.ok, data: result }
+}
+```
+
+### 11.6 Flash 이벤트별 푸시 발송
+
+**새 모임 등록 시**
+```typescript
+// 모임 등록 API에서 호출
+async function onFlashRunCreated(flashRun: FlashRun, regionId: number) {
+  // 해당 지역 즐겨찾기한 회원의 push_id 조회
+  const { data: favorites } = await supabase
+    .from('user_favorite_regions')
+    .select('users!inner(id, push_id)')
+    .eq('region_id', regionId)
+    .not('users.push_id', 'is', null)  // push_id 있는 회원만
+
+  const pushIds = favorites
+    ?.map(f => f.users.push_id)
+    .filter(id => id !== null) || []
+
+  // 주최자 본인 제외
+  const { data: creator } = await supabase
+    .from('users')
+    .select('push_id')
+    .eq('id', flashRun.creator_id)
+    .single()
+
+  const targetPushIds = pushIds.filter(id => id !== creator?.push_id)
+
+  if (targetPushIds.length > 0) {
+    await sendPush({
+      pushIds: targetPushIds,
+      title: '새 모임이 등록되었어요! 🏃',
+      content: `${flashRun.region_name} - ${flashRun.title}`,
+      url: `https://run10.co.kr/flash/${flashRun.id}`
+    })
+  }
+}
+```
+
+**모임 완료 후 평가 요청**
+```typescript
+// 스케줄러에서 호출 (모임 종료 30분 후)
+async function onFlashRunCompleted(flashRun: FlashRun) {
+  // 참여자 + 주최자의 push_id 조회
+  const { data: participants } = await supabase
+    .from('flash_participants')
+    .select('users!inner(push_id)')
+    .eq('flash_run_id', flashRun.id)
+
+  const { data: creator } = await supabase
+    .from('users')
+    .select('push_id')
+    .eq('id', flashRun.creator_id)
+    .single()
+
+  const pushIds = [
+    ...participants?.map(p => p.users.push_id).filter(Boolean) || [],
+    creator?.push_id
+  ].filter(id => id !== null)
+
+  if (pushIds.length > 0) {
+    await sendPush({
+      pushIds,
+      title: '오늘 모임은 어떠셨나요?',
+      content: `"${flashRun.title}" 참여자를 평가해주세요!`,
+      url: `https://run10.co.kr/flash/${flashRun.id}/evaluate`
+    })
+  }
+}
+```
+
+### 11.7 push_id 저장 API
+
+```typescript
+// src/app/api/user/update-push-id/route.ts
+
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = createClient()
+
+  // 로그인 확인
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { push_id } = await request.json()
+
+  if (!push_id || typeof push_id !== 'string') {
+    return NextResponse.json({ error: 'Invalid push_id' }, { status: 400 })
+  }
+
+  // push_id 저장
+  const { error } = await supabase
+    .from('users')
+    .update({ push_id })
+    .eq('id', user.id)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}
+```
+
+### 11.8 구현 체크리스트
+
+| 순서 | 작업 | 담당 | 상태 |
+|------|------|------|------|
+| 1 | users 테이블에 push_id 컬럼 추가 | 개발 | ⬜ |
+| 2 | 환경변수에 OneSignal 키 추가 | 개발 | ⬜ |
+| 3 | `/api/user/update-push-id` API 작성 | 개발 | ⬜ |
+| 4 | 앱 로그인 시 브릿지 호출 코드 추가 | 개발 | ⬜ |
+| 5 | `src/lib/onesignal.ts` 유틸 함수 작성 | 개발 | ⬜ |
+| 6 | 모임 등록 API에 푸시 발송 추가 | 개발 | ⬜ |
+| 7 | 모임 완료 스케줄러에 평가 푸시 추가 | 개발 | ⬜ |
+| 8 | 푸시 발송 테스트 | 개발 | ⬜ |
+
+> **참고**: 앱케이크에 별도 요청 없이 기존 브릿지(getpushid)로 구현 가능
+
+### 11.9 OneSignal 요금제
+
+| 플랜 | 모바일 푸시 | 비용 |
+|------|------------|------|
+| **Free** | **무제한** ✅ | 무료 |
+| Growth | 무제한 + 고급기능 | 월 $9~ |
+| Professional | 무제한 + 엔터프라이즈 | 월 $99~ |
+
+> 런텐은 **무료 플랜**으로 충분합니다 (모바일 푸시 무제한)
+
+### 10.7 데이터 설계
+
+**user_mileage (마일리지)**
+
+| 컬럼 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| id | UUID | ✅ | PK |
+| user_id | UUID | ✅ | 사용자 ID (FK) |
+| total_km | INTEGER | ✅ | 누적 마일리지 (km) |
+| level | VARCHAR(20) | ✅ | 현재 등급 |
+| updated_at | TIMESTAMPTZ | ✅ | 최종 업데이트 |
+
+**mileage_history (마일리지 내역)**
+
+| 컬럼 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| id | UUID | ✅ | PK |
+| user_id | UUID | ✅ | 사용자 ID (FK) |
+| flash_run_id | UUID | ❌ | 관련 모임 ID |
+| change_km | INTEGER | ✅ | 변동 마일리지 (+/-) |
+| reason | VARCHAR(50) | ✅ | 사유 (host, participate, good_rating, no_show, same_day_cancel) |
+| created_at | TIMESTAMPTZ | ✅ | 발생일시 |
+
+**flash_evaluations (모임 평가)**
+
+| 컬럼 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| id | UUID | ✅ | PK |
+| flash_run_id | UUID | ✅ | 모임 ID (FK) |
+| evaluator_id | UUID | ✅ | 평가자 ID (FK) |
+| target_id | UUID | ✅ | 평가 대상 ID (FK) |
+| rating | VARCHAR(20) | ✅ | 평가 (good, no_show) |
+| created_at | TIMESTAMPTZ | ✅ | 평가일시 |
+
+### 10.8 SQL 스키마 (추가)
+
+```sql
+-- 마일리지 테이블
+CREATE TABLE user_mileage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  total_km INTEGER NOT NULL DEFAULT 0,
+  level VARCHAR(20) NOT NULL DEFAULT '워밍업',
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(user_id)
+);
+
+-- 마일리지 내역 테이블
+CREATE TABLE mileage_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  flash_run_id UUID REFERENCES flash_runs(id) ON DELETE SET NULL,
+  change_km INTEGER NOT NULL,
+  reason VARCHAR(50) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 모임 평가 테이블
+CREATE TABLE flash_evaluations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  flash_run_id UUID NOT NULL REFERENCES flash_runs(id) ON DELETE CASCADE,
+  evaluator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating VARCHAR(20) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  UNIQUE(flash_run_id, evaluator_id, target_id),
+  CONSTRAINT valid_rating CHECK (rating IN ('good', 'no_show'))
+);
+
+-- 인덱스
+CREATE INDEX idx_user_mileage_user ON user_mileage(user_id);
+CREATE INDEX idx_mileage_history_user ON mileage_history(user_id);
+CREATE INDEX idx_flash_evaluations_run ON flash_evaluations(flash_run_id);
+CREATE INDEX idx_flash_evaluations_target ON flash_evaluations(target_id);
+```
+
+### 10.9 등급 업데이트 로직
+
+```
+마일리지 변동 발생
+    ↓
+total_km 업데이트
+    ↓
+등급 재계산:
+  if total_km >= 500 → 울트라러너 👑
+  else if total_km >= 300 → 마라토너 🏅
+  else if total_km >= 100 → 러너 🏃‍♂️
+  else if total_km >= 30 → 조깅 🏃
+  else → 워밍업 🚶
+    ↓
+level 업데이트
+```
+
+### 10.10 구현 우선순위
+
+| 단계 | 내용 | 설명 |
+|------|------|------|
+| Step 1 | 마일리지 DB 설계 | user_mileage, mileage_history 테이블 |
+| Step 2 | 기본 마일리지 지급 | 모임 완료 시 주최자/참여자 자동 지급 |
+| Step 3 | 등급 시스템 | 마일리지 기반 등급 자동 계산 |
+| Step 4 | 모임 후 평가 | 평가 UI + 푸시알림 발송 |
+| Step 5 | 노쇼/당일취소 페널티 | 평가 기반 노쇼 판정 + 패널티 |
+| Step 6 | 앱 푸시 연동 | OneSignal API로 푸시알림 발송 |
+
+---
+
+## 12. 성공 지표
+
+### 12.1 핵심 지표
 
 | 지표 | 목표 (1개월 후) | 측정 방법 |
 |------|----------------|----------|
@@ -628,7 +1153,7 @@ MVP 완료 후 사용자 피드백 기반 추가 기능
 | 참여 신청 수 | 주 40건 이상 | flash_participants 카운트 |
 | 지역 분포 | 5개 이상 시/도 활성화 | 지역별 모임 수 |
 
-### 10.2 정성적 지표
+### 12.2 정성적 지표
 
 - 내 지역 모임을 쉽게 찾을 수 있는가?
 - 모임 생성 시 지역 선택이 직관적인가?
@@ -636,7 +1161,7 @@ MVP 완료 후 사용자 피드백 기반 추가 기능
 
 ---
 
-## 11. 요약
+## 13. 요약
 
 ### 핵심 설계
 
@@ -667,6 +1192,6 @@ MVP 완료 후 사용자 피드백 기반 추가 기능
 
 ---
 
-**문서 버전**: 3.0 (구/군 기반)
-**작성일**: 2026-01-29
+**문서 버전**: 5.0 (구/군 기반 + Run-Mileage + 푸시알림)
+**작성일**: 2026-02-03
 **작성**: Claude (RUN10 기획)
