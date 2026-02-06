@@ -437,8 +437,11 @@ export default function MemberRegistrationForm({
             <span className="text-blue-700 font-medium">주소:</span> {userDetails.address1} {userDetails.address2}
           </div>
         </div>
-        <p className="text-xs text-blue-600 mt-2">
+        <p className="text-xs text-blue-600 mt-5">
           ※ 회원 정보가 자동으로 입력됩니다. 정보가 잘못된 경우 마이페이지에서 수정해주세요.
+        </p>
+        <p className="text-xs text-blue-600 mt-2">
+          ※ 신청순서: 참가 신청 후 입금 / 입금 시 아래 입금자명과 동일하게 해주세요. 
         </p>
       </div>
 

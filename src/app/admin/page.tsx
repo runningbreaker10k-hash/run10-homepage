@@ -66,6 +66,7 @@ export default function AdminPage() {
   // 대회 관리 관련 상태
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [competitionsLoading, setCompetitionsLoading] = useState(false)
+  const [competitionsSortAsc, setCompetitionsSortAsc] = useState(true) // 날짜 정렬: true=오름차순(기본), false=내림차순
   const [selectedCompetitionForGroups, setSelectedCompetitionForGroups] = useState<Competition | null>(null)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
@@ -567,7 +568,7 @@ export default function AdminPage() {
         const { data, error } = await supabase
           .from('competitions')
           .select('*')
-          .order('created_at', { ascending: false })
+          .order('date', { ascending: true })
           .range(offset, offset + pageSize - 1)
 
         if (error) throw error
@@ -666,12 +667,26 @@ export default function AdminPage() {
       if (error) throw error
 
       fetchCompetitions()
-      const statusText = newStatus === 'pending' ? '배송대기' : '배송완료'
-      alert(`배송 상태가 "${statusText}"로 변경되었습니다.`)
+      const statusText = newStatus === 'pending' ? '가능' : '불가능'
+      alert(`주소변경 상태가 "${statusText}"으로 변경되었습니다.`)
     } catch (error) {
-      console.error('배송 상태 변경 오류:', error)
-      alert('배송 상태 변경 중 오류가 발생했습니다.')
+      console.error('주소변경 상태 변경 오류:', error)
+      alert('주소변경 상태 변경 중 오류가 발생했습니다.')
     }
+  }
+
+  // 대회 목록 날짜 정렬 토글
+  const toggleCompetitionsSort = () => {
+    const newSortAsc = !competitionsSortAsc
+    setCompetitionsSortAsc(newSortAsc)
+
+    // 클라이언트 사이드 정렬
+    const sorted = [...competitions].sort((a, b) => {
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      return newSortAsc ? dateA - dateB : dateB - dateA
+    })
+    setCompetitions(sorted)
   }
 
   // 종목별 참가자 수 조회
@@ -2561,13 +2576,16 @@ export default function AdminPage() {
                             상태
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            배송상태
+                            주소변경
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             참가자
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            날짜
+                          <th
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                            onClick={toggleCompetitionsSort}
+                          >
+                            날짜 {competitionsSortAsc ? '↑' : '↓'}
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             관리
@@ -2592,14 +2610,14 @@ export default function AdminPage() {
                               <select
                                 value={competition.shipping_status || 'pending'}
                                 onChange={(e) => updateShippingStatus(competition.id, e.target.value as 'pending' | 'completed')}
-                                className={`text-xs font-medium px-2 py-1 rounded-full border-0 focus:ring-2 focus:ring-offset-1 ${
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border-0 focus:ring-2 focus:ring-offset-1 ${
                                   (competition.shipping_status || 'pending') === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500'
-                                    : 'bg-green-100 text-green-800 focus:ring-green-500'
+                                    ? 'bg-green-100 text-green-800 focus:ring-green-500'
+                                    : 'bg-red-100 text-red-800 focus:ring-red-500'
                                 }`}
                               >
-                                <option value="pending">배송대기</option>
-                                <option value="completed">배송완료</option>
+                                <option value="pending">가능</option>
+                                <option value="completed">불가능</option>
                               </select>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
