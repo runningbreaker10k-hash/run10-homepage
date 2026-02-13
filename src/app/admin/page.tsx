@@ -21,7 +21,9 @@ import {
   X,
   Bell,
   BellOff,
-  Loader2
+  Loader2,
+  Receipt,
+  Undo2
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User, Popup, RegistrationWithCompetition, CommunityPostWithRelations } from '@/types'
@@ -37,7 +39,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank' | 'sms'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants'>('management')
-  const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments'>('posts')
+  const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments' | 'receipts' | 'refunds'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   // 랭커 관리 관련 상태
@@ -94,6 +96,24 @@ export default function AdminPage() {
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(true)
   const [availableParticipationGroups, setAvailableParticipationGroups] = useState<any[]>([])
+
+  // 현금영수증 관리 관련 상태
+  const [receiptRequests, setReceiptRequests] = useState<any[]>([])
+  const [receiptsLoading, setReceiptsLoading] = useState(false)
+  const [receiptStatusFilter, setReceiptStatusFilter] = useState<string>('all')
+  const [receiptCompetitionFilter, setReceiptCompetitionFilter] = useState<string>('all')
+  const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
+  const [currentReceiptPage, setCurrentReceiptPage] = useState(1)
+  const [receiptsPerPage, setReceiptsPerPage] = useState(20)
+
+  // 환불 요청 관리 관련 상태
+  const [refundRequests, setRefundRequests] = useState<any[]>([])
+  const [refundsLoading, setRefundsLoading] = useState(false)
+  const [refundStatusFilter, setRefundStatusFilter] = useState<string>('all')
+  const [refundCompetitionFilter, setRefundCompetitionFilter] = useState<string>('all')
+  const [selectedRefunds, setSelectedRefunds] = useState<string[]>([])
+  const [currentRefundPage, setCurrentRefundPage] = useState(1)
+  const [refundsPerPage, setRefundsPerPage] = useState(20)
 
   // 회원 상세 정보 모달
   const [selectedMember, setSelectedMember] = useState<User | null>(null)
@@ -174,6 +194,12 @@ export default function AdminPage() {
         } else if (communitySubTab === 'comments') {
           setCurrentCommentPage(1)
           fetchComments()
+        } else if (communitySubTab === 'receipts') {
+          fetchCompetitions()
+          fetchReceiptRequests()
+        } else if (communitySubTab === 'refunds') {
+          fetchCompetitions()
+          fetchRefundRequests()
         }
       } else if (activeTab === 'members') {
         // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
@@ -187,7 +213,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage])
+  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
@@ -555,6 +581,200 @@ export default function AdminPage() {
   }
 
   // 대회 관리 함수들
+  // 현금영수증 요청 목록 조회
+  const fetchReceiptRequests = async () => {
+    setReceiptsLoading(true)
+    try {
+      let query = supabase
+        .from('receipt_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (receiptStatusFilter !== 'all') {
+        query = query.eq('status', receiptStatusFilter)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        setReceiptRequests([])
+        setReceiptsLoading(false)
+        return
+      }
+
+      // 대회 정보 조회
+      const competitionIds = [...new Set(data.map(r => r.competition_id))]
+      const { data: compData } = await supabase
+        .from('competitions')
+        .select('id, title')
+        .in('id', competitionIds)
+
+      const compMap = new Map(compData?.map(c => [c.id, c.title]) || [])
+
+      let receiptsWithComp = data.map(r => ({
+        ...r,
+        competition_title: compMap.get(r.competition_id) || '알 수 없는 대회'
+      }))
+
+      // 대회 필터
+      if (receiptCompetitionFilter !== 'all') {
+        receiptsWithComp = receiptsWithComp.filter(r => r.competition_id === receiptCompetitionFilter)
+      }
+
+      setReceiptRequests(receiptsWithComp)
+    } catch (error) {
+      console.error('현금영수증 목록 조회 오류:', error)
+    } finally {
+      setReceiptsLoading(false)
+    }
+  }
+
+  // 현금영수증 상태 변경
+  const updateReceiptStatus = async (receiptId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('receipt_requests')
+        .update({ status: newStatus })
+        .eq('id', receiptId)
+
+      if (error) throw error
+
+      alert(`상태가 '${newStatus === 'completed' ? '발급완료' : '신청완료'}'로 변경되었습니다.`)
+      fetchReceiptRequests()
+    } catch (error) {
+      console.error('상태 변경 오류:', error)
+      alert('상태 변경에 실패했습니다.')
+    }
+  }
+
+  // 현금영수증 일괄 상태 변경
+  const updateBulkReceiptStatus = async (newStatus: string) => {
+    if (selectedReceipts.length === 0) {
+      alert('선택된 항목이 없습니다.')
+      return
+    }
+    const statusText = newStatus === 'completed' ? '발급완료' : '신청완료'
+    if (!confirm(`선택된 ${selectedReceipts.length}건을 '${statusText}'로 변경하시겠습니까?`)) return
+    try {
+      const { error } = await supabase
+        .from('receipt_requests')
+        .update({ status: newStatus })
+        .in('id', selectedReceipts)
+
+      if (error) throw error
+
+      alert(`${selectedReceipts.length}건이 '${statusText}'로 변경되었습니다.`)
+      setSelectedReceipts([])
+      fetchReceiptRequests()
+    } catch (error) {
+      console.error('일괄 상태 변경 오류:', error)
+      alert('일괄 상태 변경에 실패했습니다.')
+    }
+  }
+
+  // 환불 요청 목록 조회
+  const fetchRefundRequests = async () => {
+    setRefundsLoading(true)
+    try {
+      let query = supabase
+        .from('refund_requests')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (refundStatusFilter !== 'all') {
+        query = query.eq('status', refundStatusFilter)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        setRefundRequests([])
+        setRefundsLoading(false)
+        return
+      }
+
+      const competitionIds = [...new Set(data.map(r => r.competition_id))]
+      const { data: compData } = await supabase
+        .from('competitions')
+        .select('id, title')
+        .in('id', competitionIds)
+
+      const compMap = new Map(compData?.map(c => [c.id, c.title]) || [])
+
+      let refundsWithComp = data.map(r => ({
+        ...r,
+        competition_title: compMap.get(r.competition_id) || '알 수 없는 대회'
+      }))
+
+      if (refundCompetitionFilter !== 'all') {
+        refundsWithComp = refundsWithComp.filter(r => r.competition_id === refundCompetitionFilter)
+      }
+
+      setRefundRequests(refundsWithComp)
+    } catch (error) {
+      console.error('환불 요청 목록 조회 오류:', error)
+    } finally {
+      setRefundsLoading(false)
+    }
+  }
+
+  // 환불 일괄 상태 변경
+  const updateBulkRefundStatus = async (newStatus: string) => {
+    if (selectedRefunds.length === 0) {
+      alert('선택된 항목이 없습니다.')
+      return
+    }
+    const statusText = newStatus === 'completed' ? '환불완료' : '환불대기'
+    if (!confirm(`선택된 ${selectedRefunds.length}건을 '${statusText}'로 변경하시겠습니까?`)) return
+    try {
+      const { error } = await supabase
+        .from('refund_requests')
+        .update({ status: newStatus })
+        .in('id', selectedRefunds)
+
+      if (error) throw error
+
+      alert(`${selectedRefunds.length}건이 '${statusText}'로 변경되었습니다.`)
+      setSelectedRefunds([])
+      fetchRefundRequests()
+    } catch (error) {
+      console.error('일괄 상태 변경 오류:', error)
+      alert('일괄 상태 변경에 실패했습니다.')
+    }
+  }
+
+  // 환불 - 참가신청 삭제
+  const deleteRegistrationForRefund = async (registrationId: string, refundId: string) => {
+    if (!confirm('해당 참가신청을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
+    try {
+      // 참가신청 삭제
+      const { error: deleteError } = await supabase
+        .from('registrations')
+        .delete()
+        .eq('id', registrationId)
+
+      if (deleteError) throw deleteError
+
+      // 환불 상태를 '환불완료'로 변경
+      const { error: updateError } = await supabase
+        .from('refund_requests')
+        .update({ status: 'completed' })
+        .eq('id', refundId)
+
+      if (updateError) throw updateError
+
+      alert('참가신청이 삭제되었고 환불 상태가 완료로 변경되었습니다.')
+      fetchRefundRequests()
+    } catch (error) {
+      console.error('참가신청 삭제 오류:', error)
+      alert('처리 중 오류가 발생했습니다.')
+    }
+  }
+
   const fetchCompetitions = async () => {
     setCompetitionsLoading(true)
     try {
@@ -1281,7 +1501,9 @@ export default function AdminPage() {
       // pending → confirmed로 변경될 때만 알림톡 발송
       if (registration.payment_status === 'pending' && newStatus === 'confirmed') {
         try {
-          const competition = registration.participation_groups?.competitions
+          const participationGroup = registration.participation_groups?.[0]
+          const competitions = participationGroup?.competitions
+          const competition = Array.isArray(competitions) ? competitions[0] : competitions
           if (competition && registration.phone) {
             await fetch('/api/alimtalk/payment-confirm', {
               method: 'POST',
@@ -1291,7 +1513,7 @@ export default function AdminPage() {
                 name: registration.name,
                 eventDate: competition.date,
                 location: competition.location,
-                distance: registration.participation_groups?.distance || registration.distance || '',
+                distance: participationGroup?.distance || registration.distance || '',
                 fee: registration.entry_fee?.toLocaleString() || '0',
               }),
             })
@@ -3222,6 +3444,7 @@ export default function AdminPage() {
                 )}
               </>
             )}
+
           </div>
         )}
         {activeTab === 'community' && (
@@ -3250,6 +3473,28 @@ export default function AdminPage() {
                 >
                   <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
                   댓글 관리
+                </button>
+                <button
+                  onClick={() => setCommunitySubTab('receipts')}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    communitySubTab === 'receipts'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Receipt className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
+                  현금영수증
+                </button>
+                <button
+                  onClick={() => setCommunitySubTab('refunds')}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    communitySubTab === 'refunds'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
+                  환불요청
                 </button>
               </nav>
             </div>
@@ -3791,6 +4036,517 @@ export default function AdminPage() {
                 </div>
               </>
             )}
+
+            {/* 현금영수증 관리 */}
+            {communitySubTab === 'receipts' && (() => {
+              const totalReceiptPages = Math.ceil(receiptRequests.length / receiptsPerPage)
+              const paginatedReceipts = receiptRequests.slice((currentReceiptPage - 1) * receiptsPerPage, currentReceiptPage * receiptsPerPage)
+              const allPageSelected = paginatedReceipts.length > 0 && paginatedReceipts.every(r => selectedReceipts.includes(r.id))
+              return (
+              <>
+                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">현금영수증 요청 관리</h2>
+                  <div className="flex flex-wrap gap-2">
+                    <select
+                      value={receiptStatusFilter}
+                      onChange={(e) => { setReceiptStatusFilter(e.target.value); setCurrentReceiptPage(1); setSelectedReceipts([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    >
+                      <option value="all">전체 상태</option>
+                      <option value="pending">신청완료</option>
+                      <option value="completed">발급완료</option>
+                    </select>
+                    <select
+                      value={receiptCompetitionFilter}
+                      onChange={(e) => { setReceiptCompetitionFilter(e.target.value); setCurrentReceiptPage(1); setSelectedReceipts([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    >
+                      <option value="all">전체 대회</option>
+                      {competitions.map((comp) => (
+                        <option key={comp.id} value={comp.id}>{comp.title}</option>
+                      ))}
+                    </select>
+                    {receiptRequests.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const statusText = (s: string) => s === 'completed' ? '발급완료' : '신청완료'
+                          const typeText = (s: string) => s === 'business' ? '사업자' : '개인'
+                          const bom = '\uFEFF'
+                          const header = '이름,발급유형,연락처,사업자번호,대회,거리,금액,요청일,상태'
+                          const rows = receiptRequests.map(r =>
+                            `"${r.name}","${typeText(r.receipt_type)}","${r.phone || ''}","${r.business_number || ''}","${r.competition_title}","${r.distance}","${r.amount}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
+                          )
+                          const csv = bom + header + '\n' + rows.join('\n')
+                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                          const url = URL.createObjectURL(blob)
+                          const a = document.createElement('a')
+                          a.href = url
+                          a.download = `현금영수증_요청_${format(new Date(), 'yyyyMMdd')}.csv`
+                          a.click()
+                          URL.revokeObjectURL(url)
+                        }}
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                      >
+                        <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        CSV
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedReceipts.length > 0 && (
+                  <div className="px-3 sm:px-6 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                    <span className="text-sm text-blue-700 font-medium">{selectedReceipts.length}건 선택됨</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateBulkReceiptStatus('completed')}
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        발급완료 처리
+                      </button>
+                      <button
+                        onClick={() => updateBulkReceiptStatus('pending')}
+                        className="px-3 py-1.5 bg-yellow-500 text-white text-xs sm:text-sm rounded-lg hover:bg-yellow-600 transition-colors"
+                      >
+                        신청완료로
+                      </button>
+                      <button
+                        onClick={() => setSelectedReceipts([])}
+                        className="px-3 py-1.5 bg-gray-400 text-white text-xs sm:text-sm rounded-lg hover:bg-gray-500 transition-colors"
+                      >
+                        선택해제
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {receiptsLoading ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">로딩 중...</p>
+                  </div>
+                ) : receiptRequests.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Receipt className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>현금영수증 요청이 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="px-3 sm:px-6 py-2 text-xs text-gray-500 border-b">
+                      총 {receiptRequests.length}건
+                    </div>
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-2 sm:px-3 py-3 text-center w-10">
+                            <input
+                              type="checkbox"
+                              checked={allPageSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedReceipts(prev => [...new Set([...prev, ...paginatedReceipts.map(r => r.id)])])
+                                } else {
+                                  setSelectedReceipts(prev => prev.filter(id => !paginatedReceipts.some(r => r.id === id)))
+                                }
+                              }}
+                              className="w-4 h-4 text-red-600 rounded border-gray-300"
+                            />
+                          </th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">유형</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">연락처/사업자번호</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">대회</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">거리</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">금액</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">요청일</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {paginatedReceipts.map((receipt) => (
+                          <tr key={receipt.id} className={`hover:bg-gray-50 ${selectedReceipts.includes(receipt.id) ? 'bg-blue-50' : ''}`}>
+                            <td className="px-2 sm:px-3 py-3 text-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedReceipts.includes(receipt.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedReceipts(prev => [...prev, receipt.id])
+                                  } else {
+                                    setSelectedReceipts(prev => prev.filter(id => id !== receipt.id))
+                                  }
+                                }}
+                                className="w-4 h-4 text-red-600 rounded border-gray-300"
+                              />
+                            </td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900">{receipt.name}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100'
+                              }`}>
+                                {receipt.receipt_type === 'business' ? '사업자' : '개인'}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {receipt.receipt_type === 'business' ? (receipt.business_number || '-') : (receipt.phone || '-')}
+                            </td>
+                            <td className="px-3 sm:px-6 py-3 text-sm text-gray-900 max-w-[150px] truncate">{receipt.competition_title}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{receipt.distance}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{receipt.amount?.toLocaleString()}원</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(receipt.created_at, 'yyyy.MM.dd')}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                receipt.status === 'completed' ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+                              }`}>
+                                {receipt.status === 'completed' ? '발급완료' : '신청완료'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="px-3 sm:px-6 py-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">페이지당</span>
+                      <select
+                        value={receiptsPerPage}
+                        onChange={(e) => { setReceiptsPerPage(Number(e.target.value)); setCurrentReceiptPage(1); setSelectedReceipts([]); }}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                      >
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      <span className="text-sm text-gray-600">건</span>
+                    </div>
+                    {totalReceiptPages > 1 && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => { setCurrentReceiptPage(1); setSelectedReceipts([]); }}
+                          disabled={currentReceiptPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          처음
+                        </button>
+                        <button
+                          onClick={() => { setCurrentReceiptPage(currentReceiptPage - 1); setSelectedReceipts([]); }}
+                          disabled={currentReceiptPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          이전
+                        </button>
+                        <div className="flex items-center space-x-1">
+                          {Array.from({ length: Math.min(5, totalReceiptPages) }, (_, i) => {
+                            let page: number
+                            if (totalReceiptPages <= 5) {
+                              page = i + 1
+                            } else if (currentReceiptPage <= 3) {
+                              page = i + 1
+                            } else if (currentReceiptPage >= totalReceiptPages - 2) {
+                              page = totalReceiptPages - 4 + i
+                            } else {
+                              page = currentReceiptPage - 2 + i
+                            }
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => { setCurrentReceiptPage(page); setSelectedReceipts([]); }}
+                                className={`px-3 py-1.5 text-sm rounded-md ${
+                                  currentReceiptPage === page
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <button
+                          onClick={() => { setCurrentReceiptPage(currentReceiptPage + 1); setSelectedReceipts([]); }}
+                          disabled={currentReceiptPage === totalReceiptPages}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          다음
+                        </button>
+                        <button
+                          onClick={() => { setCurrentReceiptPage(totalReceiptPages); setSelectedReceipts([]); }}
+                          disabled={currentReceiptPage === totalReceiptPages}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          마지막
+                        </button>
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      {currentReceiptPage} / {totalReceiptPages} 페이지 (총 {receiptRequests.length}건)
+                    </div>
+                  </div>
+                </div>
+              </>
+              )
+            })()}
+
+            {/* 환불 요청 관리 */}
+            {communitySubTab === 'refunds' && (() => {
+              const totalRefundPages = Math.ceil(refundRequests.length / refundsPerPage)
+              const paginatedRefunds = refundRequests.slice((currentRefundPage - 1) * refundsPerPage, currentRefundPage * refundsPerPage)
+              const allRefundPageSelected = paginatedRefunds.length > 0 && paginatedRefunds.every(r => selectedRefunds.includes(r.id))
+              return (
+              <>
+                <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">환불 요청 관리</h2>
+                  <div className="flex flex-wrap gap-2">
+                    <select
+                      value={refundStatusFilter}
+                      onChange={(e) => { setRefundStatusFilter(e.target.value); setCurrentRefundPage(1); setSelectedRefunds([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    >
+                      <option value="all">전체 상태</option>
+                      <option value="pending">환불대기</option>
+                      <option value="completed">환불완료</option>
+                    </select>
+                    <select
+                      value={refundCompetitionFilter}
+                      onChange={(e) => { setRefundCompetitionFilter(e.target.value); setCurrentRefundPage(1); setSelectedRefunds([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    >
+                      <option value="all">전체 대회</option>
+                      {competitions.map((comp) => (
+                        <option key={comp.id} value={comp.id}>{comp.title}</option>
+                      ))}
+                    </select>
+                    {refundRequests.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const statusText = (s: string) => s === 'completed' ? '환불완료' : '환불대기'
+                          const bom = '\uFEFF'
+                          const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
+                          const rows = refundRequests.map(r =>
+                            `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
+                          )
+                          const csv = bom + header + '\n' + rows.join('\n')
+                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                          const url = URL.createObjectURL(blob)
+                          const a = document.createElement('a')
+                          a.href = url
+                          a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
+                          a.click()
+                          URL.revokeObjectURL(url)
+                        }}
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                      >
+                        <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        CSV
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {selectedRefunds.length > 0 && (
+                  <div className="px-3 sm:px-6 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                    <span className="text-sm text-blue-700 font-medium">{selectedRefunds.length}건 선택됨</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateBulkRefundStatus('completed')}
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        환불완료 처리
+                      </button>
+                      
+                      <button
+                        onClick={() => setSelectedRefunds([])}
+                        className="px-3 py-1.5 bg-gray-400 text-white text-xs sm:text-sm rounded-lg hover:bg-gray-500 transition-colors"
+                      >
+                        선택해제
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {refundsLoading ? (
+                  <div className="p-8 text-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-2" />
+                    <p className="text-gray-500 text-sm">로딩 중...</p>
+                  </div>
+                ) : refundRequests.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <Undo2 className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>환불 요청이 없습니다.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <div className="px-3 sm:px-6 py-2 text-xs text-gray-500 border-b">
+                      총 {refundRequests.length}건
+                    </div>
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-2 sm:px-3 py-3 text-center w-10">
+                            <input
+                              type="checkbox"
+                              checked={allRefundPageSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedRefunds(prev => [...new Set([...prev, ...paginatedRefunds.map(r => r.id)])])
+                                } else {
+                                  setSelectedRefunds(prev => prev.filter(id => !paginatedRefunds.some(r => r.id === id)))
+                                }
+                              }}
+                              className="w-4 h-4 text-red-600 rounded border-gray-300"
+                            />
+                          </th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">연락처</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">대회</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">거리</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">금액</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">환불계좌</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">요청일</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">환불(삭제)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {paginatedRefunds.map((refund) => (
+                          <tr key={refund.id} className={`hover:bg-gray-50 ${selectedRefunds.includes(refund.id) ? 'bg-blue-50' : ''}`}>
+                            <td className="px-2 sm:px-3 py-3 text-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedRefunds.includes(refund.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedRefunds(prev => [...prev, refund.id])
+                                  } else {
+                                    setSelectedRefunds(prev => prev.filter(id => id !== refund.id))
+                                  }
+                                }}
+                                className="w-4 h-4 text-red-600 rounded border-gray-300"
+                              />
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{refund.name}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{refund.phone}</td>
+                            <td className="px-3 sm:px-4 py-3 text-sm text-gray-900 max-w-[120px] truncate">{refund.competition_title}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{refund.distance}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{refund.amount?.toLocaleString()}원</td>
+                            <td className="px-3 sm:px-4 py-3 text-sm text-gray-700">
+                              <div className="text-xs">
+                                <div className="font-medium">{refund.bank_name}</div>
+                                <div className="text-gray-500">{refund.account_number}</div>
+                                <div className="text-gray-400">{refund.account_holder}</div>
+                              </div>
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(refund.created_at, 'yyyy.MM.dd')}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                refund.status === 'completed' ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+                              }`}>
+                                {refund.status === 'completed' ? '환불완료' : '환불대기'}
+                              </span>
+                            </td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                              {refund.status === 'pending' ? (
+                                <button
+                                  onClick={() => deleteRegistrationForRefund(refund.registration_id, refund.id)}
+                                  className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                >
+                                  환불(삭제)
+                                </button>
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="px-3 sm:px-6 py-3 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">페이지당</span>
+                      <select
+                        value={refundsPerPage}
+                        onChange={(e) => { setRefundsPerPage(Number(e.target.value)); setCurrentRefundPage(1); setSelectedRefunds([]); }}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                      >
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      <span className="text-sm text-gray-600">건</span>
+                    </div>
+                    {totalRefundPages > 1 && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => { setCurrentRefundPage(1); setSelectedRefunds([]); }}
+                          disabled={currentRefundPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          처음
+                        </button>
+                        <button
+                          onClick={() => { setCurrentRefundPage(currentRefundPage - 1); setSelectedRefunds([]); }}
+                          disabled={currentRefundPage === 1}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          이전
+                        </button>
+                        <div className="flex items-center space-x-1">
+                          {Array.from({ length: Math.min(5, totalRefundPages) }, (_, i) => {
+                            let page: number
+                            if (totalRefundPages <= 5) {
+                              page = i + 1
+                            } else if (currentRefundPage <= 3) {
+                              page = i + 1
+                            } else if (currentRefundPage >= totalRefundPages - 2) {
+                              page = totalRefundPages - 4 + i
+                            } else {
+                              page = currentRefundPage - 2 + i
+                            }
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => { setCurrentRefundPage(page); setSelectedRefunds([]); }}
+                                className={`px-3 py-1.5 text-sm rounded-md ${
+                                  currentRefundPage === page
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <button
+                          onClick={() => { setCurrentRefundPage(currentRefundPage + 1); setSelectedRefunds([]); }}
+                          disabled={currentRefundPage === totalRefundPages}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          다음
+                        </button>
+                        <button
+                          onClick={() => { setCurrentRefundPage(totalRefundPages); setSelectedRefunds([]); }}
+                          disabled={currentRefundPage === totalRefundPages}
+                          className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          마지막
+                        </button>
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      {currentRefundPage} / {totalRefundPages} 페이지 (총 {refundRequests.length}건)
+                    </div>
+                  </div>
+                </div>
+              </>
+              )
+            })()}
           </div>
         )}
 

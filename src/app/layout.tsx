@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ModalProvider } from "@/contexts/ModalContext";
-import ModalInitializer from "@/components/ModalInitializer";
+import RootLayoutContent from "@/components/RootLayoutContent";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -113,16 +109,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          <ModalProvider>
-            <ModalInitializer />
-            <Header />
-            <main className="pt-16 min-h-screen">
-              {children}
-            </main>
-            <Footer />
-          </ModalProvider>
-        </AuthProvider>
+        <RootLayoutContent>{children}</RootLayoutContent>
       </body>
     </html>
   );

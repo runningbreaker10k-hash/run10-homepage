@@ -45,13 +45,21 @@ export default function CompetitionDetailPage() {
   
   const [competition, setCompetition] = useState<Competition | null>(null)
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
-  const [posts, setPosts] = useState<CompetitionPost[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'register' | 'lookup' | 'board' | 'photos'>('overview')
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
   const [registrationComplete, setRegistrationComplete] = useState(false)
   const [userRegistration, setUserRegistration] = useState<any>(null)
   const [registrationLoading, setRegistrationLoading] = useState(false)
+
+  // URL 파라미터에서 tab 감지 (스티키 버튼 클릭 시)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'register') {
+      setActiveTab('register')
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [searchParams])
 
   // 게시판 관련 상태
   const [boardPosts, setBoardPosts] = useState<any[]>([])
@@ -428,18 +436,18 @@ export default function CompetitionDetailPage() {
     // 정원 마감 또는 기한 마감
     if (registrationEnd < now || competition.current_participants >= competition.max_participants) {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-red-700">
           접수 마감
         </span>
       )
     }
 
-    // 마감 임박 (7일 이내)
+    // 마감 임박 (7일 이내 또는 모집 인원의 절반 이상)
     const hoursUntilEnd = (registrationEnd.getTime() - now.getTime()) / (1000 * 60 * 60)
-    if (hoursUntilEnd <= 168 && hoursUntilEnd > 0) {
+    if ((hoursUntilEnd <= 168 && hoursUntilEnd > 0) || (competition.current_participants >= competition.max_participants / 2)) {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-          마감 임박
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-white text-red-700">
+          <span className="animate-pulse">마감 임박</span>
         </span>
       )
     }
@@ -1703,25 +1711,6 @@ export default function CompetitionDetailPage() {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 스티키 신청 배너 */}
-      {activeTab !== 'register' && isRegistrationOpen(competition) && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
-          <button
-            onClick={() => {
-              setActiveTab('register')
-              window.scrollTo({ top: 0, behavior: 'smooth' })
-            }}
-            className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-full shadow-2xl hover:shadow-blue-500/50 hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center space-x-2 sm:space-x-3 transform hover:scale-105"
-          >
-            <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-            <div className="flex flex-col items-start">
-              <span className="text-xs sm:text-sm font-medium">참가신청</span>
-              <span className="text-xs sm:text-sm opacity-50">바로가기</span>
-            </div>
-          </button>
         </div>
       )}
     </div>

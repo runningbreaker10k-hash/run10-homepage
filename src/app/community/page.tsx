@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { MessageCircle, Search, Plus, MessageSquare, Pin } from 'lucide-react'
@@ -28,16 +28,39 @@ interface Post {
 }
 
 export default function CommunityPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen pt-16 bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div></div>}>
+      <CommunityContent />
+    </Suspense>
+  )
+}
+
+function CommunityContent() {
   const { user, getGradeInfo } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [posts, setPosts] = useState<Post[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authDefaultTab, setAuthDefaultTab] = useState<'login' | 'signup'>('login')
   const postsPerPage = 15
+
+  // URL에서 페이지 번호 읽기
+  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+
+  // 페이지 변경 함수 (URL 업데이트)
+  const setCurrentPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (page === 1) {
+      params.delete('page')
+    } else {
+      params.set('page', page.toString())
+    }
+    const query = params.toString()
+    router.push(`/community${query ? `?${query}` : ''}`, { scroll: false })
+  }
 
   useEffect(() => {
     loadPosts()

@@ -305,7 +305,6 @@ export default function AppMainPage() {
           </div>
         </div>
       </section>
-
     </div>
   )
 }

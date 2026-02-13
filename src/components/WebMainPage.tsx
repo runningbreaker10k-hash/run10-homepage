@@ -598,7 +598,6 @@ export default function WebMainPage() {
           </div>
         </div>
       )}
-
     </div>
   )
 }

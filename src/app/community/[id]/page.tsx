@@ -403,7 +403,7 @@ export default function CommunityPostPage() {
               </p>
             </div>
             <button
-              onClick={() => router.push('/community')}
+              onClick={() => router.back()}
               className="flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm sm:text-base font-medium touch-manipulation backdrop-blur-sm border border-white/20"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />

@@ -9,7 +9,6 @@ import { Competition } from '@/types'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
-
 type CompetitionWithGroups = Competition & {
   participation_groups?: Array<{
     id: string
@@ -109,9 +108,9 @@ export default function CompetitionsPage() {
       return 'registration_closed'
     }
 
-    // 마감 임박 (7일 이내)
+    // 마감 임박 (7일 이내 또는 모집 인원의 절반 이상)
     const hoursUntilEnd = (registrationEnd.getTime() - now.getTime()) / (1000 * 60 * 60)
-    if (hoursUntilEnd <= 168 && hoursUntilEnd > 0) {
+    if ((hoursUntilEnd <= 168 && hoursUntilEnd > 0) || (competition.current_participants >= competition.max_participants / 2)) {
       return 'deadline_approaching'
     }
 
@@ -174,8 +173,8 @@ export default function CompetitionsPage() {
     // 마감 임박
     if (actualStatus === 'deadline_approaching') {
       return (
-        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-amber-600 shadow-md">
-          마감 임박
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-red-700 shadow-md">
+          <span className="animate-pulse-deadline">마감 임박</span>
         </span>
       )
     }
@@ -183,7 +182,7 @@ export default function CompetitionsPage() {
     // 접수마감 (대회는 남았지만 신청 마감)
     if (actualStatus === 'registration_closed') {
       return (
-        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-orange-600 shadow-md">
+        <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-red-700 shadow-md">
           접수 마감
         </span>
       )

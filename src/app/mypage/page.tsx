@@ -56,12 +56,47 @@ interface Registration {
   }
 }
 
+interface ReceiptRequest {
+  id: string
+  competition_id: string
+  name: string
+  phone: string
+  amount: number
+  distance: string
+  status: string
+  receipt_type: string
+  business_number: string
+  created_at: string
+  competitions: {
+    title: string
+  }
+}
+
+interface RefundRequest {
+  id: string
+  competition_id: string
+  name: string
+  phone: string
+  amount: number
+  distance: string
+  bank_name: string
+  account_number: string
+  account_holder: string
+  status: string
+  created_at: string
+  competitions: {
+    title: string
+  }
+}
+
 export default function MyPage() {
   const { user, updateUser, getGradeInfo } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'registrations'>('profile')
   const [isLoading, setIsLoading] = useState(false)
   const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [receiptRequests, setReceiptRequests] = useState<ReceiptRequest[]>([])
+  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([])
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -102,6 +137,8 @@ export default function MyPage() {
     // 사용자 상세 정보 로드
     loadUserDetails()
     loadRegistrations()
+    loadReceiptRequests()
+    loadRefundRequests()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router])
 
@@ -230,6 +267,158 @@ export default function MyPage() {
     }
   }
 
+
+  const loadReceiptRequests = async () => {
+    if (!user) return
+
+    try {
+      const { data: receiptData, error: receiptError } = await supabase
+        .from('receipt_requests')
+        .select('id, competition_id, name, phone, amount, distance, status, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (receiptError) {
+        console.error('현금영수증 내역 조회 오류:', receiptError)
+        return
+      }
+
+      if (!receiptData || receiptData.length === 0) {
+        setReceiptRequests([])
+        return
+      }
+
+      const competitionIds = [...new Set(receiptData.map(r => r.competition_id))]
+
+      const { data: competitionData, error: competitionError } = await supabase
+        .from('competitions')
+        .select('id, title')
+        .in('id', competitionIds)
+
+      if (competitionError) {
+        console.error('대회 정보 조회 오류:', competitionError)
+        return
+      }
+
+      const receiptsWithCompetitions = receiptData.map(receipt => {
+        const competition = competitionData?.find(c => c.id === receipt.competition_id)
+        return {
+          ...receipt,
+          competitions: competition || { title: '알 수 없는 대회' }
+        }
+      })
+
+      setReceiptRequests(receiptsWithCompetitions as unknown as ReceiptRequest[])
+    } catch (error) {
+      console.error('현금영수증 내역 로드 오류:', error)
+      setReceiptRequests([])
+    }
+  }
+
+  // 현금영수증 신청 취소
+  const cancelReceiptRequest = async (receiptId: string) => {
+    if (!confirm('현금영수증 신청을 취소하시겠습니까?')) return
+    try {
+      const { error } = await supabase
+        .from('receipt_requests')
+        .delete()
+        .eq('id', receiptId)
+        .eq('status', 'pending')
+
+      if (error) throw error
+      alert('신청이 취소되었습니다.')
+      loadReceiptRequests()
+    } catch (error) {
+      console.error('현금영수증 신청 취소 오류:', error)
+      alert('신청 취소에 실패했습니다.')
+    }
+  }
+
+  // 현금영수증 상태 표시
+  const getReceiptStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return { text: '발급완료', color: 'text-green-600 bg-green-100' }
+      case 'pending':
+        return { text: '신청완료', color: 'text-yellow-600 bg-yellow-100' }
+      case 'rejected':
+        return { text: '신청완료', color: 'text-yellow-600 bg-yellow-100' }
+      default:
+        return { text: status, color: 'text-gray-600 bg-gray-100' }
+    }
+  }
+
+  // 환불 요청 내역 로드
+  const loadRefundRequests = async () => {
+    if (!user) return
+    try {
+      const { data: refundData, error: refundError } = await supabase
+        .from('refund_requests')
+        .select('id, competition_id, name, phone, amount, distance, bank_name, account_number, account_holder, status, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (refundError) {
+        console.error('환불 내역 조회 오류:', refundError)
+        return
+      }
+
+      if (!refundData || refundData.length === 0) {
+        setRefundRequests([])
+        return
+      }
+
+      const competitionIds = [...new Set(refundData.map(r => r.competition_id))]
+      const { data: competitionData } = await supabase
+        .from('competitions')
+        .select('id, title')
+        .in('id', competitionIds)
+
+      const refundsWithCompetitions = refundData.map(refund => {
+        const competition = competitionData?.find(c => c.id === refund.competition_id)
+        return {
+          ...refund,
+          competitions: competition || { title: '알 수 없는 대회' }
+        }
+      })
+
+      setRefundRequests(refundsWithCompetitions as unknown as RefundRequest[])
+    } catch (error) {
+      console.error('환불 내역 로드 오류:', error)
+      setRefundRequests([])
+    }
+  }
+
+  // 환불 요청 취소
+  const cancelRefundRequest = async (refundId: string) => {
+    if (!confirm('환불 요청을 취소하시겠습니까?')) return
+    try {
+      const { error } = await supabase
+        .from('refund_requests')
+        .delete()
+        .eq('id', refundId)
+        .eq('status', 'pending')
+
+      if (error) throw error
+      alert('요청이 취소되었습니다.')
+      loadRefundRequests()
+    } catch (error) {
+      console.error('환불 요청 취소 오류:', error)
+      alert('요청 취소에 실패했습니다.')
+    }
+  }
+
+  // 환불 상태 표시
+  const getRefundStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return { text: '환불완료', color: 'text-green-600 bg-green-100' }
+      case 'pending':
+        return { text: '환불대기', color: 'text-yellow-600 bg-yellow-100' }
+      default:
+        return { text: status, color: 'text-gray-600 bg-gray-100' }
+    }
+  }
 
   // 전화번호 자동 하이픈 추가
   const formatPhoneNumber = (value: string) => {
@@ -469,9 +658,9 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-50">
+    <div className="min-h-screen pt-14 md:pt-16 bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-10 md:py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
         <div className="absolute inset-0 opacity-20">
           <img
@@ -484,56 +673,56 @@ export default function MyPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">마이페이지</h1>
-          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
+          <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">마이페이지</h1>
+          <p className="text-sm md:text-lg text-red-100 max-w-3xl mx-auto">
             회원정보 수정 및 대회 신청 내역을 관리하세요
           </p>
         </div>
       </section>
 
       {/* 메인 컨텐츠 */}
-      <section className="py-16">
+      <section className="py-8 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* 탭 네비게이션 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
             <button
               onClick={() => setActiveTab('profile')}
-              className={`p-6 rounded-lg shadow-md transition-colors ${
+              className={`p-3 md:p-6 rounded-lg shadow-md transition-colors ${
                 activeTab === 'profile'
                   ? 'bg-red-600 text-white'
                   : 'bg-white text-gray-600 hover:bg-red-50'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
-                <User className="w-6 h-6" />
-                <span className="font-medium">회원정보 수정</span>
+                <User className="w-5 md:w-6 h-5 md:h-6" />
+                <span className="font-medium text-sm md:text-base">회원정보 수정</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('password')}
-              className={`p-6 rounded-lg shadow-md transition-colors ${
+              className={`p-3 md:p-6 rounded-lg shadow-md transition-colors ${
                 activeTab === 'password'
                   ? 'bg-red-600 text-white'
                   : 'bg-white text-gray-600 hover:bg-red-50'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
-                <Settings className="w-6 h-6" />
-                <span className="font-medium">비밀번호 변경</span>
+                <Settings className="w-5 md:w-6 h-5 md:h-6" />
+                <span className="font-medium text-sm md:text-base">비밀번호 변경</span>
               </div>
             </button>
             <button
               onClick={() => setActiveTab('registrations')}
-              className={`p-6 rounded-lg shadow-md transition-colors ${
+              className={`p-3 md:p-6 rounded-lg shadow-md transition-colors ${
                 activeTab === 'registrations'
                   ? 'bg-red-600 text-white'
                   : 'bg-white text-gray-600 hover:bg-red-50'
               }`}
             >
               <div className="flex items-center justify-center space-x-2">
-                <Calendar className="w-6 h-6" />
-                <span className="font-medium">신청 내역</span>
+                <Calendar className="w-5 md:w-6 h-5 md:h-6" />
+                <span className="font-medium text-sm md:text-base">신청 내역</span>
               </div>
             </button>
           </div>
@@ -541,8 +730,8 @@ export default function MyPage() {
 
       {/* 회원정보 수정 */}
       {activeTab === 'profile' && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">회원정보 수정</h2>
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+          <h2 className="text-base md:text-lg font-medium text-gray-900 mb-4 md:mb-6">회원정보 수정</h2>
           
           {isLoadingData ? (
             <div className="text-center py-8">
@@ -553,11 +742,11 @@ export default function MyPage() {
             <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
             {/* 성명 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">성명</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">성명</label>
               <input
                 {...profileForm.register('name')}
                 type="text"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                 placeholder="성명을 입력하세요"
               />
               {profileForm.formState.errors.name && (
@@ -567,24 +756,24 @@ export default function MyPage() {
 
             {/* 주소 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">주소</label>
-              <div className="space-y-3">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">주소</label>
+              <div className="space-y-2">
                 <input
                   {...profileForm.register('postal_code')}
                   type="text"
-                  className="w-32 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-28 md:w-32 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="우편번호"
                 />
                 <input
                   {...profileForm.register('address1')}
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="기본주소"
                 />
                 <input
                   {...profileForm.register('address2')}
                   type="text"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="상세주소"
                 />
               </div>
@@ -598,11 +787,11 @@ export default function MyPage() {
 
             {/* 연락처 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">연락처</label>
               <input
                 {...profileForm.register('phone')}
                 type="text"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                 placeholder="010-0000-0000"
                 onChange={(e) => {
                   const formatted = formatPhoneNumber(e.target.value)
@@ -614,41 +803,41 @@ export default function MyPage() {
                   <input
                     {...profileForm.register('phone_marketing_agree')}
                     type="checkbox"
-                    className="mr-2"
+                    className="mr-2 w-4 h-4"
                   />
-                  <span className="text-sm text-gray-600">연락처로 마케팅 정보 수신에 동의합니다</span>
+                  <span className="text-xs md:text-sm text-gray-600">연락처로 마케팅 정보 수신에 동의합니다</span>
                 </label>
               </div>
             </div>
 
             {/* 이메일 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">이메일</label>
               <input
                 {...profileForm.register('email')}
                 type="email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
               />
               <div className="mt-2">
                 <label className="flex items-center">
                   <input
                     {...profileForm.register('email_marketing_agree')}
                     type="checkbox"
-                    className="mr-2"
+                    className="mr-2 w-4 h-4"
                   />
-                  <span className="text-sm text-gray-600">이메일로 마케팅 정보 수신에 동의합니다</span>
+                  <span className="text-xs md:text-sm text-gray-600">이메일로 마케팅 정보 수신에 동의합니다</span>
                 </label>
               </div>
             </div>
 
             {/* 주민번호 앞자리 (생년월일 + 성별) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">주민번호 앞 7자리</label>
-              <div className="flex items-center gap-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">주민번호 앞 7자리</label>
+              <div className="flex items-center gap-1 md:gap-2">
                 <input
                   {...profileForm.register('birth_date')}
                   type="text"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center"
+                  className="flex-1 px-2 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-sm"
                   placeholder="000000"
                   maxLength={6}
                   onChange={(e) => {
@@ -656,11 +845,11 @@ export default function MyPage() {
                     profileForm.setValue('birth_date', cleaned)
                   }}
                 />
-                <span className="text-lg font-bold text-gray-400">-</span>
+                <span className="text-lg md:text-2xl font-bold text-gray-400">-</span>
                 <input
                   {...profileForm.register('gender_digit')}
                   type="text"
-                  className="w-14 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center font-medium"
+                  className="w-10 md:w-14 px-2 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center font-medium text-sm"
                   placeholder="0"
                   maxLength={1}
                   onChange={(e) => {
@@ -676,9 +865,9 @@ export default function MyPage() {
                     }
                   }}
                 />
-                <div className="flex-1 flex items-center gap-1">
+                <div className="flex-1 flex items-center gap-0.5 md:gap-1">
                   {[...Array(6)].map((_, i) => (
-                    <div key={i} className="w-3 h-3 bg-gray-300 rounded-full"></div>
+                    <div key={i} className="w-2 md:w-3 h-2 md:h-3 bg-gray-300 rounded-full"></div>
                   ))}
                 </div>
               </div>
@@ -686,29 +875,29 @@ export default function MyPage() {
 
             {/* 성별 (자동 선택되지만 수정 가능) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
                 성별 {profileForm.watch('gender_digit') && '(자동 선택됨, 수정 가능)'}
               </label>
-              <div className="flex gap-4">
-                <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg transition-all cursor-pointer border-2 ${
+              <div className="flex gap-2 md:gap-4">
+                <label className={`flex-1 flex items-center justify-center px-3 md:px-4 py-2.5 md:py-3 rounded-lg transition-all cursor-pointer border-2 text-sm ${
                   profileForm.watch('gender') === 'male' ? 'bg-blue-100 border-blue-500 font-semibold' : 'bg-white border-gray-300 hover:border-blue-300'
                 }`}>
                   <input
                     {...profileForm.register('gender')}
                     type="radio"
                     value="male"
-                    className="mr-2"
+                    className="mr-1 md:mr-2"
                   />
                   <span>남성</span>
                 </label>
-                <label className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg transition-all cursor-pointer border-2 ${
+                <label className={`flex-1 flex items-center justify-center px-3 md:px-4 py-2.5 md:py-3 rounded-lg transition-all cursor-pointer border-2 text-sm ${
                   profileForm.watch('gender') === 'female' ? 'bg-pink-100 border-pink-500 font-semibold' : 'bg-white border-gray-300 hover:border-pink-300'
                 }`}>
                   <input
                     {...profileForm.register('gender')}
                     type="radio"
                     value="female"
-                    className="mr-2"
+                    className="mr-1 md:mr-2"
                   />
                   <span>여성</span>
                 </label>
@@ -717,30 +906,30 @@ export default function MyPage() {
 
             {/* 기록 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">10K 기록</label>
-              <div className="flex gap-2 items-center">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">10K 기록</label>
+              <div className="flex gap-1 md:gap-2 items-center">
                 <div className="flex-1">
                   <input
                     type="number"
                     {...profileForm.register('record_minutes', { valueAsNumber: true })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                     placeholder="분"
                     min="1"
                     max="200"
                   />
                 </div>
-                <span className="text-gray-500">분</span>
+                <span className="text-xs md:text-sm text-gray-500">분</span>
                 <div className="flex-1">
                   <input
                     type="number"
                     {...profileForm.register('record_seconds', { valueAsNumber: true })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                    className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                     placeholder="초"
                     min="0"
                     max="59"
                   />
                 </div>
-                <span className="text-gray-500">초</span>
+                <span className="text-xs md:text-sm text-gray-500">초</span>
               </div>
               {profileForm.watch('record_minutes') && (
                 <div className={`flex items-center gap-2 text-sm mt-2 ${getGradeDisplayLocal(profileForm.watch('record_minutes'), profileForm.watch('record_seconds') || 0, profileForm.watch('gender')).color}`}>
@@ -770,26 +959,26 @@ export default function MyPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 md:py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base font-medium"
             >
               {isLoading ? '수정 중...' : '회원정보 수정'}
             </button>
           </form>
           )}
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="bg-red-50 p-4 rounded-lg">
-              <h3 className="text-sm font-medium text-red-800 mb-2">회원 탈퇴</h3>
-              <p className="text-sm text-red-600 mb-4">
+          <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200">
+            <div className="bg-red-50 p-3 md:p-4 rounded-lg">
+              <h3 className="text-xs md:text-sm font-medium text-red-800 mb-2">회원 탈퇴</h3>
+              <p className="text-xs md:text-sm text-red-600 mb-3 md:mb-4">
                 탈퇴 시 모든 회원 정보와 대회 신청 내역이 삭제되며, 복구할 수 없습니다.
               </p>
               <button
                 type="button"
                 onClick={handleWithdraw}
                 disabled={isLoading}
-                className="flex items-center px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center px-3 md:px-4 py-2 md:py-2.5 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-4 w-4 mr-1 md:mr-2" />
                 {isLoading ? '처리 중...' : '탈퇴하기'}
               </button>
             </div>
@@ -799,26 +988,26 @@ export default function MyPage() {
 
       {/* 비밀번호 변경 */}
       {activeTab === 'password' && (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">비밀번호 변경</h2>
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow">
+          <h2 className="text-base md:text-lg font-medium text-gray-900 mb-4 md:mb-6">비밀번호 변경</h2>
           
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 md:space-y-6">
             {/* 현재 비밀번호 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">현재 비밀번호</label>
               <div className="relative">
                 <input
                   {...passwordForm.register('current_password')}
                   type={showCurrentPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 pr-10 md:pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="현재 비밀번호를 입력하세요"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showCurrentPassword ? <EyeOff className="w-4 md:w-5 h-4 md:h-5" /> : <Eye className="w-4 md:w-5 h-4 md:h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.current_password && (
@@ -828,20 +1017,20 @@ export default function MyPage() {
 
             {/* 새 비밀번호 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">새 비밀번호</label>
               <div className="relative">
                 <input
                   {...passwordForm.register('new_password')}
                   type={showNewPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 pr-10 md:pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="영문, 숫자 포함 8자 이상"
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showNewPassword ? <EyeOff className="w-4 md:w-5 h-4 md:h-5" /> : <Eye className="w-4 md:w-5 h-4 md:h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.new_password && (
@@ -851,20 +1040,20 @@ export default function MyPage() {
 
             {/* 새 비밀번호 확인 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">새 비밀번호 확인</label>
               <div className="relative">
                 <input
                   {...passwordForm.register('confirm_password')}
                   type={showConfirmPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+                  className="w-full px-3 md:px-4 py-2.5 md:py-3 pr-10 md:pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
                   placeholder="새 비밀번호를 다시 입력하세요"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? <EyeOff className="w-4 md:w-5 h-4 md:h-5" /> : <Eye className="w-4 md:w-5 h-4 md:h-5" />}
                 </button>
               </div>
               {passwordForm.formState.errors.confirm_password && (
@@ -875,7 +1064,7 @@ export default function MyPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-2.5 md:py-3 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base font-medium"
             >
               {isLoading ? '변경 중...' : '비밀번호 변경'}
             </button>
@@ -885,16 +1074,17 @@ export default function MyPage() {
 
       {/* 신청 내역 */}
       {activeTab === 'registrations' && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">신청 내역</h2>
-            <p className="text-sm text-gray-600 mt-1">참가 신청한 대회 목록입니다.</p>
+        <>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-gray-200 border-l-4 border-l-blue-500">
+            <h2 className="text-base md:text-lg font-medium text-gray-900">대회 신청 내역</h2>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">참가 신청한 대회 목록입니다.</p>
           </div>
           
           {registrations.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>참가 신청한 대회가 없습니다.</p>
+            <div className="p-6 md:p-8 text-center text-gray-500">
+              <Calendar className="w-10 md:w-12 h-10 md:h-12 mx-auto mb-3 md:mb-4 text-gray-300" />
+              <p className="text-sm md:text-base">참가 신청한 대회가 없습니다.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
@@ -903,31 +1093,31 @@ export default function MyPage() {
                 return (
                   <div
                     key={registration.id}
-                    className="group p-6 hover:bg-blue-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent hover:border-blue-500"
+                    className="group p-4 md:p-6 hover:bg-blue-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent hover:border-blue-500"
                     onClick={() => router.push(`/competitions/${registration.competition_id}?tab=lookup`)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-700 transition-colors">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base md:text-lg font-medium text-gray-900 group-hover:text-blue-700 transition-colors truncate">
                           {registration.competitions.title}
                         </h3>
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                          <span>📅 {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
-                          <span>📍 {registration.competitions.location}</span>
-                          {registration.distance && <span>🏃 {registration.distance}</span>}
+                        <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-500">
+                          <span className="flex items-center">📅 {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
+                          <span className="flex items-center">📍 {registration.competitions.location}</span>
+                          {registration.distance && <span className="flex items-center">🏃 {registration.distance}</span>}
                         </div>
                         <div className="mt-1 text-xs text-gray-400">
                           신청일: {formatKST(registration.created_at, 'yyyy.MM.dd')}
                         </div>
-                        <div className="mt-2 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-1 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                           👆 클릭하여 상세 신청 내역 보기
                         </div>
                       </div>
-                      <div className="ml-4 flex flex-col items-end space-y-2">
+                      <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-2">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
                           {status.text}
                         </span>
-                        <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                        <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors hidden md:block">
                           상세 보기 →
                         </div>
                       </div>
@@ -938,6 +1128,152 @@ export default function MyPage() {
             </div>
           )}
         </div>
+
+        {/* 입금완료된 대회가 있을 때만 현금영수증/환불 요청 내역 표시 */}
+        {registrations.some(r => r.payment_status === 'confirmed') && (<>
+        {/* 현금영수증 신청 내역 */}
+        <div className="bg-white rounded-lg shadow mt-5 md:mt-6 overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-gray-200 border-l-4 border-l-emerald-500">
+            <h2 className="text-base md:text-lg font-medium text-gray-900">현금영수증 신청 내역</h2>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">현금영수증 발급 신청 내역입니다.</p>
+          </div>
+
+          {receiptRequests.length === 0 ? (
+            <div className="p-6 md:p-8 text-center text-gray-500">
+              <p className="text-sm md:text-base">현금영수증 신청 내역이 없습니다.</p>
+              <button
+                onClick={() => router.push('/request/receipt')}
+                className="mt-3 md:mt-4 px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                현금영수증 신청하기
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-gray-200">
+                {receiptRequests.map((receipt) => {
+                  const receiptStatus = getReceiptStatusDisplay(receipt.status)
+                  return (
+                    <div key={receipt.id} className="p-4 md:p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm md:text-base font-medium text-gray-900 truncate">
+                            {receipt.competitions.title}
+                          </h3>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                              receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 bg-gray-100'
+                            }`}>
+                              {receipt.receipt_type === 'business' ? '사업자' : '개인'}
+                            </span>
+                            <span className="flex items-center">🏃 {receipt.distance}</span>
+                            <span className="flex items-center">💰 {receipt.amount.toLocaleString()}원</span>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-400">
+                            신청일: {formatKST(receipt.created_at, 'yyyy.MM.dd')}
+                          </div>
+                        </div>
+                        <div className="flex md:flex-col items-center md:items-end gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${receiptStatus.color}`}>
+                            {receiptStatus.text}
+                          </span>
+                          {receipt.status === 'pending' && (
+                            <button
+                              onClick={() => cancelReceiptRequest(receipt.id)}
+                              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                            >
+                              신청 취소
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="p-3 md:p-4 border-t border-gray-200 text-center">
+                <button
+                  onClick={() => router.push('/request/receipt')}
+                  className="px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  추가 신청하기
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 환불 요청 내역 */}
+        <div className="bg-white rounded-lg shadow mt-5 md:mt-6 overflow-hidden">
+          <div className="p-4 md:p-6 border-b border-gray-200 border-l-4 border-l-orange-500">
+            <h2 className="text-base md:text-lg font-medium text-gray-900">환불 요청 내역</h2>
+            <p className="text-xs md:text-sm text-gray-500 mt-1">참가비 환불 요청 내역입니다.</p>
+          </div>
+
+          {refundRequests.length === 0 ? (
+            <div className="p-6 md:p-8 text-center text-gray-500">
+              <p className="text-sm md:text-base">환불 요청 내역이 없습니다.</p>
+              <button
+                onClick={() => router.push('/request/refund')}
+                className="mt-3 md:mt-4 px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                환불 요청하기
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-gray-200">
+                {refundRequests.filter(r => r.status === 'pending').map((refund) => {
+                  const refundStatus = getRefundStatusDisplay(refund.status)
+                  return (
+                    <div key={refund.id} className="p-4 md:p-6">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm md:text-base font-medium text-gray-900 truncate">
+                            {refund.competitions.title}
+                          </h3>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
+                            <span className="flex items-center">🏃 {refund.distance}</span>
+                            <span className="flex items-center">💰 {refund.amount.toLocaleString()}원</span>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-400 break-all">
+                            {refund.bank_name} {refund.account_number} ({refund.account_holder})
+                          </div>
+                          <div className="mt-1 text-xs text-gray-400">
+                            요청일: {formatKST(refund.created_at, 'yyyy.MM.dd')}
+                          </div>
+                        </div>
+                        <div className="flex md:flex-col items-center md:items-end gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${refundStatus.color}`}>
+                            {refundStatus.text}
+                          </span>
+                          {refund.status === 'pending' && (
+                            <button
+                              onClick={() => cancelRefundRequest(refund.id)}
+                              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                            >
+                              요청 취소
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="p-3 md:p-4 border-t border-gray-200 text-center">
+                <button
+                  onClick={() => router.push('/request/refund')}
+                  className="px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  환불 요청하기
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+        </>)}
+        </>
       )}
         </div>
       </section>

@@ -52,3 +52,22 @@ header {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* 커스텀 pulse 애니메이션 - 마감 임박 텍스트 깜박임 */
+@keyframes pulse-deadline {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-deadline {
+  animation: pulse-deadline 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Tailwind의 기본 animate-pulse 속도 조정 (선택사항) */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
