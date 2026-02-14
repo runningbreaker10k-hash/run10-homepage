@@ -126,11 +126,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
 
       const { error: uploadError, data } = await supabase.storage
         .from('competition-images')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            setUploadProgress((progress.loaded / progress.total) * 100)
-          }
-        })
+        .upload(filePath, file)
 
       if (uploadError) {
         console.error('이미지 업로드 오류:', uploadError)

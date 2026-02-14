@@ -589,7 +589,7 @@ export default function CommunityPostPage() {
                                   <button
                                     onClick={() => {
                                       setOpenCommentMenuId(null)
-                                      handleReportComment(comment.id, comment.report_count)
+                                      handleReportComment(comment.id, (comment as any).report_count || 0)
                                     }}
                                     className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
                                   >

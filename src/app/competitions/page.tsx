@@ -410,7 +410,7 @@ export default function CompetitionsPage() {
                   </div>
 
                   {/* 대회 이미지 */}
-                  <div className="relative h-48">
+                  <div className="relative h-48 overflow-hidden bg-gray-200">
                     {competition.image_url ? (
                       <Image
                         src={competition.image_url}
@@ -426,13 +426,26 @@ export default function CompetitionsPage() {
                       </div>
                     )}
 
-                    {/* 좌측상단 - 상태배지 */}
-                    <div className="absolute top-3 left-3 z-10">
-                      {getStatusBadge(competition)}
-                    </div>
+                    {/* 종료/접수마감 상태 - 어두운 오버레이 + 큰 텍스트 */}
+                    {(isClosed || actualStatus === 'registration_closed') && (
+                      <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
+                        <div className="text-center px-4">
+                          <p className="text-white text-2xl sm:text-2xl font-bold leading-snug whitespace-pre-line">
+                            {isClosed ? '대회 종료' : '모든 종목 참가접수가\n마감됐습니다'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 좌측상단 - 상태배지 (종료/접수마감 제외) */}
+                    {!(isClosed || actualStatus === 'registration_closed') && (
+                      <div className="absolute top-3 left-3 z-10">
+                        {getStatusBadge(competition)}
+                      </div>
+                    )}
 
                     {/* 우측하단 - 원형 + 버튼 (예정일 때는 표시 안함) */}
-                    {!isUpcoming && (
+                    {!isUpcoming && !(isClosed || actualStatus === 'registration_closed') && (
                       <div className="absolute bottom-3 right-3 z-10">
                         <div className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-red-600 font-black text-2xl">
                           +

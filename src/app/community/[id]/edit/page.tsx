@@ -150,11 +150,7 @@ export default function CommunityEditPage() {
 
       const { error: uploadError } = await supabase.storage
         .from('competition-images')
-        .upload(filePath, file, {
-          onUploadProgress: (progress) => {
-            setUploadProgress((progress.loaded / progress.total) * 100)
-          }
-        })
+        .upload(filePath, file)
 
       if (uploadError) throw uploadError
 

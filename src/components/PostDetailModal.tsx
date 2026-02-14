@@ -758,13 +758,13 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                               {isAdmin() && reply.is_admin_reply && (
                                 <div className="flex space-x-1">
                                   <button
-                                    onClick={() => handleEditReply(reply)}
+                                    //onClick={() => handleEditReply(reply)}
                                     className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 border border-blue-200 rounded"
                                   >
                                     수정
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteReply(reply)}
+                                    //onClick={() => handleDeleteReply(reply)}
                                     className="text-xs text-red-600 hover:text-red-800 px-2 py-1 border border-red-200 rounded"
                                   >
                                     삭제

@@ -8,7 +8,6 @@ import {
   Calendar,
   MapPin,
   Users,
-  Clock,
   Trophy,
   CreditCard,
   ArrowLeft,
@@ -511,8 +510,7 @@ export default function CompetitionDetailPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="max-w-4xl mx-auto">
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -586,83 +584,6 @@ export default function CompetitionDetailPage() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="lg:col-span-1">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex items-center mb-4">
-                <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                <h4 className="font-semibold text-gray-900">신청 기간</h4>
-              </div>
-
-              <div className="space-y-4">
-                {/* 기간 표시 */}
-                <div className="text-center">
-                  <div className="text-lg font-bold text-gray-900">
-                    {format(new Date(competition.registration_start), 'M월 d일')} - {format(new Date(competition.registration_end), 'M월 d일')}
-                  </div>
-                </div>
-
-                {/* 진행률 바 */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-gray-600">
-                    <span>{format(new Date(competition.registration_start), 'M/d')}</span>
-                    <span>{format(new Date(competition.registration_end), 'M/d')}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(() => {
-                          const now = new Date()
-                          const start = new Date(competition.registration_start)
-                          const end = new Date(competition.registration_end)
-                          const total = end.getTime() - start.getTime()
-                          const elapsed = now.getTime() - start.getTime()
-                          return Math.min(Math.max((elapsed / total) * 100, 0), 100)
-                        })()}%`
-                      }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* 상태 표시 */}
-                <div className="text-center">
-                  {(() => {
-                    const now = new Date()
-                    const start = new Date(competition.registration_start)
-                    const end = new Date(competition.registration_end)
-                    const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-
-                    if (now < start) {
-                      return (
-                        <div className="text-orange-600 text-sm font-medium">
-                          신청 대기 중
-                        </div>
-                      )
-                    } else if (now > end) {
-                      return (
-                        <div className="text-red-600 text-sm font-medium">
-                          신청 마감
-                        </div>
-                      )
-                     } else {
-                       return (
-                         <div>
-                           <div className="text-green-600 text-sm font-medium">
-                             신청 가능
-                           </div>
-                           <div className="text-xs text-gray-500 mt-1">
-                             {daysLeft}일 남음
-                           </div>
-                         </div>
-                       )
-                     }
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* 코스 이미지 */}

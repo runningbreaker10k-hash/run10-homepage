@@ -516,7 +516,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     <p className="break-words">은행: {competition.bank_name || '하나은행'}</p>
                     <p className="break-all">계좌: {competition.bank_account || '734-910008-72504'}</p>
                     <p className="break-words">예금주: {competition.account_holder || '(주)러닝브레이커'}</p>
-                    <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}</p>
+                    <p className="break-words">입금액: ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}</p>
                     <p className="font-medium break-words">입금자명: {registration.depositor_name}</p>
                   </div>
                 </div>
@@ -646,7 +646,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm text-gray-500">참가비</p>
                     <p className="font-medium text-sm sm:text-base break-words">
-                      ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || registration.competitions?.entry_fee || 0).toLocaleString()}
+                      ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
