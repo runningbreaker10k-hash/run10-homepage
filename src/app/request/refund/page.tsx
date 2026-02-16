@@ -15,6 +15,7 @@ interface Registration {
   payment_status: string
   competition_title: string
   already_requested: boolean
+  is_closed: boolean
 }
 
 const BANK_LIST = [
@@ -78,10 +79,19 @@ export default function RefundRequestPage() {
       const competitionIds = [...new Set(regData.map(r => r.competition_id))]
       const { data: compData } = await supabase
         .from('competitions')
-        .select('id, title')
+        .select('id, title, current_participants, max_participants, registration_end')
         .in('id', competitionIds)
 
-      const compMap = new Map(compData?.map(c => [c.id, c.title]) || [])
+      const compMap = new Map(
+        compData?.map(c => {
+          const now = new Date()
+          const registrationEnd = new Date(c.registration_end)
+          // 1차: 신청 기간 종료 여부 확인
+          // 2차: 정원 마감 여부 확인
+          const is_closed = registrationEnd < now || c.current_participants >= c.max_participants
+          return [c.id, { title: c.title, is_closed }]
+        }) || []
+      )
 
       const { data: refundData } = await supabase
         .from('refund_requests')
@@ -91,11 +101,15 @@ export default function RefundRequestPage() {
       const requestedRegIds = new Set(refundData?.map(r => r.registration_id) || [])
 
       setRegistrations(
-        regData.map(r => ({
-          ...r,
-          competition_title: compMap.get(r.competition_id) || '알 수 없는 대회',
-          already_requested: requestedRegIds.has(r.id)
-        }))
+        regData.map(r => {
+          const comp = compMap.get(r.competition_id)
+          return {
+            ...r,
+            competition_title: comp?.title || '알 수 없는 대회',
+            is_closed: comp?.is_closed || false,
+            already_requested: requestedRegIds.has(r.id)
+          }
+        })
       )
     } catch (err) {
       console.error('참가 내역 조회 오류:', err)
@@ -105,7 +119,7 @@ export default function RefundRequestPage() {
   }
 
   const selectedReg = registrations.find(r => r.id === selectedRegId)
-  const availableRegistrations = registrations.filter(r => !r.already_requested)
+  const availableRegistrations = registrations.filter(r => !r.already_requested && !r.is_closed)
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
@@ -328,8 +342,8 @@ export default function RefundRequestPage() {
           {user && !isDataLoading && registrations.length === 0 && (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <Undo2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">신청한 대회가 없습니다</h2>
-              <p className="text-gray-600 mb-6">대회에 참가 신청 후 환불을 요청할 수 있습니다.</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">신청 가능한 대회가 없습니다</h2>
+              <p className="text-gray-600 mb-6">대회에 참가 신청 중에만 환불을 요청할 수 있습니다.</p>
               <button
                 onClick={() => router.push('/competitions')}
                 className="py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
@@ -342,8 +356,8 @@ export default function RefundRequestPage() {
           {user && !isDataLoading && registrations.length > 0 && availableRegistrations.length === 0 && (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
               <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">모든 대회의 환불 요청이 완료되었습니다</h2>
-              <p className="text-gray-600 mb-6">신청한 모든 대회에 대해 환불 요청을 완료하셨습니다.</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">신청 가능한 대회의 환불 요청이 완료되었습니다</h2>
+              <p className="text-gray-600 mb-6">접수 마감 대회는 환불 신청 불가능합니다.</p>
               <button
                 onClick={() => router.push('/mypage')}
                 className="py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
@@ -386,9 +400,9 @@ export default function RefundRequestPage() {
                     </option>
                   ))}
                 </select>
-                {registrations.some(r => r.already_requested) && (
+                {(registrations.some(r => r.already_requested) || registrations.some(r => r.is_closed)) && (
                   <p className="text-xs text-gray-400 mt-1">
-                    이미 요청한 대회는 목록에서 제외됩니다
+                    이미 요청한 대회와 접수마감된 대회는 목록에서 제외됩니다
                   </p>
                 )}
               </div>
