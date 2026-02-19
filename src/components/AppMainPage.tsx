@@ -158,13 +158,13 @@ export default function AppMainPage() {
             </div>
           </div>
 
-          {/* 대회 참가하기 버튼 */}
+          {/* 대회 확인하기 버튼 */}
           <div className="text-center">
             <Link
               href="/competitions"
               className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
             >
-              대회 참가하기
+              대회 확인하기
             </Link>
           </div>
         </div>

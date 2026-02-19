@@ -431,7 +431,7 @@ export default function CompetitionsPage() {
                       <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
                         <div className="text-center px-4">
                           <p className="text-white text-2xl sm:text-2xl font-bold leading-snug whitespace-pre-line">
-                            {isClosed ? '대회 종료' : '모든 종목 참가접수가\n마감됐습니다'}
+                            {isClosed ? '대회 종료' : '모든 종목 마감'}
                           </p>
                         </div>
                       </div>
@@ -481,14 +481,13 @@ export default function CompetitionsPage() {
                       <span className="flex-1">{competition.location}</span>
                     </div>
 
-                    {/* 5. 신청 */}
+                    {/* 5. 현황 */}
                     <div className="text-sm text-gray-600 flex">
-                      <span className="font-medium text-gray-700 w-12">신청</span>
+                      <span className="font-medium text-gray-700 w-12">현황</span>
                       <span className={`flex-1 ${isOngoing ? 'text-red-600 font-medium' : ''}`}>
                         {isUpcoming && (
                           <>
-                            {format(new Date(competition.registration_start), 'yyyy. M. d (E)', { locale: ko })}
-                            {' ~ 선착순 접수'}
+                            {'접수 예정'}
                           </>
                         )}
                         {isClosed && '마감 종료'}
@@ -497,6 +496,8 @@ export default function CompetitionsPage() {
                             ? '※ 선착순 3,000명 모집'
                             : competition.title.includes('세종')
                               ? '※ 선착순 3,500명 모집'
+                            : competition.title.includes('성남')
+                              ? '※ 선착순 3,000명 모집'
                               : '※ 선착순 2,500명 모집'
                         )}
                       </span>

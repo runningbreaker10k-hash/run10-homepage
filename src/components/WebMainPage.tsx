@@ -265,7 +265,8 @@ export default function WebMainPage() {
                       <p>도시관광도 즐기고 PB에 도전하세요!</p>
                     </div>
                     <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                      <p>2026.3.21 청주에서 열립니다</p>
+                      <p>2026 상반기</p>
+                      <p>세종, 청주, 성남, 남양주, 대구, 대전, 광주에서 열립니다</p>
                     </div>
                   </div>
                 </div>
@@ -286,13 +287,13 @@ export default function WebMainPage() {
               </div>
             </div>
 
-            {/* 대회 참가하기 버튼 */}
+            {/* 대회 확인하기 버튼 */}
             <div className="text-center">
               <Link
                 href="/competitions"
                 className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
               >
-                대회 참가하기
+                대회 확인하기
               </Link>
             </div>
           </div>
