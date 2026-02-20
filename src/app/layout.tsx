@@ -8,6 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://runten.co.kr'),
   title: "런텐 / 전국러닝협회 인증 10K 러닝대회",
   description: "전국 10K 러너들의 공식 플랫폼, JUST run 10 전국 러닝대회 개최 일정",
   keywords: "런닝, 마라톤, 10km, 러닝대회, 런텐, RUN10, 전국러닝협회, 저스트런텐",

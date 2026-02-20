@@ -136,8 +136,9 @@ export default function AppMainPage() {
                     <p>주말, 소중한 사람들과 전국을 누비며</p>
                     <p>도시관광도 즐기고 PB에 도전하세요!</p>
                   </div>
-                  <div className="text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>2026.3.21 청주에서 열립니다</p>
+                  <div className="space-y-1 text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
+                    <p>2026 상반기</p>
+                    <p>세종, 청주, 성남, 남양주, 대구, 대전, 광주 열립니다</p>
                   </div>
                 </div>
               </div>

@@ -22,7 +22,9 @@ const nextConfig: NextConfig = {
     ],
   },
   // Turbopack 설정 (Next.js 16 기본)
-  turbopack: {},
+  turbopack: {
+    root: './',
+  },
   webpack: (config, { isServer }) => {
     // Supabase 호환성을 위한 설정
     if (!isServer) {

@@ -453,9 +453,36 @@ const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
 2. **Supabase**: 데이터베이스, 인증(미사용), Storage
 3. **Vercel**: 호스팅 및 배포
 
+## 최근 작업 내역 (2026-02-20)
+
+### 환불 페이지 접수마감 조건 추가
+**파일**: `src/app/request/refund/page.tsx`
+- **목적**: 접수마감된 대회에 대한 환불 신청 방지
+- **조건**: 신청 기간 종료 또는 정원 마감
+  - **1차 우선**: `registrationEnd < now` (신청 기간 종료 확인)
+  - **2차 차선**: `current_participants >= max_participants` (정원 마감 확인)
+- **구현**:
+  ```typescript
+  const is_closed = registrationEnd < now || c.current_participants >= c.max_participants
+  ```
+- **UI 반영**:
+  - `availableRegistrations` 필터에 `!r.is_closed` 추가
+  - 드롭다운에서 접수마감 대회 자동 제외
+  - 안내 메시지 업데이트: "이미 요청한 대회와 접수마감된 대회는 목록에서 제외됩니다"
+
+### 현금영수증 vs 환불 요청 차이점
+| 구분 | 현금영수증 | 환불 요청 |
+|------|-----------|---------|
+| **중복 제외 기준** | `competition_id` (같은 대회 1번만) | `registration_id` (같은 신청 1번만) |
+| **상태 확인** | ❌ 없음 (접수마감 상관없이 신청 가능) | ✓ 있음 (접수마감 신청 불가) |
+| **접수마감 조건** | - | `registrationEnd < now` 또는 `current_participants >= max_participants` |
+
+---
+
 ## 참고 사항
 
 - **언어**: UI 전반 한국어
 - **타임존**: KST (UTC+9) 변환 유틸리티 사용
 - **반응형**: 모바일 우선 디자인
 - **브라우저 지원**: 모던 브라우저 (ES2017+)
+- **도메인**: https://runten.co.kr (OpenGraph metadataBase 설정됨)
