@@ -33,6 +33,7 @@ import PostDetailModal from '@/components/PostDetailModal'
 import AuthModal from '@/components/AuthModal'
 import ImageUpload from '@/components/ImageUpload'
 import PopupImageUpload from '@/components/PopupImageUpload'
+import { AreaChart, BarChart, Area, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function AdminPage() {
   const { user, getGradeInfo } = useAuth()
@@ -72,6 +73,9 @@ export default function AdminPage() {
   const [selectedCompetitionForGroups, setSelectedCompetitionForGroups] = useState<Competition | null>(null)
   const [showGroupsModal, setShowGroupsModal] = useState(false)
   const [participationGroups, setParticipationGroups] = useState<any[]>([])
+  const [groupsModalTab, setGroupsModalTab] = useState<'groups' | 'stats'>('groups')
+  const [statsDrillView, setStatsDrillView] = useState<'daily' | 'hourly'>('daily')
+  const [statsDrillDay, setStatsDrillDay] = useState<string | null>(null)
 
   // 참가자 관리 관련 상태
   const [registrations, setRegistrations] = useState<RegistrationWithCompetition[]>([])
@@ -92,7 +96,7 @@ export default function AdminPage() {
   const [editedParticipant, setEditedParticipant] = useState<RegistrationWithCompetition | null>(null)
   const [currentRegistrationPage, setCurrentRegistrationPage] = useState(1)
   const [totalRegistrations, setTotalRegistrations] = useState(0)
-  const [registrationsPerPage, setRegistrationsPerPage] = useState(20)
+  const [registrationsPerPage, setRegistrationsPerPage] = useState(100)
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
   const [showFilters, setShowFilters] = useState(true)
   const [availableParticipationGroups, setAvailableParticipationGroups] = useState<any[]>([])
@@ -912,11 +916,53 @@ export default function AdminPage() {
   // 종목별 참가자 수 조회
   const showParticipationGroups = async (competition: Competition) => {
     try {
-      // 참가 그룹 정보 가져오기 (1000개씩 여러 번 조회)
-      let allGroups: any[] = []
+      setRegistrationsLoading(true)
+
+      // 참가자 데이터 로드 (통계 탭용)
+      let allRegistrations: any[] = []
       let offset = 0
       const pageSize = 1000
       let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('registrations')
+          .select(`
+            *,
+            competitions (
+              title,
+              date
+            ),
+            users (
+              grade
+            )
+          `)
+          .eq('competition_id', competition.id)
+          .range(offset, offset + pageSize - 1)
+
+        if (error) {
+          console.error('Supabase error:', error)
+          throw error
+        }
+
+        if (data && data.length > 0) {
+          allRegistrations = [...allRegistrations, ...data]
+          offset += pageSize
+
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      setRegistrations(allRegistrations)
+
+      // 참가 그룹 정보 가져오기 (1000개씩 여러 번 조회)
+      let allGroups: any[] = []
+      offset = 0
+      hasMore = true
 
       while (hasMore) {
         const { data, error } = await supabase
@@ -992,6 +1038,8 @@ export default function AdminPage() {
     } catch (error) {
       console.error('종목별 참가자 수 조회 오류:', error)
       alert('종목별 참가자 수 조회 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationsLoading(false)
     }
   }
 
@@ -3405,9 +3453,9 @@ export default function AdminPage() {
                           }}
                           className="border border-gray-300 rounded px-2 py-1 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white w-full sm:w-auto"
                         >
-                          <option value={20}>20개씩</option>
                           <option value={50}>50개씩</option>
                           <option value={100}>100개씩</option>
+                          <option value={150}>150개씩</option>
                         </select>
                       </div>
                       <div className="flex items-center space-x-2 justify-center sm:justify-end w-full sm:w-auto">
@@ -5804,13 +5852,43 @@ export default function AdminPage() {
       {/* 종목별 참가자 수 모달 */}
       {showGroupsModal && selectedCompetitionForGroups && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                {selectedCompetitionForGroups.title} - 종목별 참가자 현황
+                {selectedCompetitionForGroups.title} - 참가자 현황
               </h3>
 
-              <div className="space-y-4">
+              {/* 모달 내부 탭 */}
+              <div className="flex gap-2 border-b mb-6">
+                <button
+                  onClick={() => setGroupsModalTab('groups')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    groupsModalTab === 'groups'
+                      ? 'text-red-600 border-b-2 border-red-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  종목별 현황
+                </button>
+                <button
+                  onClick={() => {
+                    setGroupsModalTab('stats')
+                    setStatsDrillView('daily')
+                    setStatsDrillDay(null)
+                  }}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    groupsModalTab === 'stats'
+                      ? 'text-red-600 border-b-2 border-red-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  신청 통계
+                </button>
+              </div>
+
+              {/* 탭 1: 종목별 현황 */}
+              {groupsModalTab === 'groups' && (
+                <div className="space-y-4">
                 {participationGroups.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     등록된 참가 그룹이 없습니다.
@@ -5901,6 +5979,302 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+              )}
+
+              {/* 탭 2: 신청 통계 */}
+              {groupsModalTab === 'stats' && selectedCompetitionForGroups && (() => {
+                const getStatsSummary = (regs: RegistrationWithCompetition[]) => {
+                  const filtered = regs.filter(r => r.competition_id === selectedCompetitionForGroups.id && r.payment_status !== 'cancelled')
+                  return {
+                    total: filtered.length,
+                    confirmed: filtered.filter(r => r.payment_status === 'confirmed').length,
+                    pending: filtered.filter(r => r.payment_status === 'pending').length
+                  }
+                }
+
+                const getWeekRangeKey = (date: Date): string => {
+                  const start = new Date(date)
+                  start.setDate(start.getDate() - start.getDay() + 1)
+                  const end = new Date(start)
+                  end.setDate(end.getDate() + 6)
+                  const startYear = start.getFullYear()
+                  const endYear = end.getFullYear()
+
+                  // 연도가 다르면 명시적으로 표기 (예: "2025-12/29~2026-01/04")
+                  if (startYear === endYear) {
+                    return `${startYear}-${String(start.getMonth() + 1).padStart(2, '0')}/${String(start.getDate()).padStart(2, '0')}~${String(end.getMonth() + 1).padStart(2, '0')}/${String(end.getDate()).padStart(2, '0')}`
+                  } else {
+                    return `${startYear}-${String(start.getMonth() + 1).padStart(2, '0')}/${String(start.getDate()).padStart(2, '0')}~${endYear}-${String(end.getMonth() + 1).padStart(2, '0')}/${String(end.getDate()).padStart(2, '0')}`
+                  }
+                }
+
+const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
+                  const filtered = regs.filter(r => r.competition_id === selectedCompetitionForGroups.id && r.payment_status !== 'cancelled')
+
+                  // 전체 모집 기간 결정
+                  const sortedRegs = filtered.slice().sort((a, b) => a.created_at.localeCompare(b.created_at))
+                  if (sortedRegs.length === 0) return []
+
+                  // 첫 번째와 마지막 신청 날짜 기준 (KST)
+                  const firstUtcDate = new Date(sortedRegs[0].created_at)
+                  const firstKstDate = new Date(firstUtcDate.getTime() + 9 * 60 * 60 * 1000)
+                  const firstYear = firstKstDate.getUTCFullYear()
+                  const firstMonth = firstKstDate.getUTCMonth() + 1
+                  const firstDay = firstKstDate.getUTCDate()
+
+                  const lastUtcDate = new Date(sortedRegs[sortedRegs.length - 1].created_at)
+                  const lastKstDate = new Date(lastUtcDate.getTime() + 9 * 60 * 60 * 1000)
+                  const lastYear = lastKstDate.getUTCFullYear()
+                  const lastMonth = lastKstDate.getUTCMonth() + 1
+                  const lastDay = lastKstDate.getUTCDate()
+
+                  const periodStart = new Date(firstYear, firstMonth - 1, firstDay, 0, 0, 0, 0)
+                  const periodEnd = new Date(lastYear, lastMonth - 1, lastDay, 23, 59, 59, 999)
+
+                  const dayMap = new Map<string, { total: number; day: string }>()
+
+                  // 모든 날짜를 초기화
+                  const current = new Date(periodStart)
+                  while (current.getTime() <= periodEnd.getTime()) {
+                    const dateKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
+                    const dayName = ['일', '월', '화', '수', '목', '금', '토'][current.getDay()]
+                    dayMap.set(dateKey, { total: 0, day: dayName })
+                    current.setDate(current.getDate() + 1)
+                  }
+
+                  // 실제 데이터로 업데이트
+                  filtered.forEach(reg => {
+                    const utcDate = new Date(reg.created_at)
+                    const kstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000)
+                    const year = kstDate.getUTCFullYear()
+                    const month = kstDate.getUTCMonth() + 1
+                    const day = kstDate.getUTCDate()
+                    const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+                    const dayData = dayMap.get(dateKey)
+                    if (dayData) {
+                      dayData.total++
+                    }
+                  })
+
+                  // 결과 배열 생성
+                  const result: any[] = []
+                  const current2 = new Date(periodStart)
+                  while (current2.getTime() <= periodEnd.getTime()) {
+                    const dateKey = `${current2.getFullYear()}-${String(current2.getMonth() + 1).padStart(2, '0')}-${String(current2.getDate()).padStart(2, '0')}`
+                    const data = dayMap.get(dateKey)!
+                    result.push({
+                      date: dateKey.substring(5),
+                      fullDate: dateKey,
+                      total: data.total,
+                      day: data.day
+                    })
+                    current2.setDate(current2.getDate() + 1)
+                  }
+
+                  return result
+                }
+
+                const getHourlyChartData = (regs: RegistrationWithCompetition[], dateKey: string) => {
+                  const filtered = regs.filter(r => r.competition_id === selectedCompetitionForGroups.id && r.payment_status !== 'cancelled')
+                  const hourMap = new Map<number, { hour: string; total: number; confirmed: number }>()
+
+                  // dateKey 파싱: "2026-02-22" 형식
+                  const [keyYear, keyMonth, keyDay] = dateKey.split('-').map(Number)
+
+                  for (let h = 0; h < 24; h++) {
+                    hourMap.set(h, { hour: `${String(h).padStart(2, '0')}:00`, total: 0 })
+                  }
+
+                  filtered
+                    .filter(r => {
+                      // created_at은 UTC 시간으로 저장됨 → KST(UTC+9)로 변환
+                      const utcDate = new Date(r.created_at)
+                      const kstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000)  // UTC+9
+
+                      // KST 기준으로 Date 객체 생성
+                      const year = kstDate.getUTCFullYear()
+                      const month = kstDate.getUTCMonth() + 1
+                      const day = kstDate.getUTCDate()
+
+                      return year === keyYear && month === keyMonth && day === keyDay
+                    })
+                    .forEach(reg => {
+                      // created_at은 UTC 시간으로 저장됨 → KST(UTC+9)로 변환
+                      const utcDate = new Date(reg.created_at)
+                      const kstDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000)  // UTC+9
+
+                      // KST 기준으로 시간 추출
+                      const hour = kstDate.getUTCHours()
+                      const data = hourMap.get(hour)
+                      if (data) {
+                        data.total++
+                      }
+                    })
+
+                  return Array.from(hourMap.values())
+                }
+
+                const summary = getStatsSummary(registrations)
+                const totalCapacity = participationGroups.reduce((sum, g) => sum + (g.max_participants || 0), 0)
+                const capacityRate = totalCapacity > 0 ? Math.min((summary.total / totalCapacity) * 100, 100) : 0
+
+                const isHourlyEnabled = statsDrillDay !== null
+
+                return (
+                  <>
+                    {/* 요약 카드 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p className="text-gray-600 text-sm mb-1">총 신청</p>
+                        <p className="text-2xl font-bold text-blue-600">{summary.total}명</p>
+                      </div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <p className="text-gray-600 text-sm mb-1">확정완료</p>
+                        <p className="text-2xl font-bold text-green-600">{summary.confirmed}명</p>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <p className="text-gray-600 text-sm mb-1">입금대기</p>
+                        <p className="text-2xl font-bold text-yellow-600">{summary.pending}명</p>
+                      </div>
+                    </div>
+
+                    {/* 정원 달성률 게이지바 */}
+                    {totalCapacity > 0 && (
+                      <div className="mb-6">
+                        <p className="text-sm text-gray-600 mb-2">정원 달성률</p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 bg-gray-200 rounded-full h-3">
+                            <div
+                              className="h-3 rounded-full bg-purple-600 transition-all"
+                              style={{ width: `${capacityRate}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-700 min-w-[60px]">
+                            {capacityRate.toFixed(0)}% ({summary.total} / {totalCapacity}명)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 드릴다운 탭 버튼 */}
+                    <div className="flex gap-2 flex-wrap mb-6">
+                      <button
+                        onClick={() => {
+                          setStatsDrillView('daily')
+                          setStatsDrillDay(null)
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          statsDrillView === 'daily'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        일별
+                      </button>
+                      <button
+                        onClick={() => setStatsDrillView('hourly')}
+                        disabled={!isHourlyEnabled}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          !isHourlyEnabled
+                            ? 'opacity-40 cursor-not-allowed bg-gray-100'
+                            : statsDrillView === 'hourly'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        시간별
+                      </button>
+                    </div>
+
+                    {/* 브레드크럼 */}
+                    {statsDrillDay && (
+                      <div className="mb-4 text-sm text-gray-600">
+                        전체 {statsDrillDay && `> ${statsDrillDay}`}
+                      </div>
+                    )}
+
+                    {/* 일별 그래프 */}
+                    {statsDrillView === 'daily' && (
+                      <div className="space-y-6">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-3">일별 신청 현황 (전체 모집기간)</p>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={getDailyChartData(registrations)}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                              <YAxis tick={{ fontSize: 12 }} />
+                              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
+                              <Legend />
+                              <Bar dataKey="total" fill="#3b82f6" name="신청" onClick={(data: any) => {
+                                setStatsDrillView('hourly')
+                                setStatsDrillDay(data.fullDate)
+                              }} cursor="pointer" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50 border-b">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-gray-600">날짜</th>
+                                <th className="px-4 py-2 text-center text-gray-600">신청</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {getDailyChartData(registrations).map((day, idx) => (
+                                <tr key={idx} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => {
+                                  setStatsDrillView('hourly')
+                                  setStatsDrillDay(day.fullDate)
+                                }}>
+                                  <td className="px-4 py-2">{day.date} ({day.day})</td>
+                                  <td className="px-4 py-2 text-center font-semibold text-blue-600">{day.total}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 시간별 그래프 */}
+                    {statsDrillView === 'hourly' && statsDrillDay && (
+                      <div className="space-y-6">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 mb-3">시간대별 신청 현황 ({statsDrillDay})</p>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={getHourlyChartData(registrations, statsDrillDay)}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="hour" tick={{ fontSize: 12 }} />
+                              <YAxis tick={{ fontSize: 12 }} />
+                              <Tooltip />
+                              <Bar dataKey="total" fill="#3b82f6" name="신청" />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm">
+                            <thead className="bg-gray-50 border-b">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-gray-600">시간</th>
+                                <th className="px-4 py-2 text-center text-gray-600">신청</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {getHourlyChartData(registrations, statsDrillDay).map((hour, idx) => (
+                                <tr key={idx} className="border-b">
+                                  <td className="px-4 py-2">{hour.hour}</td>
+                                  <td className="px-4 py-2 text-center font-semibold text-blue-600">{hour.total}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
 
               <div className="mt-6 flex justify-end">
                 <button
@@ -5908,6 +6282,9 @@ export default function AdminPage() {
                     setShowGroupsModal(false)
                     setSelectedCompetitionForGroups(null)
                     setParticipationGroups([])
+                    setGroupsModalTab('groups')
+                    setStatsDrillView('daily')
+                    setStatsDrillDay(null)
                   }}
                   className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                 >
