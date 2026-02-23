@@ -22,6 +22,7 @@ export interface User {
   email_marketing_agree?: boolean
   record_time?: number
   etc?: string
+  utm?: Record<string, any>
   created_at: string
 }
 
@@ -108,8 +109,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [])
 
   // 로그인 함수 (저장소 저장은 LoginForm에서 처리)
-  const login = (userData: User) => {
+  const login = async (userData: User) => {
     setUser(userData)
+
+    // 세션에 UTM 데이터가 있으면 users 테이블에 저장
+    if (typeof window !== 'undefined') {
+      const utmDataStr = sessionStorage.getItem('utm_data')
+      if (utmDataStr) {
+        try {
+          const utmData = JSON.parse(utmDataStr)
+          if (Object.keys(utmData).length > 0) {
+            // users 테이블에 utm 저장
+            const { error } = await supabase
+              .from('users')
+              .update({ utm: utmData })
+              .eq('id', userData.id)
+
+            if (error) {
+              console.error('UTM 저장 실패:', error)
+            } else {
+              console.log('UTM 저장 성공:', utmData)
+            }
+          }
+        } catch (err) {
+          console.error('UTM 파싱 오류:', err)
+        }
+      }
+    }
   }
 
   // 로그아웃 함수
