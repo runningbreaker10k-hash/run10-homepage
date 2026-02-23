@@ -6077,7 +6077,7 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
 
                 const getHourlyChartData = (regs: RegistrationWithCompetition[], dateKey: string) => {
                   const filtered = regs.filter(r => r.competition_id === selectedCompetitionForGroups.id && r.payment_status !== 'cancelled')
-                  const hourMap = new Map<number, { hour: string; total: number; confirmed: number }>()
+                  const hourMap = new Map<number, { hour: string; total: number }>()
 
                   // dateKey 파싱: "2026-02-22" 형식
                   const [keyYear, keyMonth, keyDay] = dateKey.split('-').map(Number)

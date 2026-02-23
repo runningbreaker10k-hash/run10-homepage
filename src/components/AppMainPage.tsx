@@ -3,8 +3,11 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import PagePopup from '@/components/PagePopup'
+import { useUTMTracking } from '@/hooks/useUTMTracking'
 
 export default function AppMainPage() {
+  // UTM 파라미터 추적
+  useUTMTracking()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [currentMaleRanker, setCurrentMaleRanker] = useState(0)

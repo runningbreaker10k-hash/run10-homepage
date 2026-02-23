@@ -60,6 +60,16 @@ export default function CompetitionDetailPage() {
     }
   }, [searchParams])
 
+  // 신청 완료 시 signup-complete 페이지로 리다이렉트 (대회 ID 함께 전달)
+  useEffect(() => {
+    if (registrationComplete) {
+      const timer = setTimeout(() => {
+        router.push(`/signup-complete?competitionId=${competitionId}`)
+      }, 2000) // 2초 후 리다이렉트
+      return () => clearTimeout(timer)
+    }
+  }, [registrationComplete, router, competitionId])
+
   // 게시판 관련 상태
   const [boardPosts, setBoardPosts] = useState<any[]>([])
   const [boardLoading, setBoardLoading] = useState(false)

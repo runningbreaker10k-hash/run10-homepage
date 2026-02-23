@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getUTMData } from '@/hooks/useUTMTracking'
 
 export interface User {
   id: string
@@ -127,10 +128,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       console.log('업데이트할 데이터:', userData)
 
+      // UTM 데이터가 없으면 세션에서 가져오기
+      const utmData = userData.utm || getUTMData()
+      const updateData = { ...userData }
+
+      // UTM 데이터가 있으면 추가
+      if (utmData && Object.keys(utmData).length > 0) {
+        updateData.utm = utmData
+      }
+
       // 데이터베이스 업데이트
       const { error, data } = await supabase
         .from('users')
-        .update(userData as any)
+        .update(updateData as any)
         .eq('id', user.id)
         .select()
 
@@ -147,7 +157,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       // 일반적인 업데이트의 경우 기존 방식 사용
-      const updatedUser = { ...user, ...userData }
+      const updatedUser = { ...user, ...updateData }
       setUser(updatedUser)
       sessionStorage.setItem('user', JSON.stringify(updatedUser))
     } catch (error) {

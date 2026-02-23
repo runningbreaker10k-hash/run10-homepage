@@ -77,14 +77,14 @@ export default function PrivacyPage() {
                     <h4 className="font-semibold text-gray-900 mb-2">1. 대회 참가 신청</h4>
                     <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
                       <li>필수항목: 성명, 생년월일, 성별, 전화번호, 이메일주소, 주소, 입금자명</li>
-                      <li>선택항목: 소속팀, 목표기록</li>
                     </ul>
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-2">2. 결제 정보</h4>
                     <ul className="list-disc list-inside ml-4 space-y-1 text-sm">
-                      <li>무통장입금 정보 (입금자명, 입금금액, 입금일시)</li>
+                      <li>무통장입금 대회별 상이</li>
                       <li>하나은행 734-910008-72504 (주식회사 러닝브레이커)</li>
+                      <li>기업은행 423-071709-04-013 (주식회사 러닝브레이커)</li>
                     </ul>
                   </div>
                   <div>

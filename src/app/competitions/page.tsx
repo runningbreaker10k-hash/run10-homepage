@@ -145,6 +145,30 @@ export default function CompetitionsPage() {
     return true
   })
 
+  // 상태 우선순위로 정렬 (진행 > 예정 > 종료), 각각 날짜순
+  const statusPriority: Record<string, number> = {
+    'ongoing': 0,
+    'deadline_approaching': 0,
+    'registration_closed': 0,
+    'upcoming': 1,
+    'closed': 2
+  }
+
+  const sortedCompetitions = [...filteredCompetitions].sort((a, b) => {
+    const statusA = getActualCompetitionStatus(a)
+    const statusB = getActualCompetitionStatus(b)
+    const priorityA = statusPriority[statusA]
+    const priorityB = statusPriority[statusB]
+
+    // 상태 우선순위로 정렬
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB
+    }
+
+    // 같은 상태면 날짜순 (오래된것 먼저)
+    return new Date(a.date).getTime() - new Date(b.date).getTime()
+  })
+
   useEffect(() => {
     fetchCompetitions()
   }, [statusFilter])
@@ -356,16 +380,6 @@ export default function CompetitionsPage() {
                 진행
               </button>
               <button
-                onClick={() => setStatusFilter('closed')}
-                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
-                  statusFilter === 'closed'
-                    ? 'bg-red-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
-                }`}
-              >
-                종료
-              </button>
-              <button
                 onClick={() => setStatusFilter('upcoming')}
                 className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
                   statusFilter === 'upcoming'
@@ -375,12 +389,22 @@ export default function CompetitionsPage() {
               >
                 예정
               </button>
+              <button
+                onClick={() => setStatusFilter('closed')}
+                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                  statusFilter === 'closed'
+                    ? 'bg-red-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
+                }`}
+              >
+                종료
+              </button>
             </div>
           </div>
         </div>
 
         {/* Competitions Grid */}
-        {filteredCompetitions.length === 0 ? (
+        {sortedCompetitions.length === 0 ? (
           <div className="text-center py-12">
             <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">대회가 없습니다</h3>
@@ -390,7 +414,7 @@ export default function CompetitionsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredCompetitions.map((competition) => {
+            {sortedCompetitions.map((competition) => {
               const actualStatus = getActualCompetitionStatus(competition)
               const isUpcoming = actualStatus === 'upcoming'
               const isOngoing = actualStatus === 'ongoing' || actualStatus === 'deadline_approaching' || actualStatus === 'registration_closed'
