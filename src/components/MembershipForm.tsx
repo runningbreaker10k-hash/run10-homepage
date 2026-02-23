@@ -43,7 +43,7 @@ const membershipSchema = z.object({
     .trim()
     .min(1, '성명을 입력해주세요')
     .min(2, '성명은 최소 2자 이상이어야 합니다')
-    .max(10, '성명은 최대 10자까지 가능합니다'),
+    .max(20, '성명은 최대 20자까지 가능합니다'),
   postal_code: z.string()
     .trim()
     .min(1, '우편번호 찾기 버튼을 클릭하여 주소를 입력해주세요')
