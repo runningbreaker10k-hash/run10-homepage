@@ -106,6 +106,7 @@ export default function AdminPage() {
   const [receiptsLoading, setReceiptsLoading] = useState(false)
   const [receiptStatusFilter, setReceiptStatusFilter] = useState<string>('all')
   const [receiptCompetitionFilter, setReceiptCompetitionFilter] = useState<string>('all')
+  const [receiptSearchTerm, setReceiptSearchTerm] = useState('')
   const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
   const [currentReceiptPage, setCurrentReceiptPage] = useState(1)
   const [receiptsPerPage, setReceiptsPerPage] = useState(20)
@@ -115,6 +116,7 @@ export default function AdminPage() {
   const [refundsLoading, setRefundsLoading] = useState(false)
   const [refundStatusFilter, setRefundStatusFilter] = useState<string>('all')
   const [refundCompetitionFilter, setRefundCompetitionFilter] = useState<string>('all')
+  const [refundSearchTerm, setRefundSearchTerm] = useState('')
   const [selectedRefunds, setSelectedRefunds] = useState<string[]>([])
   const [currentRefundPage, setCurrentRefundPage] = useState(1)
   const [refundsPerPage, setRefundsPerPage] = useState(20)
@@ -617,9 +619,19 @@ export default function AdminPage() {
 
       const compMap = new Map(compData?.map(c => [c.id, c.title]) || [])
 
+      // 참가신청 정보 조회 (신청자 이름 확인용)
+      const registrationIds = [...new Set(data.map(r => r.registration_id).filter(Boolean))]
+      const { data: regData } = await supabase
+        .from('registrations')
+        .select('id, name')
+        .in('id', registrationIds)
+
+      const regMap = new Map(regData?.map(r => [r.id, r.name]) || [])
+
       let receiptsWithComp = data.map(r => ({
         ...r,
-        competition_title: compMap.get(r.competition_id) || '알 수 없는 대회'
+        competition_title: compMap.get(r.competition_id) || '알 수 없는 대회',
+        registration_name: regMap.get(r.registration_id) || ''
       }))
 
       // 대회 필터
@@ -776,6 +788,44 @@ export default function AdminPage() {
     } catch (error) {
       console.error('참가신청 삭제 오류:', error)
       alert('처리 중 오류가 발생했습니다.')
+    }
+  }
+
+  // 현금영수증 신청 취소
+  const cancelReceiptRequest = async (receiptId: string) => {
+    if (!confirm('해당 현금영수증 신청을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
+    try {
+      const { error } = await supabase
+        .from('receipt_requests')
+        .delete()
+        .eq('id', receiptId)
+
+      if (error) throw error
+
+      alert('현금영수증 신청이 취소되었습니다.')
+      fetchReceiptRequests()
+    } catch (error) {
+      console.error('현금영수증 신청 취소 오류:', error)
+      alert('신청 취소에 실패했습니다.')
+    }
+  }
+
+  // 환불 신청 취소
+  const cancelRefundRequest = async (refundId: string) => {
+    if (!confirm('해당 환불 신청을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
+    try {
+      const { error } = await supabase
+        .from('refund_requests')
+        .delete()
+        .eq('id', refundId)
+
+      if (error) throw error
+
+      alert('환불 신청이 취소되었습니다.')
+      fetchRefundRequests()
+    } catch (error) {
+      console.error('환불 신청 취소 오류:', error)
+      alert('신청 취소에 실패했습니다.')
     }
   }
 
@@ -1593,7 +1643,23 @@ export default function AdminPage() {
 
       if (fetchError) throw fetchError
 
-      // 참가 신청 삭제
+      // 1단계: 현금영수증 요청 삭제
+      const { error: receiptDeleteError } = await supabase
+        .from('receipt_requests')
+        .delete()
+        .eq('registration_id', registrationId)
+
+      if (receiptDeleteError) throw receiptDeleteError
+
+      // 2단계: 환불 요청 삭제
+      const { error: refundDeleteError } = await supabase
+        .from('refund_requests')
+        .delete()
+        .eq('registration_id', registrationId)
+
+      if (refundDeleteError) throw refundDeleteError
+
+      // 3단계: 참가 신청 삭제
       const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
@@ -4087,8 +4153,18 @@ export default function AdminPage() {
 
             {/* 현금영수증 관리 */}
             {communitySubTab === 'receipts' && (() => {
-              const totalReceiptPages = Math.ceil(receiptRequests.length / receiptsPerPage)
-              const paginatedReceipts = receiptRequests.slice((currentReceiptPage - 1) * receiptsPerPage, currentReceiptPage * receiptsPerPage)
+              // 검색 필터 적용
+              let filteredReceipts = receiptRequests
+              if (receiptSearchTerm) {
+                const searchLower = receiptSearchTerm.toLowerCase()
+                filteredReceipts = filteredReceipts.filter(r =>
+                  r.name?.toLowerCase().includes(searchLower) ||
+                  r.phone?.toLowerCase().includes(searchLower)
+                )
+              }
+
+              const totalReceiptPages = Math.ceil(filteredReceipts.length / receiptsPerPage)
+              const paginatedReceipts = filteredReceipts.slice((currentReceiptPage - 1) * receiptsPerPage, currentReceiptPage * receiptsPerPage)
               const allPageSelected = paginatedReceipts.length > 0 && paginatedReceipts.every(r => selectedReceipts.includes(r.id))
               return (
               <>
@@ -4114,6 +4190,13 @@ export default function AdminPage() {
                         <option key={comp.id} value={comp.id}>{comp.title}</option>
                       ))}
                     </select>
+                    <input
+                      type="text"
+                      placeholder="이름/연락처 검색"
+                      value={receiptSearchTerm}
+                      onChange={(e) => { setReceiptSearchTerm(e.target.value); setCurrentReceiptPage(1); setSelectedReceipts([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    />
                     {receiptRequests.length > 0 && (
                       <button
                         onClick={() => {
@@ -4208,6 +4291,7 @@ export default function AdminPage() {
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">금액</th>
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">요청일</th>
                           <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
+                          <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">작업</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -4227,7 +4311,19 @@ export default function AdminPage() {
                                 className="w-4 h-4 text-red-600 rounded border-gray-300"
                               />
                             </td>
-                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900">{receipt.name}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900">
+                              <div className="flex items-center gap-1">
+                                {receipt.name}
+                                {receipt.registration_name && receipt.name !== receipt.registration_name && (
+                                  <div className="group relative">
+                                    <span className="text-amber-600 font-bold cursor-help">⚠️</span>
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 bg-gray-800 text-white text-xs rounded p-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal text-center z-10">
+                                      참가자명: {receipt.registration_name}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                 receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100'
@@ -4248,6 +4344,16 @@ export default function AdminPage() {
                               }`}>
                                 {receipt.status === 'completed' ? '발급완료' : '신청완료'}
                               </span>
+                            </td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
+                              {receipt.status === 'pending' ? (
+                                <button
+                                  onClick={() => cancelReceiptRequest(receipt.id)}
+                                  className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                                >
+                                  요청삭제
+                                </button>
+                              ) : null}
                             </td>
                           </tr>
                         ))}
@@ -4331,7 +4437,7 @@ export default function AdminPage() {
                       </div>
                     )}
                     <div className="text-sm text-gray-600">
-                      {currentReceiptPage} / {totalReceiptPages} 페이지 (총 {receiptRequests.length}건)
+                      {currentReceiptPage} / {totalReceiptPages} 페이지 (총 {filteredReceipts.length}건)
                     </div>
                   </div>
                 </div>
@@ -4341,8 +4447,18 @@ export default function AdminPage() {
 
             {/* 환불 요청 관리 */}
             {communitySubTab === 'refunds' && (() => {
-              const totalRefundPages = Math.ceil(refundRequests.length / refundsPerPage)
-              const paginatedRefunds = refundRequests.slice((currentRefundPage - 1) * refundsPerPage, currentRefundPage * refundsPerPage)
+              // 검색 필터 적용
+              let filteredRefunds = refundRequests
+              if (refundSearchTerm) {
+                const searchLower = refundSearchTerm.toLowerCase()
+                filteredRefunds = filteredRefunds.filter(r =>
+                  r.name?.toLowerCase().includes(searchLower) ||
+                  r.phone?.toLowerCase().includes(searchLower)
+                )
+              }
+
+              const totalRefundPages = Math.ceil(filteredRefunds.length / refundsPerPage)
+              const paginatedRefunds = filteredRefunds.slice((currentRefundPage - 1) * refundsPerPage, currentRefundPage * refundsPerPage)
               const allRefundPageSelected = paginatedRefunds.length > 0 && paginatedRefunds.every(r => selectedRefunds.includes(r.id))
               return (
               <>
@@ -4355,8 +4471,9 @@ export default function AdminPage() {
                       className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
                     >
                       <option value="all">전체 상태</option>
-                      <option value="pending">환불대기</option>
-                      <option value="completed">환불완료</option>
+                      <option value="pending">대기</option>
+                      <option value="processing">처리중</option>
+                      <option value="completed">완료</option>
                     </select>
                     <select
                       value={refundCompetitionFilter}
@@ -4368,23 +4485,63 @@ export default function AdminPage() {
                         <option key={comp.id} value={comp.id}>{comp.title}</option>
                       ))}
                     </select>
+                    <input
+                      type="text"
+                      placeholder="이름/연락처 검색"
+                      value={refundSearchTerm}
+                      onChange={(e) => { setRefundSearchTerm(e.target.value); setCurrentRefundPage(1); setSelectedRefunds([]); }}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                    />
                     {refundRequests.length > 0 && (
                       <button
-                        onClick={() => {
-                          const statusText = (s: string) => s === 'completed' ? '환불완료' : '환불대기'
-                          const bom = '\uFEFF'
-                          const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
-                          const rows = refundRequests.map(r =>
-                            `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
-                          )
-                          const csv = bom + header + '\n' + rows.join('\n')
-                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                          const url = URL.createObjectURL(blob)
-                          const a = document.createElement('a')
-                          a.href = url
-                          a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
-                          a.click()
-                          URL.revokeObjectURL(url)
+                        onClick={async () => {
+                          try {
+                            // 체크된 항목이 없으면 알림
+                            if (selectedRefunds.length === 0) {
+                              alert('다운로드할 항목을 선택해주세요.')
+                              return
+                            }
+
+                            // 1단계: 체크된 항목을 processing으로 변경
+                            const { error: updateError } = await supabase
+                              .from('refund_requests')
+                              .update({ status: 'processing' })
+                              .in('id', selectedRefunds)
+
+                            if (updateError) {
+                              console.error('상태 변경 오류:', updateError)
+                              alert('상태 변경 중 오류가 발생했습니다.')
+                              return
+                            }
+
+                            // 2단계: 체크된 항목만 CSV 생성 및 다운로드
+                            const statusText = (s: string) => {
+                              if (s === 'completed') return '완료'
+                              if (s === 'processing') return '처리중'
+                              return '대기'
+                            }
+                            const selectedRefundData = refundRequests.filter(r => selectedRefunds.includes(r.id))
+                            const bom = '\uFEFF'
+                            const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
+                            const rows = selectedRefundData.map(r =>
+                              `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
+                            )
+                            const csv = bom + header + '\n' + rows.join('\n')
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
+                            a.click()
+                            URL.revokeObjectURL(url)
+
+                            // 3단계: 선택 해제 및 데이터 새로고침
+                            setSelectedRefunds([])
+                            fetchRefundRequests()
+                          } catch (error) {
+                            console.error('CSV 다운로드 중 오류:', error)
+                            alert('CSV 다운로드 중 오류가 발생했습니다.')
+                          }
                         }}
                         className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
                       >
@@ -4395,28 +4552,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {selectedRefunds.length > 0 && (
-                  <div className="px-3 sm:px-6 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
-                    <span className="text-sm text-blue-700 font-medium">{selectedRefunds.length}건 선택됨</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateBulkRefundStatus('completed')}
-                        className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        환불완료 처리
-                      </button>
-                      
-                      <button
-                        onClick={() => setSelectedRefunds([])}
-                        className="px-3 py-1.5 bg-gray-400 text-white text-xs sm:text-sm rounded-lg hover:bg-gray-500 transition-colors"
-                      >
-                        선택해제
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {refundsLoading ? (
+{refundsLoading ? (
                   <div className="p-8 text-center">
                     <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-2" />
                     <p className="text-gray-500 text-sm">로딩 중...</p>
@@ -4440,7 +4576,9 @@ export default function AdminPage() {
                               checked={allRefundPageSelected}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedRefunds(prev => [...new Set([...prev, ...paginatedRefunds.map(r => r.id)])])
+                                  // completed 제외하고 선택
+                                  const selectableIds = paginatedRefunds.filter(r => r.status !== 'completed').map(r => r.id)
+                                  setSelectedRefunds(prev => [...new Set([...prev, ...selectableIds])])
                                 } else {
                                   setSelectedRefunds(prev => prev.filter(id => !paginatedRefunds.some(r => r.id === id)))
                                 }
@@ -4456,7 +4594,7 @@ export default function AdminPage() {
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">환불계좌</th>
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">요청일</th>
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태</th>
-                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">환불(삭제)</th>
+                          <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">상태변경</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -4467,13 +4605,14 @@ export default function AdminPage() {
                                 type="checkbox"
                                 checked={selectedRefunds.includes(refund.id)}
                                 onChange={(e) => {
-                                  if (e.target.checked) {
+                                  if (e.target.checked && refund.status === 'pending') {
                                     setSelectedRefunds(prev => [...prev, refund.id])
                                   } else {
                                     setSelectedRefunds(prev => prev.filter(id => id !== refund.id))
                                   }
                                 }}
-                                className="w-4 h-4 text-red-600 rounded border-gray-300"
+                                disabled={refund.status !== 'pending'}
+                                className={`w-4 h-4 text-red-600 rounded border-gray-300 ${refund.status !== 'pending' ? 'opacity-40 cursor-not-allowed' : ''}`}
                               />
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{refund.name}</td>
@@ -4491,20 +4630,35 @@ export default function AdminPage() {
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(refund.created_at, 'yyyy.MM.dd')}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                refund.status === 'completed' ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+                                refund.status === 'completed' ? 'text-green-600 bg-green-100' :
+                                refund.status === 'processing' ? 'text-orange-600 bg-orange-100' :
+                                'text-yellow-600 bg-yellow-100'
                               }`}>
-                                {refund.status === 'completed' ? '환불완료' : '환불대기'}
+                                {refund.status === 'completed' ? '완료' :
+                                 refund.status === 'processing' ? '처리중' :
+                                 '대기'}
                               </span>
                             </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
-                              {refund.status === 'pending' ? (
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap flex gap-1">
+                              {/* 요청삭제: pending/processing에서만 가능 */}
+                              {(refund.status === 'pending' || refund.status === 'processing') && (
+                                <button
+                                  onClick={() => cancelRefundRequest(refund.id)}
+                                  className="px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors"
+                                >
+                                  요청삭제
+                                </button>
+                              )}
+
+                              {/* 환불(삭제): processing에서만 가능 */}
+                              {refund.status === 'processing' && (
                                 <button
                                   onClick={() => deleteRegistrationForRefund(refund.registration_id, refund.id)}
                                   className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
                                 >
                                   환불(삭제)
                                 </button>
-                              ) : null}
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -4588,7 +4742,7 @@ export default function AdminPage() {
                       </div>
                     )}
                     <div className="text-sm text-gray-600">
-                      {currentRefundPage} / {totalRefundPages} 페이지 (총 {refundRequests.length}건)
+                      {currentRefundPage} / {totalRefundPages} 페이지 (총 {filteredRefunds.length}건)
                     </div>
                   </div>
                 </div>

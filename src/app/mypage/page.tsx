@@ -412,9 +412,11 @@ export default function MyPage() {
   const getRefundStatusDisplay = (status: string) => {
     switch (status) {
       case 'completed':
-        return { text: '환불완료', color: 'text-green-600 bg-green-100' }
+        return { text: '완료', color: 'text-green-600 bg-green-100' }
+      case 'processing':
+        return { text: '처리중', color: 'text-orange-600 bg-orange-100' }
       case 'pending':
-        return { text: '환불대기', color: 'text-yellow-600 bg-yellow-100' }
+        return { text: '대기', color: 'text-yellow-600 bg-yellow-100' }
       default:
         return { text: status, color: 'text-gray-600 bg-gray-100' }
     }
@@ -1223,7 +1225,7 @@ export default function MyPage() {
           ) : (
             <>
               <div className="divide-y divide-gray-200">
-                {refundRequests.filter(r => r.status === 'pending').map((refund) => {
+                {refundRequests.map((refund) => {
                   const refundStatus = getRefundStatusDisplay(refund.status)
                   return (
                     <div key={refund.id} className="p-4 md:p-6">
