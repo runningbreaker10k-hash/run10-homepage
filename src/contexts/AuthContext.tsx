@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const utmData = JSON.parse(utmDataStr)
         if (Object.keys(utmData).length === 0) return
 
-        // 먼저 현재 users의 utm이 있는지 확인
+        // 먼저 DB에서 현재 utm 확인
         const { data: existingUser, error: selectError } = await supabase
           .from('users')
           .select('utm')
@@ -134,13 +134,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return
         }
 
-        // 이미 utm이 저장되어 있으면 저장하지 않음
-        if (existingUser?.utm) {
+        // 이미 실제 데이터가 저장되어 있으면 저장하지 않음
+        // "{}"는 빈 객체이므로 저장 진행
+        if (existingUser?.utm && Object.keys(existingUser.utm).length > 0) {
           localStorage.removeItem('utm_data')
           return
         }
 
-        // utm이 없으면 저장
+        // utm이 없거나 "{}"이면 저장
         const { error: updateError } = await supabase
           .from('users')
           .update({ utm: utmData })

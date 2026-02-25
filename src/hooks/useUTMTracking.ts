@@ -9,7 +9,7 @@ export interface UTMData {
 }
 
 /**
- * UTM 파라미터를 URL에서 추출하여 로컬스토리지에 저장하는 Hook
+ * UTM 파라미터를 URL에서 추출하여 세션스토리지에 저장하는 Hook
  * 페이지 진입 시 자동으로 UTM을 캡처하고 저장합니다.
  */
 export function useUTMTracking() {
