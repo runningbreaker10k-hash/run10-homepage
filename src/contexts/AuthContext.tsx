@@ -108,34 +108,61 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false)
   }, [])
 
-  // 로그인 함수 (저장소 저장은 LoginForm에서 처리)
-  const login = async (userData: User) => {
-    setUser(userData)
+  // 사용자가 로그인되면 localStorage의 UTM 데이터를 DB에 저장
+  useEffect(() => {
+    if (!user) return
 
-    // 세션에 UTM 데이터가 있으면 users 테이블에 저장
-    if (typeof window !== 'undefined') {
-      const utmDataStr = sessionStorage.getItem('utm_data')
-      if (utmDataStr) {
-        try {
-          const utmData = JSON.parse(utmDataStr)
-          if (Object.keys(utmData).length > 0) {
-            // users 테이블에 utm 저장
-            const { error } = await supabase
-              .from('users')
-              .update({ utm: utmData })
-              .eq('id', userData.id)
+    const saveUTMData = async () => {
+      if (typeof window === 'undefined') return
 
-            if (error) {
-              console.error('UTM 저장 실패:', error)
-            } else {
-              console.log('UTM 저장 성공:', utmData)
-            }
-          }
-        } catch (err) {
-          console.error('UTM 파싱 오류:', err)
+      try {
+        const utmDataStr = localStorage.getItem('utm_data')
+        if (!utmDataStr) return
+
+        const utmData = JSON.parse(utmDataStr)
+        if (Object.keys(utmData).length === 0) return
+
+        // 먼저 현재 users의 utm이 있는지 확인
+        const { data: existingUser, error: selectError } = await supabase
+          .from('users')
+          .select('utm')
+          .eq('id', user.id)
+          .single()
+
+        if (selectError) {
+          console.error('UTM 조회 실패:', selectError)
+          return
         }
+
+        // 이미 utm이 저장되어 있으면 저장하지 않음
+        if (existingUser?.utm) {
+          localStorage.removeItem('utm_data')
+          return
+        }
+
+        // utm이 없으면 저장
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ utm: utmData })
+          .eq('id', user.id)
+
+        if (updateError) {
+          console.error('UTM 저장 실패:', updateError)
+        } else {
+          // 저장 완료 후 로컬스토리지에서 제거
+          localStorage.removeItem('utm_data')
+        }
+      } catch (err) {
+        console.error('UTM 데이터 저장 중 오류:', err)
       }
     }
+
+    saveUTMData()
+  }, [user?.id])
+
+  // 로그인 함수 (UTM 저장은 useEffect에서 자동 처리)
+  const login = async (userData: User) => {
+    setUser(userData)
   }
 
   // 로그아웃 함수

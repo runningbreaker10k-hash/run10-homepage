@@ -3,8 +3,12 @@
 import { useState, useEffect } from 'react'
 import WebMainPage from '@/components/WebMainPage'
 import AppMainPage from '@/components/AppMainPage'
+import { useUTMTracking } from '@/hooks/useUTMTracking'
 
 export default function Home() {
+  // UTM 파라미터 추적 (모든 플랫폼)
+  useUTMTracking()
+
   const [platform, setPlatform] = useState<'web' | 'android' | 'ios' | null>(null)
   const [isChecking, setIsChecking] = useState(true)
 

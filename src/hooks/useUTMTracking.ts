@@ -9,7 +9,7 @@ export interface UTMData {
 }
 
 /**
- * UTM 파라미터를 URL에서 추출하여 세션스토리지에 저장하는 Hook
+ * UTM 파라미터를 URL에서 추출하여 로컬스토리지에 저장하는 Hook
  * 페이지 진입 시 자동으로 UTM을 캡처하고 저장합니다.
  */
 export function useUTMTracking() {
@@ -37,8 +37,8 @@ export function useUTMTracking() {
       if (utmContent) utmData.content = utmContent
       if (utmTerm) utmData.term = utmTerm
 
-      // 세션스토리지에 저장
-      sessionStorage.setItem('utm_data', JSON.stringify(utmData))
+      // 로컬스토리지에 저장 (탭 간 공유)
+      localStorage.setItem('utm_data', JSON.stringify(utmData))
 
       // GA4에 utm 전송 (기본 동작)
       if (typeof window !== 'undefined' && window.gtag) {
@@ -60,7 +60,7 @@ export function useUTMTracking() {
 export function getUTMData(): UTMData | null {
   if (typeof window === 'undefined') return null
 
-  const utmDataStr = sessionStorage.getItem('utm_data')
+  const utmDataStr = localStorage.getItem('utm_data')
   if (!utmDataStr) return null
 
   try {
@@ -71,9 +71,9 @@ export function getUTMData(): UTMData | null {
 }
 
 /**
- * 세션스토리지에서 UTM 데이터를 제거하는 함수
+ * 로컬스토리지에서 UTM 데이터를 제거하는 함수
  */
 export function clearUTMData(): void {
   if (typeof window === 'undefined') return
-  sessionStorage.removeItem('utm_data')
+  localStorage.removeItem('utm_data')
 }
