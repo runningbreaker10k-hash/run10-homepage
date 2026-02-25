@@ -69,6 +69,24 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        {/* Google Analytics (GA4) - 추적 코드 */}
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-CBZE1LRM9T'}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-CBZE1LRM9T'}', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
+
         {/* 네이버 웹마스터 도구 사이트 확인 메타태그 */}
         <meta name="naver-site-verification" content="bfb49d12d1b9336b386b36b0082e9cf7bcecc0e5" />
         <script

@@ -11,7 +11,14 @@ export default function SignupCompletePage() {
     const params = new URLSearchParams(window.location.search)
     const competitionId = params.get('competitionId')
 
-    // GA4는 URL 도달로 자동 추적
+    // GA4 signup_complete 이벤트 추적
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'signup_complete', {
+        competition_id: competitionId || undefined,
+        timestamp: new Date().toISOString()
+      })
+    }
+
     // 즉시 해당 대회 페이지로 리다이렉트
     if (competitionId) {
       router.push(`/competitions/${competitionId}?tab=lookup`)
