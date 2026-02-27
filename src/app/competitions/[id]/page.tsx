@@ -47,7 +47,6 @@ export default function CompetitionDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'register' | 'lookup' | 'board' | 'photos'>('overview')
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
-  const [registrationComplete, setRegistrationComplete] = useState(false)
   const [userRegistration, setUserRegistration] = useState<any>(null)
   const [registrationLoading, setRegistrationLoading] = useState(false)
 
@@ -59,16 +58,6 @@ export default function CompetitionDetailPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }, [searchParams])
-
-  // 신청 완료 시 signup-complete 페이지로 리다이렉트 (대회 ID 함께 전달)
-  useEffect(() => {
-    if (registrationComplete) {
-      const timer = setTimeout(() => {
-        router.push(`/signup-complete?competitionId=${competitionId}`)
-      }, 2000) // 2초 후 리다이렉트
-      return () => clearTimeout(timer)
-    }
-  }, [registrationComplete, router, competitionId])
 
   // 게시판 관련 상태
   const [boardPosts, setBoardPosts] = useState<any[]>([])
@@ -122,7 +111,6 @@ export default function CompetitionDetailPage() {
   useEffect(() => {
     if (activeTab !== 'register') {
       setShowRegistrationForm(false)
-      setRegistrationComplete(false)
     }
   }, [activeTab])
 
@@ -682,95 +670,19 @@ export default function CompetitionDetailPage() {
             </div>
           </div>
         ) : isRegistrationOpen(competition) ? (
-          registrationComplete ? (
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 text-center">
-              <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-green-900 mb-4">
-                🎉 참가 신청이 완료되었습니다!
-              </h3>
-
-              <div className="bg-white rounded-lg p-6 mb-6 text-left">
-                <h4 className="font-semibold text-gray-900 mb-4 text-center">참가비 입금 안내</h4>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600 font-medium">은행</span>
-                    <span className="font-semibold text-gray-900">{competition.bank_name || '하나은행'}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600 font-medium">계좌번호</span>
-                    <span className="font-semibold text-gray-900">{competition.bank_account || '734-910008-72504'}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-600 font-medium">예금주</span>
-                    <span className="font-semibold text-gray-900">{competition.account_holder || '(주)러닝브레이커'}</span>
-                  </div>
-                  <div className="py-2">
-                    <span className="text-gray-600 font-medium block mb-2">입금액</span>
-                    {participationGroups.length > 0 ? (
-                      <div className="space-y-2">
-                        {participationGroups.map((group) => (
-                          <div key={group.id} className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">{group.name}</span>
-                            <span className="font-bold text-blue-600">₩{group.entry_fee.toLocaleString()}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="font-bold text-blue-600 text-lg">₩{competition.entry_fee.toLocaleString()}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-left">
-                <h4 className="font-semibold text-yellow-800 mb-2">중요 안내사항</h4>
-                <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
-                  <li>입금자명은 신청시 입력한 이름과 동일해야 합니다</li>
-                  <li>입금 확인은 1-2일 정도 소요됩니다</li>
-                  <li>마이페이지에서 신청 내역을 확인하실 수 있습니다</li>
-                  <li>문의사항은 대회 문의처로 연락해 주세요</li>
-                </ul>
-              </div>
-
-              <div className="text-center mb-6">
-                <p className="text-green-700 text-lg mb-2">
-                  신청해주셔서 감사합니다!
-                </p>
-                <p className="text-gray-600">
-                  입금 확인 후 참가가 확정됩니다. 마이페이지에서 신청 내역을 확인하실 수 있습니다.
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setRegistrationComplete(false)
-                  setShowRegistrationForm(false)
-                  router.push('/mypage')
+          <>
+            {user ? (
+              <MemberRegistrationForm
+                competition={competition}
+                participationGroups={participationGroups}
+                user={user}
+                onSuccess={() => {
+                  fetchCompetitionData()
+                  checkUserRegistration()
+                  router.push(`/signup-complete?competitionId=${competitionId}&competitionName=${encodeURIComponent(competition.title)}`)
                 }}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg"
-              >
-                마이페이지로 이동
-              </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {user ? (
-                <MemberRegistrationForm
-                  competition={competition}
-                  participationGroups={participationGroups}
-                  user={user}
-                  onSuccess={() => {
-                    fetchCompetitionData()
-                    checkUserRegistration()
-                    setRegistrationComplete(true)
-                    // 조회 탭으로 이동
-                    setActiveTab('lookup')
-                    router.push(`/competitions/${competitionId}?tab=lookup`)
-                  }}
-                />
-              ) : (
+              />
+            ) : (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
                   <Users className="h-16 w-16 text-blue-400 mx-auto mb-6" />
                   <h4 className="text-2xl font-bold text-blue-900 mb-4">
@@ -825,7 +737,6 @@ export default function CompetitionDetailPage() {
                 </div>
               )}
             </>
-          )
         ) : (
           <div className="bg-gray-50 rounded-lg p-8 text-center">
             <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
