@@ -1460,8 +1460,8 @@ export default function CompetitionDetailPage() {
               <Image
                 src={galleryPhotos[currentPhotoIndex].image_url}
                 alt={galleryPhotos[currentPhotoIndex].caption || `대회 사진 ${currentPhotoIndex + 1}`}
-                width={1920}
-                height={1080}
+                width={1280}
+                height={1280}
                 quality={90}
                 className="max-w-full max-h-[calc(100vh-140px)] sm:max-h-[70vh] w-auto h-auto object-contain"
                 priority

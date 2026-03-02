@@ -23,6 +23,63 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // 이미지 압축 함수 (Canvas API 사용)
+  const compressImage = async (file: File): Promise<File> => {
+    const MAX_SIZE = 1920      // 최대 가로/세로 1920px
+    const QUALITY = 0.82       // 압축 품질 82%
+
+    return new Promise((resolve) => {
+      const img = new Image()
+
+      img.onload = () => {
+        URL.revokeObjectURL(img.src)
+
+        // 이미 작은 이미지는 스킵 (1MB 미만 + 1920px 이하)
+        if (img.width <= MAX_SIZE && img.height <= MAX_SIZE && file.size < 1024 * 1024) {
+          resolve(file)
+          return
+        }
+
+        let width = img.width
+        let height = img.height
+
+        // 비율 유지 리사이징
+        if (width > MAX_SIZE || height > MAX_SIZE) {
+          if (width > height) {
+            height = Math.round(height * MAX_SIZE / width)
+            width = MAX_SIZE
+          } else {
+            width = Math.round(width * MAX_SIZE / height)
+            height = MAX_SIZE
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        canvas.getContext('2d')?.drawImage(img, 0, 0, width, height)
+
+        // WebP 지원 여부 확인
+        const supportsWebP = canvas.toDataURL('image/webp').startsWith('data:image/webp')
+        const outputType = supportsWebP ? 'image/webp' : 'image/jpeg'
+        const ext = supportsWebP ? 'webp' : 'jpg'
+        const baseName = file.name.split('.').slice(0, -1).join('.') || file.name
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return }
+            resolve(new File([blob], `${baseName}.${ext}`, { type: outputType }))
+          },
+          outputType,
+          QUALITY
+        )
+      }
+
+      img.onerror = () => resolve(file)
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return
 
@@ -34,9 +91,9 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
         return
       }
 
-      // 5MB 제한
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name}의 크기가 5MB를 초과합니다.`)
+      // 20MB 제한 (압축 후 실제 크기는 대폭 감소)
+      if (file.size > 20 * 1024 * 1024) {
+        alert(`${file.name}의 크기가 20MB를 초과합니다.`)
         return
       }
 
@@ -132,15 +189,18 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
         const image = images[i]
 
         try {
+          // 이미지 압축 (브라우저 사이드)
+          const compressedFile = await compressImage(image.file)
+
           // 파일명 충돌 방지: 타임스탬프 + 인덱스 + 랜덤
-          const fileExt = image.file.name.split('.').pop()
+          const fileExt = compressedFile.name.split('.').pop()
           const fileName = `${Date.now()}-${i}-${Math.random().toString(36).substring(2)}.${fileExt}`
           const filePath = `competition-photos/${competitionId}/${fileName}`
 
-          // Supabase Storage에 업로드
+          // Supabase Storage에 업로드 (압축된 파일)
           const { error: uploadError } = await supabase.storage
             .from('competition-images')
-            .upload(filePath, image.file)
+            .upload(filePath, compressedFile)
 
           if (uploadError) {
             console.error('Upload error:', uploadError)
@@ -234,7 +294,7 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
           클릭하거나 파일을 드래그하여 사진을 추가하세요
         </p>
         <p className="text-sm text-gray-500">
-          여러 장의 이미지를 한 번에 선택할 수 있습니다 (최대 5MB/파일)
+          여러 장의 이미지를 한 번에 선택할 수 있습니다 (최대 20MB/파일, 업로드 시 자동 압축)
         </p>
         <input
           ref={fileInputRef}
