@@ -459,10 +459,13 @@ export default function ReceiptRequestPage() {
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    className="w-full px-3 py-2.5 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm font-semibold bg-yellow-50"
                     placeholder="010-0000-0000"
                     required
                   />
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ 연락처가 정확하지 않을 시 현금영수증이 발급되지 않습니다. 다시 한번 확인해 주세요.
+                  </p>
                 </div>
               )}
 
@@ -476,11 +479,14 @@ export default function ReceiptRequestPage() {
                     type="text"
                     value={businessNumber}
                     onChange={(e) => setBusinessNumber(formatBusinessNumber(e.target.value))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    className="w-full px-3 py-2.5 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm font-semibold bg-yellow-50"
                     placeholder="000-00-00000"
                     maxLength={12}
                     required
                   />
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ 사업자번호가 정확하지 않을 시 현금영수증이 발급되지 않습니다. 다시 한번 확인해 주세요.
+                  </p>
                 </div>
               )}
 

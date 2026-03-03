@@ -165,8 +165,6 @@ export default function RefundRequestPage() {
     setShowConfirmModal(false)
 
     try {
-      const finalBankName = bankName === '기타' ? customBankName : bankName
-
       const response = await fetch('/api/request/refund', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +176,7 @@ export default function RefundRequestPage() {
           phone: phone.replace(/-/g, ''),
           amount: amount.replace(/,/g, ''),
           distance: selectedReg.distance,
-          bank_name: finalBankName,
+          bank_name: bankName,
           account_number: accountNumber,
           account_holder: accountHolder
         })
@@ -509,10 +507,13 @@ export default function RefundRequestPage() {
                     type="text"
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9-]/g, ''))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                    className="w-full px-3 py-2.5 border-2 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm font-semibold bg-yellow-50"
                     placeholder="계좌번호를 입력하세요 (- 포함 가능)"
                     required
                   />
+                  <p className="text-xs text-red-600 mt-2">
+                    ⚠️ 계좌번호가 정확하지 않을 시 환불이 되지 않습니다. 다시 한번 확인해 주세요.
+                  </p>
                 </div>
 
                 {/* 예금주 */}
