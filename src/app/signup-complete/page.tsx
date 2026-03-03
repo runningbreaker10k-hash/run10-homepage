@@ -17,14 +17,8 @@ export default function SignupCompletePage() {
 
     setCompetitionTitle(decodeURIComponent(competitionName))
 
-    // GA4 signup_complete 이벤트 추적 (Beacon 방식)
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'signup_complete', {
-        'transport_type': 'beacon',
-        'competition_id': competitionId || undefined,
-        'timestamp': new Date().toISOString()
-      })
-    }
+    // TODO: GA4 signup_complete 이벤트 추적은 나중에 재작업
+    // (현재 리다이렉트 체인으로 인한 Vercel Fast Data Transfer 비용 증가로 인해 임시 제거)
 
     // 3초 후 자동 리다이렉트
     const timer = setTimeout(() => {

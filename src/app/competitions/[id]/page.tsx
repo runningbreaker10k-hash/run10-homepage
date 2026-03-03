@@ -679,7 +679,7 @@ export default function CompetitionDetailPage() {
                 onSuccess={() => {
                   fetchCompetitionData()
                   checkUserRegistration()
-                  router.push(`/signup-complete?competitionId=${competitionId}&competitionName=${encodeURIComponent(competition.title)}`)
+                  setActiveTab('lookup')
                 }}
               />
             ) : (
