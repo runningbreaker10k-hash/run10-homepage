@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { Menu, X, Users, Calendar, Trophy, User, LogOut, MessageCircle, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -35,16 +36,15 @@ export default function Header() {
             <a href="/" className="flex items-center space-x-3">
               <div className="flex items-center space-x-3">
                 {/* 로고 이미지 - 러너 실루엣 */}
-                <div
-                  className="w-16 h-10"
-                  style={{
-                    backgroundImage: "url('/images/runner-logo.png')", // 러너 로고 이미지 경로
-                    backgroundSize: 'contain',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    margin: '0'
-                  }}
-                >
+                <div className="relative w-16 h-10">
+                  <Image
+                    src="/images/runner-logo.png"
+                    alt="런텐 RUN10 로고"
+                    fill
+                    className="object-contain"
+                    quality={75}
+                    priority
+                  />
                 </div>
                 <span className="text-xl font-bold text-white">런텐 RUN10</span>
               </div>

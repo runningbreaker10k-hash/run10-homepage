@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Trophy } from 'lucide-react'
 
 type RankData = {
@@ -72,13 +73,12 @@ export default function RankPage() {
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 opacity-20">
-          <img
+          <Image
             src="/images/rank-hero-bg.jpg"
             alt="런텐 랭커 배경"
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
+            fill
+            className="object-cover"
+            quality={75}
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -102,10 +102,13 @@ export default function RankPage() {
             {/* 치타족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
               <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
-                <img
+                <Image
                   src="/images/grades/cheetah.png"
                   alt="치타족"
+                  width={48}
+                  height={48}
                   className="w-10 h-10 md:w-12 md:h-12"
+                  quality={75}
                 />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">치타족</h3>
@@ -123,10 +126,13 @@ export default function RankPage() {
             {/* 홀스족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
               <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
-                <img
+                <Image
                   src="/images/grades/horse.png"
                   alt="홀스족"
+                  width={48}
+                  height={48}
                   className="w-10 h-10 md:w-12 md:h-12"
+                  quality={75}
                 />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">홀스족</h3>
@@ -144,10 +150,13 @@ export default function RankPage() {
             {/* 울프족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
               <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
-                <img
+                <Image
                   src="/images/grades/wolf.png"
                   alt="울프족"
+                  width={48}
+                  height={48}
                   className="w-10 h-10 md:w-12 md:h-12"
+                  quality={75}
                 />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">울프족</h3>
@@ -165,10 +174,13 @@ export default function RankPage() {
             {/* 터틀족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
               <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
-                <img
+                <Image
                   src="/images/grades/turtle.png"
                   alt="터틀족"
+                  width={48}
+                  height={48}
                   className="w-10 h-10 md:w-12 md:h-12"
+                  quality={75}
                 />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">터틀족</h3>
@@ -255,11 +267,14 @@ export default function RankPage() {
 
                     {/* 티어 */}
                     <div className="flex justify-center">
-                      <img
+                      <Image
                         src={getTierImage(item.tier)}
                         alt={getTierName(item.tier)}
+                        width={32}
+                        height={32}
                         className="w-6 h-6 md:w-8 md:h-8"
                         title={getTierName(item.tier)}
+                        quality={75}
                       />
                     </div>
 

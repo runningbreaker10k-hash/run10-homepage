@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import PagePopup from '@/components/PagePopup'
 import { useUTMTracking } from '@/hooks/useUTMTracking'
@@ -69,13 +70,16 @@ export default function AppMainPage() {
       {/* Hero Section - 앱 스타일로 간소화 */}
       <section className="relative h-[30vh] min-h-[250px] flex items-center justify-center bg-gradient-to-br from-red-600 via-red-700 to-red-800">
         {/* 배경 이미지 */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-          style={{
-            backgroundImage: "url('/images/runners-bg.jpg')",
-            backgroundPosition: 'center center'
-          }}
-        ></div>
+        <div className="absolute inset-0 overflow-hidden opacity-30">
+          <Image
+            src="/images/runners-bg.jpg"
+            alt="러너 배경"
+            fill
+            className="object-cover"
+            quality={75}
+            priority
+          />
+        </div>
 
         {/* 중앙 텍스트 */}
         <div className="relative z-10 text-center text-white px-6">
@@ -94,10 +98,14 @@ export default function AppMainPage() {
       {/* 런텐프로젝트 슬로건 */}
       <section className="py-8 bg-[#051735]">
         <div className="max-w-md mx-auto px-4 text-center">
-          <img
+          <Image
             src="/images/grades/subtitle_m.png"
             alt="런텐프로젝트 슬로건"
+            width={500}
+            height={200}
             className="mx-auto max-w-full h-auto"
+            quality={75}
+            sizes="100vw"
           />
         </div>
       </section>
@@ -114,15 +122,18 @@ export default function AppMainPage() {
             >
               {/* 슬라이드 이미지들 */}
               {slideImages.map((image, index) => (
-                <div
-                  key={index}
-                  className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-                  style={{
-                    backgroundImage: `url('${image}')`,
-                    opacity: currentSlide === index ? 1 : 0,
-                    zIndex: currentSlide === index ? 1 : 0
-                  }}
-                />
+                currentSlide === index && (
+                  <Image
+                    key={index}
+                    src={image}
+                    alt={`슬라이드 ${index + 1}`}
+                    fill
+                    className="object-cover transition-opacity duration-1000 rounded-lg"
+                    quality={75}
+                    priority={index === 0}
+                    sizes="100vw"
+                  />
+                )
               ))}
 
               {/* 배경 오버레이 */}
@@ -191,14 +202,16 @@ export default function AppMainPage() {
 
           {/* 티어 단일 이미지 */}
           <div>
-            <img
+            <Image
               src="/images/grades/main_m.png"
               alt="RUN10 티어"
+              width={500}
+              height={600}
               className="w-full h-auto mx-auto"
+              quality={75}
+              sizes="100vw"
             />
           </div>
-
-          
         </div>
       </section>
 
@@ -232,10 +245,14 @@ export default function AppMainPage() {
                       zIndex: currentMaleRanker === index ? 1 : 0
                     }}
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`남성 랭커 ${index + 1}위`}
+                      width={400}
+                      height={500}
                       className="w-full h-auto rounded-lg"
+                      quality={75}
+                      sizes="100vw"
                     />
                   </div>
                 ))}
@@ -274,10 +291,14 @@ export default function AppMainPage() {
                       zIndex: currentFemaleRanker === index ? 1 : 0
                     }}
                   >
-                    <img
+                    <Image
                       src={image}
                       alt={`여성 랭커 ${index + 1}위`}
+                      width={400}
+                      height={500}
                       className="w-full h-auto rounded-lg"
+                      quality={75}
+                      sizes="100vw"
                     />
                   </div>
                 ))}

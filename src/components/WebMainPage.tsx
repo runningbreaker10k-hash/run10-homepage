@@ -131,13 +131,15 @@ export default function WebMainPage() {
       {/* Hero Section - 러너 이미지 배경 + 런텐프로젝트 */}
       <section className="relative h-[50vh] min-h-[400px] sm:h-[60vh] flex items-center justify-center sm:justify-end">
         {/* 배경 이미지 - 러너들의 다리와 신발 */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/runners-bg.jpg')", // 러너 이미지 경로
-            backgroundPosition: 'center bottom'
-          }}
-        >
+        <div className="absolute inset-0 overflow-hidden">
+          <Image
+            src="/images/runners-bg.jpg"
+            alt="러너 배경"
+            fill
+            className="object-cover"
+            quality={75}
+            priority
+          />
           <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
@@ -156,7 +158,7 @@ export default function WebMainPage() {
             {/* 2. we are RUN10 */}
             <div className="mb-10">
               <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
-                
+
                 <span className="block text-red-600">런텐 RUN10</span>
               </h1>
             </div>
@@ -210,18 +212,26 @@ export default function WebMainPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* 모바일용 이미지 */}
           <div className="block md:hidden max-w-md mx-auto">
-            <img
+            <Image
               src="/images/grades/subtitle_m.png"
               alt="런텐프로젝트 슬로건"
+              width={500}
+              height={200}
               className="mx-auto max-w-full h-auto"
+              quality={75}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 85vw"
             />
           </div>
           {/* 웹용 이미지 */}
           <div className="hidden md:block max-w-3xl mx-auto">
-            <img
+            <Image
               src="/images/grades/subtitle.png"
               alt="런텐프로젝트 슬로건"
+              width={900}
+              height={300}
               className="mx-auto max-w-full h-auto"
+              quality={75}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 85vw"
             />
           </div>
         </div>
@@ -321,10 +331,14 @@ export default function WebMainPage() {
 
           {/* 모바일/앱용 단일 이미지 */}
           <div className="block md:hidden">
-            <img
+            <Image
               src="/images/grades/main_m.png"
               alt="RUN10 티어"
+              width={500}
+              height={600}
               className="w-full h-auto mx-auto"
+              quality={75}
+              sizes="100vw"
             />
           </div>
 
@@ -332,37 +346,53 @@ export default function WebMainPage() {
           <div className="hidden md:grid grid-cols-4 gap-6">
             {/* 치타족 */}
             <div className="text-center">
-              <img
+              <Image
                 src="/images/grades/main_cheetah.png"
                 alt="치타족"
+                width={300}
+                height={350}
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                quality={75}
+                sizes="(max-width: 1024px) 50vw, 25vw"
               />
             </div>
 
             {/* 홀스족 */}
             <div className="text-center">
-              <img
+              <Image
                 src="/images/grades/main_house.png"
                 alt="홀스족"
+                width={300}
+                height={350}
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                quality={75}
+                sizes="(max-width: 1024px) 50vw, 25vw"
               />
             </div>
 
             {/* 울프족 */}
             <div className="text-center">
-              <img
+              <Image
                 src="/images/grades/main_wolf.png"
                 alt="울프족"
+                width={300}
+                height={350}
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                quality={75}
+                sizes="(max-width: 1024px) 50vw, 25vw"
               />
             </div>
 
             {/* 터틀족 */}
             <div className="text-center">
-              <img
+              <Image
                 src="/images/grades/main_turtle.png"
                 alt="터틀족"
+                width={300}
+                height={350}
                 className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                quality={75}
+                sizes="(max-width: 1024px) 50vw, 25vw"
               />
             </div>
           </div>
@@ -401,10 +431,14 @@ export default function WebMainPage() {
                         zIndex: currentMaleRanker === index ? 1 : 0
                       }}
                     >
-                      <img
+                      <Image
                         src={image}
                         alt={`남성 랭커 ${index + 1}위`}
+                        width={400}
+                        height={500}
                         className="w-full h-auto rounded-lg"
+                        quality={75}
+                        sizes="100vw"
                       />
                     </div>
                   ))}
@@ -443,10 +477,14 @@ export default function WebMainPage() {
                         zIndex: currentFemaleRanker === index ? 1 : 0
                       }}
                     >
-                      <img
+                      <Image
                         src={image}
                         alt={`여성 랭커 ${index + 1}위`}
+                        width={400}
+                        height={500}
                         className="w-full h-auto rounded-lg"
+                        quality={75}
+                        sizes="100vw"
                       />
                     </div>
                   ))}
@@ -473,31 +511,47 @@ export default function WebMainPage() {
             {/* 남성 랭커 */}
             <div className="grid grid-cols-4 gap-6 mb-6">
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r01.png"
                   alt="남성 랭커 1위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r02.png"
                   alt="남성 랭커 2위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r03.png"
                   alt="남성 랭커 3위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r04.png"
                   alt="남성 랭커 4위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
             </div>
@@ -505,31 +559,47 @@ export default function WebMainPage() {
             {/* 여성 랭커 */}
             <div className="grid grid-cols-4 gap-6 mb-8 sm:mb-12">
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r05.png"
                   alt="여성 랭커 1위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r06.png"
                   alt="여성 랭커 2위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r07.png"
                   alt="여성 랭커 3위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
               <div className="text-center">
-                <img
+                <Image
                   src="/images/rank/r08.png"
                   alt="여성 랭커 4위"
+                  width={300}
+                  height={350}
                   className="w-full h-auto max-w-full mx-auto rounded-lg shadow-lg"
+                  quality={75}
+                  sizes="(max-width: 1024px) 50vw, 25vw"
                 />
               </div>
             </div>
@@ -564,10 +634,13 @@ export default function WebMainPage() {
             <div className="p-2.5 text-center">
               {/* 아이콘 + RUN10 로고 */}
               <div className="flex items-center justify-center gap-2.5 mb-5">
-                <img
+                <Image
                   src="/images/app_icon.png"
                   alt="런텐 앱 아이콘"
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-lg shadow-md"
+                  quality={75}
                 />
                 <h2 className="text-xl font-black text-red-600">런텐 RUN10</h2>
               </div>
