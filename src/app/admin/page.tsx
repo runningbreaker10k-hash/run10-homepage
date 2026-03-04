@@ -5284,7 +5284,7 @@ export default function AdminPage() {
                       CSV 형식: rank,name,tier,record,birth_date
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      예시: 1,홍길동,cheetah,00:35:42,900515
+                      예시: 1,홍길동,치타족,00:35:42,900515 (또는 cheetah)
                     </p>
                   </div>
                   {maleFile && (
@@ -5330,7 +5330,7 @@ export default function AdminPage() {
                       CSV 형식: rank,name,tier,record,birth_date
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      예시: 1,김영희,horse,00:42:30,920315
+                      예시: 1,김영희,홀스족,00:42:30,920315 (또는 horse)
                     </p>
                   </div>
                   {femaleFile && (
@@ -5362,8 +5362,9 @@ export default function AdminPage() {
                 <h4 className="text-sm font-semibold text-blue-900 mb-2">CSV 파일 작성 가이드</h4>
                 <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
                   <li>필수 컬럼: rank, name, tier, record, birth_date</li>
-                  <li>순위: 1-100 사이의 숫자</li>
-                  <li>티어: cheetah, horse, wolf, turtle, bolt 중 하나</li>
+                  <li>순위: 1-100 사이의 숫자 (중복 허용)</li>
+                  <li>이름: 공백 포함 가능</li>
+                  <li>티어: 치타족, 홀스족, 울프족, 터틀족, 볼타족 또는 cheetah, horse, wolf, turtle, bolt</li>
                   <li>기록: HH:MM:SS 형식 (예: 00:35:42)</li>
                   <li>생년월일: YYMMDD 형식 (예: 900515)</li>
                   <li>업로드 시 기존 데이터를 덮어씁니다</li>

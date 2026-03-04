@@ -523,19 +523,21 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
               </div>
             </div>
 
-            {/* 취소 버튼 */}
-            <div className="mb-4 sm:mb-6">
-              <button
-                onClick={() => setShowCancelModal(true)}
-                className="w-full py-3 px-4 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm sm:text-base touch-manipulation flex items-center justify-center"
-              >
-                <XCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
-                신청 취소하기
-              </button>
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                ⚠️ 입금 전에만 취소할 수 있습니다
-              </p>
-            </div>
+            {/* 취소 버튼 - 현재 비활성화 (차후 재활성화 가능) */}
+            {false && (
+              <div className="mb-4 sm:mb-6">
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="w-full py-3 px-4 bg-red-50 border-2 border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm sm:text-base touch-manipulation flex items-center justify-center"
+                >
+                  <XCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0" />
+                  신청 취소하기
+                </button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  ⚠️ 입금 전에만 취소할 수 있습니다
+                </p>
+              </div>
+            )}
           </>
         )}
 
@@ -772,8 +774,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         </div>
       </div>
 
-      {/* 취소 확인 모달 */}
-      {showCancelModal && (
+      {/* 취소 확인 모달 - 현재 비활성화 (차후 재활성화 가능) */}
+      {false && showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="text-center mb-6">

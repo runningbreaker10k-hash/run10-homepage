@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import PagePopup from '@/components/PagePopup'
 import { useState, useEffect } from 'react'
 import { X, Download } from 'lucide-react'
@@ -239,15 +240,18 @@ export default function WebMainPage() {
               >
                 {/* 슬라이드 이미지들 */}
                 {slideImages.map((image, index) => (
-                  <div
-                    key={index}
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-                    style={{
-                      backgroundImage: `url('${image}')`,
-                      opacity: currentSlide === index ? 1 : 0,
-                      zIndex: currentSlide === index ? 1 : 0
-                    }}
-                  />
+                  currentSlide === index && (
+                    <Image
+                      key={index}
+                      src={image}
+                      alt={`슬라이드 ${index + 1}`}
+                      fill
+                      className="object-cover transition-opacity duration-1000 rounded-lg"
+                      quality={75}
+                      priority={index === 0}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 85vw"
+                    />
+                  )
                 ))}
 
                 {/* 배경 오버레이 */}

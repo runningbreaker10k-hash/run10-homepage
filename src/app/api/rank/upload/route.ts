@@ -90,8 +90,8 @@ export async function POST(request: NextRequest) {
         errors.push(`${rowNum}행: 순위는 1-100 사이여야 합니다. (현재: ${row.rank})`)
       }
 
-      // 이름 검증
-      if (!row.name || row.name.trim() === '') {
+      // 이름 검증 (공백 포함 허용)
+      if (!row.name || row.name === '') {
         errors.push(`${rowNum}행: 이름이 비어있습니다.`)
       }
 
@@ -117,13 +117,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // 중복 순위 체크
-    const ranks = rows.map(row => parseInt(row.rank))
-    const uniqueRanks = new Set(ranks)
-    if (ranks.length !== uniqueRanks.size) {
-      errors.push('중복된 순위가 있습니다.')
-    }
-
     if (errors.length > 0) {
       return NextResponse.json(
         { error: '검증 오류', details: errors },
@@ -136,7 +129,7 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString().split('T')[0],
       data: rows.map(row => ({
         rank: parseInt(row.rank),
-        name: row.name.trim(),
+        name: row.name, // 공백 포함 그대로 유지
         tier: row.tier.trim(),
         record: row.record.trim(),
         birth_date: row.birth_date.trim()

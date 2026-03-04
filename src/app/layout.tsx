@@ -3,6 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import RootLayoutContent from "@/components/RootLayoutContent";
 
+// ISR 설정: 1800초(30분)마다 재검증 - 사이트 전체 캐싱
+export const revalidate = 1800
+
 const inter = Inter({
   subsets: ["latin"],
 });

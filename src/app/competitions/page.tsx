@@ -24,6 +24,7 @@ export default function CompetitionsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('all')
+  const [selectedYear, setSelectedYear] = useState(2026)
 
   useEffect(() => {
     fetchCompetitions()
@@ -119,6 +120,10 @@ export default function CompetitionsPage() {
   }
 
   const filteredCompetitions = competitions.filter(competition => {
+    // 년도 필터
+    const competitionYear = new Date(competition.date).getFullYear()
+    if (competitionYear !== selectedYear) return false
+
     // 검색 필터
     const matchesSearch = competition.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       competition.location.toLowerCase().includes(searchTerm.toLowerCase())
@@ -145,33 +150,14 @@ export default function CompetitionsPage() {
     return true
   })
 
-  // 상태 우선순위로 정렬 (진행 > 예정 > 종료), 각각 날짜순
-  const statusPriority: Record<string, number> = {
-    'ongoing': 0,
-    'deadline_approaching': 0,
-    'registration_closed': 0,
-    'upcoming': 1,
-    'closed': 2
-  }
-
+  // 날짜순으로만 정렬 (오름차순 - 오래된것 먼저)
   const sortedCompetitions = [...filteredCompetitions].sort((a, b) => {
-    const statusA = getActualCompetitionStatus(a)
-    const statusB = getActualCompetitionStatus(b)
-    const priorityA = statusPriority[statusA]
-    const priorityB = statusPriority[statusB]
-
-    // 상태 우선순위로 정렬
-    if (priorityA !== priorityB) {
-      return priorityA - priorityB
-    }
-
-    // 같은 상태면 날짜순 (오래된것 먼저)
     return new Date(a.date).getTime() - new Date(b.date).getTime()
   })
 
   useEffect(() => {
     fetchCompetitions()
-  }, [statusFilter])
+  }, [statusFilter, selectedYear])
 
   const getStatusBadge = (competition: Competition) => {
     const actualStatus = getActualCompetitionStatus(competition)
@@ -339,6 +325,28 @@ export default function CompetitionsPage() {
               <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
             </div>
           </div>
+
+        {/* 년도 탭 선택 */}
+        <div className="mb-6 border-b border-gray-200">
+          <div className="flex gap-8 sm:gap-10">
+            {[2025, 2026].map(year => (
+              <button
+                key={year}
+                onClick={() => setSelectedYear(year)}
+                className={`px-1 py-3 text-base sm:text-lg font-semibold transition-colors relative ${
+                  selectedYear === year
+                    ? 'text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {year}년
+                {selectedYear === year && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t"></div>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Search and Filter */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
