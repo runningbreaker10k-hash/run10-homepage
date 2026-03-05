@@ -63,13 +63,13 @@ export default function CompetitionsPage() {
     }
   }
 
-  // 대회번호 생성 (YYYYMMDD 형식)
+  // 대회번호 생성 (YYYY-MMDD 형식)
   const getCompetitionNumber = (dateString: string) => {
     const date = new Date(dateString)
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    return `${year}${month}${day}`
+    return `${year}-${month}${day}`
   }
 
   // 종목 표시 (거리만 모아서)
@@ -510,7 +510,19 @@ export default function CompetitionsPage() {
                     {/* 4. 장소 */}
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-medium text-gray-700 w-12">장소</span>
-                      <span className="flex-1">{competition.location}</span>
+                      <span className="flex-1">
+                        {
+                          competition.title.includes('세종')
+                            ? '금강 러닝성지'
+                            : competition.title.includes('청주')
+                              ? '무심천 러닝성지'
+                            : competition.title.includes('성남')
+                              ? '탄천 러닝성지'
+                            : competition.title.includes('남양주')
+                              ? '왕숙천 러닝성지'
+                              : competition.location
+                        }
+                      </span>
                     </div>
 
                     {/* 5. 현황 */}
@@ -526,9 +538,9 @@ export default function CompetitionsPage() {
                         {isOngoing && (
                           competition.title.includes('청주')
                             ? '※ 선착순 3,500명 모집'
-                            : competition.title.includes('세종')
-                              ? '※ 선착순 3,500명 모집'
                             : competition.title.includes('성남')
+                              ? '※ 선착순 3,000명 모집'
+                            : competition.title.includes('남양주')
                               ? '※ 선착순 3,000명 모집'
                               : '※ 선착순 2,500명 모집'
                         )}

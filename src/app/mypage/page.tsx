@@ -47,12 +47,16 @@ interface Registration {
   id: string
   competition_id: string
   distance?: string
+  entry_fee?: number
   payment_status: string
   created_at: string
   competitions: {
     title: string
     date: string
     location: string
+    bank_name?: string
+    bank_account?: string
+    account_holder?: string
   }
 }
 
@@ -211,6 +215,7 @@ export default function MyPage() {
           id,
           competition_id,
           distance,
+          entry_fee,
           payment_status,
           created_at
         `)
@@ -233,7 +238,7 @@ export default function MyPage() {
 
       const { data: competitionData, error: competitionError } = await supabase
         .from('competitions')
-        .select('id, title, date, location')
+        .select('id, title, date, location, bank_name, bank_account, account_holder')
         .in('id', competitionIds)
 
       if (competitionError) {
@@ -1098,31 +1103,53 @@ export default function MyPage() {
                     className="group p-4 md:p-6 hover:bg-blue-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent hover:border-blue-500"
                     onClick={() => router.push(`/competitions/${registration.competition_id}?tab=lookup`)}
                   >
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base md:text-lg font-medium text-gray-900 group-hover:text-blue-700 transition-colors truncate">
-                          {registration.competitions.title}
-                        </h3>
-                        <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs md:text-sm text-gray-500">
-                          <span className="flex items-center">📅 {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
-                          <span className="flex items-center">📍 {registration.competitions.location}</span>
-                          {registration.distance && <span className="flex items-center">🏃 {registration.distance}</span>}
-                        </div>
-                        <div className="mt-1 text-xs text-gray-400">
-                          신청일: {formatKST(registration.created_at, 'yyyy.MM.dd')}
-                        </div>
-                        <div className="mt-1 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                          👆 클릭하여 상세 신청 내역 보기
+                    {/* 제목 + 상태 */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="text-base md:text-lg font-semibold text-gray-900 flex-1 break-words">
+                        {registration.competitions.title}
+                      </h3>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${status.color}`}>
+                        {status.text}
+                      </span>
+                    </div>
+
+                    {/* 신청정보: 날짜, 위치, 거리 */}
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-2">
+                      <span className="flex items-center">날짜: {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
+                      <span className="text-gray-300 hidden md:inline">•</span>
+                      <span className="flex items-center">위치: {registration.competitions.location}</span>
+                      {registration.distance && (
+                        <>
+                          <span className="text-gray-300 hidden md:inline">•</span>
+                          <span className="flex items-center">거리: {registration.distance}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 신청일 */}
+                    <div className="text-xs text-gray-400 mb-2">
+                      신청일: {formatKST(registration.created_at, 'yyyy.MM.dd')}
+                    </div>
+
+                    {/* 결제정보 - pending일 때만 강조 표시 */}
+                    {registration.payment_status === 'pending' && registration.competitions.bank_name && (
+                      <div className="mt-3 p-3 md:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="text-xs md:text-sm text-gray-800">
+                          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                            <span className="inline-block">금액: {registration.entry_fee?.toLocaleString()}원</span>
+                            <span className="text-yellow-300 hidden md:inline">|</span>
+                            <span className="inline-block">은행: {registration.competitions.bank_name}</span>
+                            <span className="text-yellow-300 hidden md:inline">|</span>
+                            <span className="inline-block">{registration.competitions.bank_account}</span>
+                            <span className="text-yellow-300 hidden md:inline">|</span>
+                            <span className="inline-block">예금주: {registration.competitions.account_holder}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex md:flex-col items-center md:items-end gap-2 md:gap-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
-                          {status.text}
-                        </span>
-                        <div className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors hidden md:block">
-                          상세 보기 →
-                        </div>
-                      </div>
+                    )}
+
+                    <div className="mt-3 text-xs text-blue-600 cursor-pointer hover:text-blue-700 font-medium">
+                      ▶ 클릭하여 상세 신청 내역 보기
                     </div>
                   </div>
                 )
@@ -1156,38 +1183,45 @@ export default function MyPage() {
                 {receiptRequests.map((receipt) => {
                   const receiptStatus = getReceiptStatusDisplay(receipt.status)
                   return (
-                    <div key={receipt.id} className="p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm md:text-base font-medium text-gray-900 truncate">
-                            {receipt.competitions.title}
-                          </h3>
-                          <div className="mt-2 flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                              receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 bg-gray-100'
-                            }`}>
-                              {receipt.receipt_type === 'business' ? '사업자' : '개인'}
-                            </span>
-                            <span className="flex items-center">🏃 {receipt.distance}</span>
-                            <span className="flex items-center">💰 {receipt.amount.toLocaleString()}원</span>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-400">
-                            신청일: {formatKST(receipt.created_at, 'yyyy.MM.dd')}
-                          </div>
-                        </div>
-                        <div className="flex md:flex-col items-center md:items-end gap-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${receiptStatus.color}`}>
+                    <div key={receipt.id} className="p-4 md:p-6 hover:bg-emerald-50 transition-colors">
+                      {/* 대회명 + 상태 */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 flex-1 break-words">
+                          {receipt.competitions.title}
+                        </h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${receiptStatus.color}`}>
                             {receiptStatus.text}
                           </span>
-                          {receipt.status === 'pending' && (
-                            <button
-                              onClick={() => cancelReceiptRequest(receipt.id)}
-                              className="text-xs text-red-500 hover:text-red-700 transition-colors"
-                            >
-                              신청 취소
-                            </button>
-                          )}
                         </div>
+                      </div>
+
+                      {/* 신청정보: 타입, 거리, 금액 */}
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 bg-gray-100'
+                        }`}>
+                          {receipt.receipt_type === 'business' ? '사업자' : '개인'}
+                        </span>
+                        <span className="text-gray-300 hidden md:inline">•</span>
+                        <span className="flex items-center">거리: {receipt.distance}</span>
+                        <span className="text-gray-300 hidden md:inline">•</span>
+                        <span className="text-gray-800">금액: {receipt.amount.toLocaleString()}원</span>
+                      </div>
+
+                      {/* 신청일 + 취소 버튼 */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-gray-400">
+                          신청일: {formatKST(receipt.created_at, 'yyyy.MM.dd')}
+                        </span>
+                        {receipt.status === 'pending' && (
+                          <button
+                            onClick={() => cancelReceiptRequest(receipt.id)}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors hover:underline"
+                          >
+                            신청 취소
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
@@ -1228,36 +1262,60 @@ export default function MyPage() {
                 {refundRequests.map((refund) => {
                   const refundStatus = getRefundStatusDisplay(refund.status)
                   return (
-                    <div key={refund.id} className="p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm md:text-base font-medium text-gray-900 truncate">
-                            {refund.competitions.title}
-                          </h3>
-                          <div className="mt-2 flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-500">
-                            <span className="flex items-center">🏃 {refund.distance}</span>
-                            <span className="flex items-center">💰 {refund.amount.toLocaleString()}원</span>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-400 break-all">
-                            {refund.bank_name} {refund.account_number} ({refund.account_holder})
-                          </div>
-                          <div className="mt-1 text-xs text-gray-400">
-                            요청일: {formatKST(refund.created_at, 'yyyy.MM.dd')}
-                          </div>
-                        </div>
-                        <div className="flex md:flex-col items-center md:items-end gap-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${refundStatus.color}`}>
+                    <div key={refund.id} className="p-4 md:p-6 hover:bg-orange-50 transition-colors">
+                      {/* 대회명 + 상태 */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 flex-1 break-words">
+                          {refund.competitions.title}
+                        </h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${refundStatus.color}`}>
                             {refundStatus.text}
                           </span>
-                          {refund.status === 'pending' && (
-                            <button
-                              onClick={() => cancelRefundRequest(refund.id)}
-                              className="text-xs text-red-500 hover:text-red-700 transition-colors"
-                            >
-                              요청 취소
-                            </button>
-                          )}
                         </div>
+                      </div>
+
+                      {/* 환불정보: 거리, 금액 */}
+                      <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-3">
+                        <span className="flex items-center">거리: {refund.distance}</span>
+                        <span className="text-gray-300 hidden md:inline">•</span>
+                        <span className="text-gray-800">금액: {refund.amount.toLocaleString()}원</span>
+                      </div>
+
+                      {/* 은행 정보 - 모바일에서도 가시성 있게 */}
+                      <div className="p-3 bg-gray-50 rounded mb-2 border border-gray-200">
+                        <div className="text-xs md:text-sm text-gray-700">
+                          <div className="text-gray-900 mb-1 font-medium">환불 계좌</div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500 w-14 flex-shrink-0">은행:</span>
+                              <span className="text-gray-900">{refund.bank_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 break-all">
+                              <span className="text-gray-500 w-14 flex-shrink-0">계좌:</span>
+                              <span className="text-gray-900">{refund.account_number}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500 w-14 flex-shrink-0">예금주:</span>
+                              <span className="text-gray-900">{refund.account_holder}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 요청일 + 취소 버튼 */}
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="text-gray-400">
+                          요청일: {formatKST(refund.created_at, 'yyyy.MM.dd')}
+                        </span>
+                        {refund.status === 'pending' && (
+                          <button
+                            onClick={() => cancelRefundRequest(refund.id)}
+                            className="text-red-500 hover:text-red-700 font-medium transition-colors hover:underline"
+                          >
+                            요청 취소
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
