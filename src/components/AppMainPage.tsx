@@ -192,10 +192,10 @@ export default function AppMainPage() {
             <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 티어
             </h2>
-            <p className="text-base text-gray-700 font-medium">
+            <p className="text-xl text-gray-700 font-medium">
               나의 RUN10 티어를 확인해 보세요
             </p>
-            <p className="text-center text-sm text-gray-600 mt-5 font-medium">
+            <p className="text-center text-sm text-gray-600 mt-2 font-medium">
               마이페이지에서 언제든지 수정 가능합니다
             </p>
           </div>
@@ -222,8 +222,11 @@ export default function AppMainPage() {
             <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 랭커
             </h2>
-            <p className="text-base text-white font-medium mb-8">
+            <p className="text-xl text-white font-medium ">
               RUN10 랭커에 도전하세요.
+            </p>
+            <p className="text-center text-sm text-gray-500 mt-2 font-medium">
+              모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.
             </p>
           </div>
 

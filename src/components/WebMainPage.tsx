@@ -405,9 +405,12 @@ export default function WebMainPage() {
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
               런텐 랭커
-            </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 lg:mb-12">
+            </h2>            
+            <p className="text-lg sm:text-xl md:text-2xl text-white mb-2 sm:mb-3"> 
               RUN10 랭커에 도전하세요.
+            </p>
+            <p className="text-base sm:text-lg text-gray-500 mb-6 sm:mb-8 lg:mb-12">
+              모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.
             </p>
           </div>
 

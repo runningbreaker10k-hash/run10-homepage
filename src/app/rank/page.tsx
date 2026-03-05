@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Trophy } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 type RankData = {
   rank: number
@@ -30,17 +31,24 @@ export default function RankPage() {
   const fetchRankData = async (selectedGender: 'male' | 'female') => {
     setLoading(true)
     try {
-      const timestamp = Date.now()
-      const response = await fetch(`/data/rank-${selectedGender}.json?t=${timestamp}`)
+      const fileName = `rank-${selectedGender}.json`
 
-      if (!response.ok) {
-        console.error('Failed to fetch rank data')
+      // Supabase Storage에서 파일 다운로드
+      const { data, error } = await supabase.storage
+        .from('rank-data')
+        .download(fileName)
+
+      if (error) {
+        console.error('Failed to fetch rank data:', error)
         setRankData([])
         setUpdatedAt('')
         return
       }
 
-      const result: RankResponse = await response.json()
+      // Blob을 텍스트로 변환
+      const text = await data.text()
+      const result: RankResponse = JSON.parse(text)
+
       setRankData(result.data || [])
       setUpdatedAt(result.updated_at || '')
     } catch (error) {
@@ -199,8 +207,9 @@ export default function RankPage() {
           {/* 런텐 랭커 등록 수칙 */}
           <div className="mb-8 max-w-4xl mx-auto bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
             <div className="text-xs md:text-sm text-gray-700 space-y-1.5">
-              <p>• 엘리트선수(육상단체등록선수)는 랭킹에서 제외 (단, 선수 해지 후 7년 경과자는 가능)</p>
-              <p>• 매 대회마다 기록에 따라 새롭게 갱신</p>
+              <p>• 엘리트선수는 랭킹에서 제외 (단, 해지 후 7년 경과자는 가능)</p>
+              <p>• 매 대회마다 기록에 따라 통합 랭킹 새롭게 갱신</p>
+              <p>• 연말까지 랭킹 유지시 1-10위 상품 증정</p>
             </div>
           </div>
 

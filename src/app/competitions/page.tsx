@@ -320,8 +320,8 @@ export default function CompetitionsPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인법</h2>
             
             <div className="text-base text-gray-600 space-y-1">
-              <p><span className="font-bold text-gray-800">종료</span>: 이미 종료된 대회</p>
-              <p><span className="font-bold text-red-600">진행</span>: 현재 진행중 대회</p>
+              <p><span className="font-bold text-red-600">전체</span>: 모든 런텐 대회</p>
+              <p><span className="font-bold text-gray-800">종료</span>: 이미 종료된 대회</p> 
               <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
             </div>
           </div>
@@ -463,7 +463,7 @@ export default function CompetitionsPage() {
                       <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
                         <div className="text-center px-4">
                           <p className="text-white text-2xl sm:text-2xl font-bold leading-snug whitespace-pre-line">
-                            {isClosed ? '대회 종료' : '모든 종목 마감'}
+                            {isClosed ? '성황리에 대회 종료' : '모든 종목 마감'}
                           </p>
                         </div>
                       </div>

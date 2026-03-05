@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 import Papa from 'papaparse'
+import { createClient } from '@supabase/supabase-js'
 
 type CSVRow = {
   rank: string
@@ -27,6 +26,12 @@ const TIER_MAPPING: Record<string, string> = {
   'turtle': 'turtle',
   'bolt': 'bolt'
 }
+
+// Supabase 클라이언트 초기화
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export async function POST(request: NextRequest) {
   try {
@@ -136,12 +141,25 @@ export async function POST(request: NextRequest) {
       })).sort((a, b) => a.rank - b.rank)
     }
 
-    // JSON 파일 저장
-    const publicDir = join(process.cwd(), 'public', 'data')
+    // Supabase Storage에 JSON 파일 저장
     const fileName = `rank-${gender}.json`
-    const filePath = join(publicDir, fileName)
+    const fileContent = JSON.stringify(jsonData, null, 2)
+    const buffer = Buffer.from(fileContent, 'utf-8')
 
-    await writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf-8')
+    const { error } = await supabase.storage
+      .from('rank-data')
+      .upload(fileName, buffer, {
+        contentType: 'application/json',
+        upsert: true // 기존 파일 덮어쓰기
+      })
+
+    if (error) {
+      console.error('Supabase upload error:', error)
+      return NextResponse.json(
+        { error: 'Supabase 저장 중 오류가 발생했습니다.', details: error.message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
