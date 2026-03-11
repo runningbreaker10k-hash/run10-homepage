@@ -22,7 +22,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-red-600" />
-                <span className="text-gray-300 text-sm">runningbreaker10k@gmail.com</span>
+                <span className="text-gray-300 text-sm">runningbreaker@naver.com</span>
               </div>
               <div className="text-xs text-gray-400 pt-2">
                 <p>사업자등록번호: 544-86-02889</p>

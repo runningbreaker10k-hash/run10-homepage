@@ -810,6 +810,60 @@ export default function AdminPage() {
     }
   }
 
+  // 환불 일괄 완료 처리 (선택된 processing 항목들)
+  const completeRefundsInBatch = async (refundIds: string[]) => {
+    if (!confirm(`선택된 ${refundIds.length}건의 환불 신청을 완료하시겠습니까?\n대회신청도 함께 삭제됩니다.`)) return
+
+    setRefundsLoading(true)
+    try {
+      const successIds: string[] = []
+      const failedIds: string[] = []
+
+      for (const refundId of refundIds) {
+        try {
+          const refund = refundRequests.find(r => r.id === refundId)
+          if (!refund) continue
+
+          // 1단계: registrations 삭제
+          const { error: deleteError } = await supabase
+            .from('registrations')
+            .delete()
+            .eq('id', refund.registration_id)
+
+          if (deleteError) throw deleteError
+
+          // 2단계: refund_requests status를 'completed'로 변경
+          const { error: updateError } = await supabase
+            .from('refund_requests')
+            .update({ status: 'completed' })
+            .eq('id', refundId)
+
+          if (updateError) throw updateError
+
+          successIds.push(refundId)
+        } catch (error) {
+          console.error(`환불 ID ${refundId} 처리 오류:`, error)
+          failedIds.push(refundId)
+        }
+      }
+
+      // 결과 알림
+      if (failedIds.length === 0) {
+        alert(`✅ ${successIds.length}건의 환불 처리가 완료되었습니다.`)
+      } else {
+        alert(`⚠️ ${successIds.length}건 완료, ${failedIds.length}건 실패했습니다.`)
+      }
+
+      setSelectedRefunds([])
+      fetchRefundRequests()
+    } catch (error) {
+      console.error('환불 일괄 처리 오류:', error)
+      alert('환불 처리 중 오류가 발생했습니다.')
+    } finally {
+      setRefundsLoading(false)
+    }
+  }
+
   // 환불 신청 취소
   const cancelRefundRequest = async (refundId: string) => {
     if (!confirm('해당 환불 신청을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
@@ -4493,61 +4547,83 @@ export default function AdminPage() {
                       className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
                     />
                     {refundRequests.length > 0 && (
-                      <button
-                        onClick={async () => {
-                          try {
-                            // 체크된 항목이 없으면 알림
-                            if (selectedRefunds.length === 0) {
-                              alert('다운로드할 항목을 선택해주세요.')
-                              return
+                      <>
+                        {/* CSV 다운로드 버튼 (pending 포함시 상태 변경) */}
+                        <button
+                          onClick={async () => {
+                            try {
+                              if (selectedRefunds.length === 0) {
+                                alert('다운로드할 항목을 선택해주세요.')
+                                return
+                              }
+
+                              // pending 항목 확인
+                              const pendingRefunds = selectedRefunds.filter(id =>
+                                refundRequests.find(r => r.id === id)?.status === 'pending'
+                              )
+
+                              // 1단계: pending 항목이 있으면 상태 변경
+                              if (pendingRefunds.length > 0) {
+                                const { error: updateError } = await supabase
+                                  .from('refund_requests')
+                                  .update({ status: 'processing' })
+                                  .in('id', pendingRefunds)
+
+                                if (updateError) throw updateError
+                              }
+
+                              // 2단계: CSV 생성 및 다운로드
+                              const statusText = (s: string) => {
+                                if (s === 'completed') return '완료'
+                                if (s === 'processing') return '처리중'
+                                return '대기'
+                              }
+                              const selectedRefundData = refundRequests.filter(r => selectedRefunds.includes(r.id))
+                              const bom = '\uFEFF'
+                              const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
+                              const rows = selectedRefundData.map(r => {
+                                // pending이 processing으로 변경되었으면 반영
+                                const status = pendingRefunds.includes(r.id) ? 'processing' : r.status
+                                return `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(status)}"`
+                              })
+                              const csv = bom + header + '\n' + rows.join('\n')
+                              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
+                              a.click()
+                              URL.revokeObjectURL(url)
+
+                              setSelectedRefunds([])
+                              fetchRefundRequests()
+                            } catch (error) {
+                              console.error('CSV 다운로드 중 오류:', error)
+                              alert('CSV 다운로드 중 오류가 발생했습니다.')
                             }
+                          }}
+                          disabled={selectedRefunds.length === 0}
+                          className={`px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1 ${selectedRefunds.length === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                        >
+                          <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          CSV
+                        </button>
 
-                            // 1단계: 체크된 항목을 processing으로 변경
-                            const { error: updateError } = await supabase
-                              .from('refund_requests')
-                              .update({ status: 'processing' })
-                              .in('id', selectedRefunds)
-
-                            if (updateError) {
-                              console.error('상태 변경 오류:', updateError)
-                              alert('상태 변경 중 오류가 발생했습니다.')
-                              return
-                            }
-
-                            // 2단계: 체크된 항목만 CSV 생성 및 다운로드
-                            const statusText = (s: string) => {
-                              if (s === 'completed') return '완료'
-                              if (s === 'processing') return '처리중'
-                              return '대기'
-                            }
-                            const selectedRefundData = refundRequests.filter(r => selectedRefunds.includes(r.id))
-                            const bom = '\uFEFF'
-                            const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
-                            const rows = selectedRefundData.map(r =>
-                              `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
-                            )
-                            const csv = bom + header + '\n' + rows.join('\n')
-                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                            const url = URL.createObjectURL(blob)
-                            const a = document.createElement('a')
-                            a.href = url
-                            a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
-                            a.click()
-                            URL.revokeObjectURL(url)
-
-                            // 3단계: 선택 해제 및 데이터 새로고침
-                            setSelectedRefunds([])
-                            fetchRefundRequests()
-                          } catch (error) {
-                            console.error('CSV 다운로드 중 오류:', error)
-                            alert('CSV 다운로드 중 오류가 발생했습니다.')
-                          }
-                        }}
-                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
-                      >
-                        <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        CSV
-                      </button>
+                        {/* 환불완료(삭제) 일괄 버튼 */}
+                        {selectedRefunds.some(id => refundRequests.find(r => r.id === id)?.status === 'processing') && (
+                          <button
+                            onClick={() => {
+                              const processingRefunds = selectedRefunds.filter(id =>
+                                refundRequests.find(r => r.id === id)?.status === 'processing'
+                              )
+                              completeRefundsInBatch(processingRefunds)
+                            }}
+                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-red-700 transition-colors"
+                          >
+                            환불완료(삭제)
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -4576,14 +4652,14 @@ export default function AdminPage() {
                               checked={allRefundPageSelected}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  // completed 제외하고 선택
-                                  const selectableIds = paginatedRefunds.filter(r => r.status !== 'completed').map(r => r.id)
-                                  setSelectedRefunds(prev => [...new Set([...prev, ...selectableIds])])
+                                  const allIds = paginatedRefunds.map(r => r.id)
+                                  setSelectedRefunds(prev => [...new Set([...prev, ...allIds])])
                                 } else {
                                   setSelectedRefunds(prev => prev.filter(id => !paginatedRefunds.some(r => r.id === id)))
                                 }
                               }}
-                              className="w-4 h-4 text-red-600 rounded border-gray-300"
+                              disabled={refundStatusFilter === 'all'}
+                              className={`w-4 h-4 text-red-600 rounded border-gray-300 ${refundStatusFilter === 'all' ? 'opacity-40 cursor-not-allowed' : ''}`}
                             />
                           </th>
                           <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
@@ -4605,14 +4681,14 @@ export default function AdminPage() {
                                 type="checkbox"
                                 checked={selectedRefunds.includes(refund.id)}
                                 onChange={(e) => {
-                                  if (e.target.checked && refund.status === 'pending') {
+                                  if (e.target.checked) {
                                     setSelectedRefunds(prev => [...prev, refund.id])
                                   } else {
                                     setSelectedRefunds(prev => prev.filter(id => id !== refund.id))
                                   }
                                 }}
-                                disabled={refund.status !== 'pending'}
-                                className={`w-4 h-4 text-red-600 rounded border-gray-300 ${refund.status !== 'pending' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                disabled={refundStatusFilter === 'all'}
+                                className={`w-4 h-4 text-red-600 rounded border-gray-300 ${refundStatusFilter === 'all' ? 'opacity-40 cursor-not-allowed' : ''}`}
                               />
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{refund.name}</td>

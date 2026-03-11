@@ -549,7 +549,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 <h4 className="text-xs sm:text-sm font-medium text-blue-800 mb-1">입금 확인 완료</h4>
                 <p className="text-xs sm:text-sm text-blue-700">
                   입금이 확인되어 참가가 확정되었습니다.<br/>
-                  취소가 필요한 경우 대회 요청게시판을 통해 문의해주세요.
+                  취소가 필요한 경우 마이페이지-신청내역을 통해 신청해주세요.
                 </p>
               </div>
             </div>

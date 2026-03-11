@@ -409,7 +409,7 @@ export default function WebMainPage() {
             <p className="text-lg sm:text-xl md:text-2xl text-white mb-2 sm:mb-3"> 
               RUN10 랭커에 도전하세요.
             </p>
-            <p className="text-base sm:text-lg text-gray-500 mb-6 sm:mb-8 lg:mb-12">
+            <p className="text-base sm:text-lg text-white mb-6 sm:mb-8 lg:mb-12">
               모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.
             </p>
           </div>

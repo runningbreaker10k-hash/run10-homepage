@@ -225,7 +225,7 @@ export default function AppMainPage() {
             <p className="text-xl text-white font-medium ">
               RUN10 랭커에 도전하세요.
             </p>
-            <p className="text-center text-sm text-gray-500 mt-2 font-medium">
+            <p className="text-center text-sm text-white mt-2 font-medium">
               모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.
             </p>
           </div>
