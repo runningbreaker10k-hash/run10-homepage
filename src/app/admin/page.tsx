@@ -1038,6 +1038,7 @@ export default function AdminPage() {
               date
             ),
             users (
+              user_id,
               grade
             )
           `)
@@ -1207,6 +1208,7 @@ export default function AdminPage() {
               date
             ),
             users (
+              user_id,
               grade
             )
           `)
@@ -2591,6 +2593,7 @@ export default function AdminPage() {
               date
             ),
             users (
+              user_id,
               grade
             )
           `)
@@ -2675,8 +2678,7 @@ export default function AdminPage() {
         }
         const paymentMap: { [key: string]: string } = {
           'pending': '대기',
-          'confirmed': '확인',
-          'cancelled': '취소'
+          'confirmed': '확인'
         }
         const gradeMap: { [key: string]: string } = {
           'cheetah': '치타족',
@@ -3214,7 +3216,6 @@ export default function AdminPage() {
                               { value: 'all', label: '전체' },
                               { value: 'pending', label: '입금대기' },
                               { value: 'confirmed', label: '입금확인' },
-                              { value: 'cancelled', label: '취소' },
                               { value: 'expired', label: '만료예정 (7일+)' }
                             ].map((status) => (
                               <button
@@ -3511,8 +3512,7 @@ export default function AdminPage() {
                                     ? 'bg-yellow-100 text-yellow-800'
                                     : 'bg-red-100 text-red-800'
                                 }`}>
-                                  {registration.payment_status === 'confirmed' ? '입금확인' :
-                                   registration.payment_status === 'pending' ? '입금대기' : '취소'}
+                                  {registration.payment_status === 'confirmed' ? '입금확인' : '입금대기'}
                                 </span>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -3524,7 +3524,6 @@ export default function AdminPage() {
                                   >
                                     <option value="pending">입금대기</option>
                                     <option value="confirmed">입금확인</option>
-                                    <option value="cancelled">취소</option>
                                   </select>
                                   <button
                                     onClick={() => deleteRegistration(registration.id, registration.name)}
@@ -5820,21 +5819,12 @@ export default function AdminPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">이름</label>
-                    <p className="text-base text-gray-900">{selectedParticipant.name}</p>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">아이디</label>
+                    <p className="text-base text-gray-900">{selectedParticipant.users?.user_id || '-'}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
-                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
-                      <input
-                        type="email"
-                        value={editedParticipant.email}
-                        onChange={(e) => setEditedParticipant({...editedParticipant, email: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                      />
-                    ) : (
-                      <p className="text-base text-gray-900 break-all">{selectedParticipant.email}</p>
-                    )}
+                    <label className="block text-sm font-medium text-gray-600 mb-1">이름</label>
+                    <p className="text-base text-gray-900">{selectedParticipant.name}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">연락처</label>
@@ -5847,6 +5837,19 @@ export default function AdminPage() {
                       />
                     ) : (
                       <p className="text-base text-gray-900">{selectedParticipant.phone}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">이메일</label>
+                    {isEditingParticipant && editedParticipant && !selectedParticipant.is_member_registration ? (
+                      <input
+                        type="email"
+                        value={editedParticipant.email}
+                        onChange={(e) => setEditedParticipant({...editedParticipant, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      />
+                    ) : (
+                      <p className="text-base text-gray-900 break-all">{selectedParticipant.email}</p>
                     )}
                   </div>
                   <div>
@@ -5888,6 +5891,21 @@ export default function AdminPage() {
                       <p className="text-base text-gray-900">
                         {selectedParticipant.gender === 'male' ? '남성' : '여성'}
                       </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">등급</label>
+                    {selectedParticipant.users?.grade ? (
+                      <div className="flex items-center space-x-2">
+                        <img
+                          src={getGradeInfo(selectedParticipant.users.grade).icon}
+                          alt={getGradeInfo(selectedParticipant.users.grade).display}
+                          className="h-5 w-5"
+                        />
+                        <p className="text-base text-gray-900">{getGradeInfo(selectedParticipant.users.grade).display}</p>
+                      </div>
+                    ) : (
+                      <p className="text-base text-gray-900">-</p>
                     )}
                   </div>
                 </div>

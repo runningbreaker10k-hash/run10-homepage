@@ -317,20 +317,20 @@ export default function MemberRegistrationForm({
 
           {/* 신청자 정보 */}
           <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center space-x-2 mb-3">
-              <img
-                src={gradeInfo.icon}
-                alt={gradeInfo.display}
-                className="w-5 h-5 sm:w-6 sm:h-6"
-              />
+            <div className="flex items-center justify-between mb-3">
               <h4 className="text-base sm:text-lg font-medium text-blue-900">신청자 정보</h4>
             </div>
             <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 text-sm">
               <div className="break-words">
                 <span className="text-blue-700 font-medium">성명:</span> {userDetails.name}
               </div>
-              <div>
-                <span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}
+              <div className="flex items-center space-x-2">
+                <span><span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}</span>
+                <img
+                  src={gradeInfo.icon}
+                  alt={gradeInfo.display}
+                  className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+                />
               </div>
               <div className="break-all">
                 <span className="text-blue-700 font-medium">연락처:</span> {userDetails.phone}
@@ -412,20 +412,20 @@ export default function MemberRegistrationForm({
     <div className="max-w-4xl mx-auto">
       {/* 회원 정보 확인 */}
       <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-center space-x-2 mb-3">
-          <img
-            src={gradeInfo.icon}
-            alt={gradeInfo.display}
-            className="w-5 h-5 sm:w-6 sm:h-6"
-          />
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-base sm:text-lg font-medium text-blue-900">신청자 정보</h3>
         </div>
         <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4 text-sm">
           <div className="break-words">
             <span className="text-blue-700 font-medium">성명:</span> {userDetails.name}
           </div>
-          <div>
-            <span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}
+          <div className="flex items-center space-x-2">
+            <span><span className="text-blue-700 font-medium">등급:</span> {gradeInfo.display}</span>
+            <img
+              src={gradeInfo.icon}
+              alt={gradeInfo.display}
+              className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0"
+            />
           </div>
           <div className="break-all">
             <span className="text-blue-700 font-medium">연락처:</span> {userDetails.phone}

@@ -144,7 +144,8 @@ export default function CompetitionsPage() {
     }
 
     if (statusFilter === 'upcoming') {
-      return actualStatus === 'upcoming'
+      return actualStatus === 'upcoming' || actualStatus === 'ongoing' ||
+             actualStatus === 'deadline_approaching' || actualStatus === 'registration_closed'
     }
 
     return true

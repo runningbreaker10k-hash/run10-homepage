@@ -7,18 +7,17 @@ import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { Registration, Competition, RegistrationWithCompetition } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-  Search, 
-  User, 
-  Calendar, 
-  Eye, 
-  EyeOff, 
-  CheckCircle, 
-  Clock, 
+import {
+  Search,
+  User,
+  Calendar,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  Clock,
   XCircle,
   Edit,
   Phone,
-  Mail,
   MapPin,
   Shirt,
   CreditCard,
@@ -34,9 +33,9 @@ const lookupSchema = z.object({
 
 // 참가 관련 정보만 수정 가능 (회원정보는 마이페이지에서 수정)
 const updateSchema = z.object({
+  participation_group_id: z.string().min(1, '참가 종목을 선택해주세요'),
   shirt_size: z.enum(['S', 'M', 'L', 'XL', 'XXL']),
-  depositor_name: z.string().min(2, '입금자명을 입력해주세요'),
-  notes: z.string().optional()
+  depositor_name: z.string().min(2, '입금자명을 입력해주세요')
 })
 
 type LookupFormData = z.infer<typeof lookupSchema>
@@ -48,7 +47,7 @@ interface RegistrationLookupProps {
 }
 
 export default function RegistrationLookup({ competition, onCancelRequest }: RegistrationLookupProps) {
-  const { user } = useAuth()
+  const { user, getGradeInfo } = useAuth()
   const [isLooking, setIsLooking] = useState(false)
   const [registration, setRegistration] = useState<RegistrationWithCompetition | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -124,6 +123,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             name,
             distance,
             entry_fee
+          ),
+          users (
+            grade
           )
         `)
         .eq('competition_id', competition.id)
@@ -141,9 +143,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       // 수정 폼에 기존 데이터 설정 (참가 관련 정보만)
       resetUpdate({
+        participation_group_id: registrationData.participation_group_id,
         shirt_size: registrationData.shirt_size,
-        depositor_name: registrationData.depositor_name,
-        notes: registrationData.notes || ''
+        depositor_name: registrationData.depositor_name
       })
     } catch (error) {
       console.error('Error searching member registration:', error)
@@ -169,6 +171,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
             name,
             distance,
             entry_fee
+          ),
+          users (
+            grade
           )
         `)
         .eq('competition_id', competition.id)
@@ -191,9 +196,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
       // 수정 폼에 기존 데이터 설정 (참가 관련 정보만)
       resetUpdate({
+        participation_group_id: registrationData.participation_group_id,
         shirt_size: registrationData.shirt_size,
-        depositor_name: registrationData.depositor_name,
-        notes: registrationData.notes || ''
+        depositor_name: registrationData.depositor_name
       })
 
     } catch (error) {
@@ -207,15 +212,63 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
   const onUpdateSubmit = async (data: UpdateFormData) => {
     if (isUpdating || !registration) return
 
+    // 입금대기 상태일 때만 참가종목 수정 가능
+    if (registration.payment_status !== 'pending') {
+      alert('입금 완료 후에는 참가 종목을 수정할 수 없습니다.')
+      return
+    }
+
+    // 참가종목 변경 시 마감 상태 확인
+    if (data.participation_group_id !== registration.participation_group_id) {
+      const newGroup = participationGroups.find(g => g.id === data.participation_group_id)
+      if (!newGroup || newGroup.current_participants >= newGroup.max_participants) {
+        alert('모집이 마감된 종목은 선택할 수 없습니다.')
+        return
+      }
+    }
+
     setIsUpdating(true)
 
     try {
-      const updateData = {
+      const updateData: any = {
         shirt_size: data.shirt_size,
-        depositor_name: data.depositor_name,
-        notes: data.notes
+        depositor_name: data.depositor_name
       }
 
+      // 참가종목이 변경된 경우
+      if (data.participation_group_id !== registration.participation_group_id) {
+        updateData.participation_group_id = data.participation_group_id
+
+        // 1. 이전 참가 그룹 인원 -1
+        const prevGroup = participationGroups.find(g => g.id === registration.participation_group_id)
+        if (prevGroup) {
+          const { error: prevGroupError } = await supabase
+            .from('participation_groups')
+            .update({ current_participants: Math.max(0, prevGroup.current_participants - 1) })
+            .eq('id', prevGroup.id)
+
+          if (prevGroupError) {
+            console.error('Error updating previous group:', prevGroupError)
+            throw prevGroupError
+          }
+        }
+
+        // 2. 새 참가 그룹 인원 +1
+        const newGroup = participationGroups.find(g => g.id === data.participation_group_id)
+        if (newGroup) {
+          const { error: newGroupError } = await supabase
+            .from('participation_groups')
+            .update({ current_participants: newGroup.current_participants + 1 })
+            .eq('id', newGroup.id)
+
+          if (newGroupError) {
+            console.error('Error updating new group:', newGroupError)
+            throw newGroupError
+          }
+        }
+      }
+
+      // 3. 신청 정보 업데이트
       const { error } = await supabase
         .from('registrations')
         .update(updateData)
@@ -227,14 +280,26 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         return
       }
 
-      // 업데이트된 데이터로 상태 갱신
-      setRegistration(prev => prev ? {
-        ...prev,
-        ...updateData
-      } : null)
+      // 업데이트된 최신 데이터 조회
+      const { data: updatedData, error: fetchError } = await supabase
+        .from('registrations')
+        .select(`*,
+          participation_groups(*),
+          users(*)
+        `)
+        .eq('id', registration.id)
+        .single()
+
+      if (!fetchError && updatedData) {
+        setRegistration(updatedData as RegistrationWithCompetition)
+      }
+
       setIsEditing(false)
 
       alert('신청 정보가 성공적으로 수정되었습니다!')
+
+      // 페이지 새로고침 (모든 탭과 데이터 동기화)
+      window.location.reload()
 
     } catch (error) {
       console.error('Error:', error)
@@ -484,12 +549,7 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900">신청 현황</h3>
-          <button
-            onClick={handleReset}
-            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 self-start sm:self-auto touch-manipulation"
-          >
-            다시 조회하기
-          </button>
+          
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -601,34 +661,10 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500">성별</p>
-                    <p className="font-medium text-sm sm:text-base break-words">{registration.gender === 'male' ? '남성' : '여성'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
                   <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs sm:text-sm text-gray-500">연락처</p>
                     <p className="font-medium text-sm sm:text-base break-all">{registration.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500">이메일</p>
-                    <p className="font-medium text-sm sm:text-base break-all">{registration.email}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex items-start">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500">주소</p>
-                    <p className="font-medium text-sm sm:text-base break-words">{registration.address}</p>
                   </div>
                 </div>
                 <div className="flex items-center">
@@ -646,12 +682,40 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 <div className="flex items-center">
                   <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500">참가비</p>
-                    <p className="font-medium text-sm sm:text-base break-words">
-                      ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}
-                    </p>
+                    <p className="text-xs sm:text-sm text-gray-500">입금자명</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.depositor_name}</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-start">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">주소</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.address}</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-gray-500">성별</p>
+                    <p className="font-medium text-sm sm:text-base break-words">{registration.gender === 'male' ? '남성' : '여성'}</p>
+                  </div>
+                </div>
+                {registration.users?.grade && (
+                  <div className="flex items-center">
+                    <img
+                      src={getGradeInfo(registration.users.grade)?.icon || ''}
+                      alt={getGradeInfo(registration.users.grade)?.display || ''}
+                      className="h-4 w-4 sm:h-5 sm:w-5 mr-3 flex-shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm text-gray-500">등급</p>
+                      <p className="font-medium text-sm sm:text-base break-words">{getGradeInfo(registration.users.grade)?.display}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center">
                   <Shirt className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -662,16 +726,12 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 <div className="flex items-center">
                   <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 mr-3 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-500">입금자명</p>
-                    <p className="font-medium text-sm sm:text-base break-words">{registration.depositor_name}</p>
+                    <p className="text-xs sm:text-sm text-gray-500">참가비</p>
+                    <p className="font-medium text-sm sm:text-base break-words">
+                      ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
-                {registration.notes && (
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">특이사항</p>
-                    <p className="font-medium text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded break-words">{registration.notes}</p>
-                  </div>
-                )}
               </div>
             </div>
           ) : (
@@ -687,21 +747,47 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                {/* 참가 종목 (수정 불가) */}
+                {/* 참가 종목 */}
                 <div className="md:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    참가 종목 (수정 불가)
+                    참가 종목 {registration.payment_status === 'pending' ? '*' : '(수정 불가)'}
                   </label>
-                  <div className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 text-sm sm:text-base">
-                    {registration.participation_groups?.name || registration.distance || '미설정'}
-                    {registration.participation_groups?.distance && (
-                      <span className="text-gray-500 ml-2">({registration.participation_groups.distance})</span>
-                    )}
-                    {(registration.participation_groups?.entry_fee || registration.entry_fee) && (
-                      <span className="text-gray-600 ml-2">- ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}</span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">참가 종목 변경을 원하시면 문의(게시판, 유선) 해 주세요</p>
+                  {registration.payment_status === 'pending' ? (
+                    <>
+                      <select
+                        {...registerUpdate('participation_group_id')}
+                        className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                      >
+                        <option value="">종목을 선택해주세요</option>
+                        {participationGroups.map((group) => (
+                          <option
+                            key={group.id}
+                            value={group.id}
+                            disabled={group.current_participants >= group.max_participants}
+                          >
+                            {group.name || group.distance} - ₩{group.entry_fee?.toLocaleString()} {group.current_participants >= group.max_participants ? '(모집완료)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {updateErrors.participation_group_id && (
+                        <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.participation_group_id.message}</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-500">입금 대기 중일 때만 참가 종목을 수정할 수 있습니다</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 text-sm sm:text-base">
+                        {registration.participation_groups?.name || registration.distance || '미설정'}
+                        {registration.participation_groups?.distance && (
+                          <span className="text-gray-500 ml-2">({registration.participation_groups.distance})</span>
+                        )}
+                        {(registration.participation_groups?.entry_fee || registration.entry_fee) && (
+                          <span className="text-gray-600 ml-2">- ₩{(registration.participation_groups?.entry_fee || registration.entry_fee || 0).toLocaleString()}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">입금 완료 후에는 참가 종목을 수정할 수 없습니다</p>
+                    </>
+                  )}
                 </div>
 
                 {/* 티셔츠 사이즈 */}
@@ -737,19 +823,6 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                   {updateErrors.depositor_name && (
                     <p className="mt-1 text-xs sm:text-sm text-red-600 break-words">{updateErrors.depositor_name.message}</p>
                   )}
-                </div>
-
-                {/* 기타사항 */}
-                <div className="md:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                    기타사항 (선택)
-                  </label>
-                  <textarea
-                    {...registerUpdate('notes')}
-                    rows={3}
-                    className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                    placeholder="특이사항이나 요청사항이 있으시면 입력해주세요"
-                  />
                 </div>
               </div>
 

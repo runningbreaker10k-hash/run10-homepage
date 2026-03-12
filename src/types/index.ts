@@ -33,6 +33,7 @@ export interface RegistrationWithCompetition extends Registration {
     date: string
   }
   users?: {
+    user_id: string
     grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
   }
   participation_groups?: {
