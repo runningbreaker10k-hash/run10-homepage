@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { MessageCircle, Search, Plus, MessageSquare, Pin } from 'lucide-react'
-import { format } from 'date-fns'
-import { toKST } from '@/lib/dateUtils'
+import { formatPostDate } from '@/lib/dateUtils'
 import AuthModal from '@/components/AuthModal'
 
 interface Post {
@@ -150,18 +149,6 @@ function CommunityContent() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const kstDate = toKST(dateString)
-    const now = new Date()
-    const diff = now.getTime() - kstDate.getTime()
-    const diffHours = Math.floor(diff / (1000 * 60 * 60))
-
-    if (diffHours < 24) {
-      return format(kstDate, 'HH:mm')
-    } else {
-      return format(kstDate, 'MM.dd')
-    }
-  }
 
   const totalPages = Math.ceil(totalPosts / postsPerPage)
 
@@ -369,7 +356,7 @@ function CommunityContent() {
                                     <span>{maskName(post.users?.name || '')}</span>
                                   </div>
                                   <span>•</span>
-                                  <span>{formatDate(post.created_at)}</span>
+                                  <span>{formatPostDate(post.created_at)}</span>
                                   <span>•</span>
                                   <span>조회 {post.views}</span>
                                 </div>
@@ -392,7 +379,7 @@ function CommunityContent() {
 
                             {/* 작성일 - 데스크톱만 */}
                             <div className="col-span-2 text-center text-sm text-gray-500 hidden sm:block">
-                              {formatDate(post.created_at)}
+                              {formatPostDate(post.created_at)}
                             </div>
 
                             {/* 조회수 - 데스크톱만 */}

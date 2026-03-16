@@ -78,3 +78,24 @@ export function fromDatetimeLocal(datetimeLocal: string): string {
   const date = new Date(datetimeLocal)
   return date.toISOString()
 }
+
+/**
+ * 게시글 목록 용 날짜 포맷팅
+ * 당일: HH:mm (예: 14:30)
+ * 과거: MM.dd (예: 03.13)
+ */
+export function formatPostDate(utcDate: string | Date): string {
+  const date = toKST(utcDate)
+  const now = toKST(new Date().toISOString())
+
+  const isSameDay =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear()
+
+  if (isSameDay) {
+    return dateFnsFormat(date, 'HH:mm', { locale: ko })
+  } else {
+    return dateFnsFormat(date, 'MM.dd', { locale: ko })
+  }
+}

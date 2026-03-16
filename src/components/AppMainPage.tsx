@@ -152,7 +152,7 @@ export default function AppMainPage() {
                   </div>
                   <div className="space-y-1 text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
                     <p>2026 상반기</p>
-                    <p>세종, 청주, 성남, 남양주, 양산, 대구, 대전, 광주에서 열립니다</p>
+                    <p>세종, 청주, 성남, 남양주, 양산, 대구, 대전, 광주에서<br/>열립니다</p>
                   </div>
                 </div>
               </div>

@@ -230,15 +230,19 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
     setIsUpdating(true)
 
     try {
+      // 선택한 참가 그룹 정보 조회
+      const selectedGroup = participationGroups.find(g => g.id === data.participation_group_id)
+
       const updateData: any = {
         shirt_size: data.shirt_size,
-        depositor_name: data.depositor_name
+        depositor_name: data.depositor_name,
+        participation_group_id: data.participation_group_id,
+        entry_fee: selectedGroup?.entry_fee,
+        distance: selectedGroup?.distance
       }
 
-      // 참가종목이 변경된 경우
+      // 참가종목이 변경된 경우 그룹 인원 수 조정
       if (data.participation_group_id !== registration.participation_group_id) {
-        updateData.participation_group_id = data.participation_group_id
-
         // 1. 이전 참가 그룹 인원 -1
         const prevGroup = participationGroups.find(g => g.id === registration.participation_group_id)
         if (prevGroup) {
@@ -254,12 +258,11 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         }
 
         // 2. 새 참가 그룹 인원 +1
-        const newGroup = participationGroups.find(g => g.id === data.participation_group_id)
-        if (newGroup) {
+        if (selectedGroup) {
           const { error: newGroupError } = await supabase
             .from('participation_groups')
-            .update({ current_participants: newGroup.current_participants + 1 })
-            .eq('id', newGroup.id)
+            .update({ current_participants: selectedGroup.current_participants + 1 })
+            .eq('id', selectedGroup.id)
 
           if (newGroupError) {
             console.error('Error updating new group:', newGroupError)
