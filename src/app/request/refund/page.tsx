@@ -86,9 +86,8 @@ export default function RefundRequestPage() {
         compData?.map(c => {
           const now = new Date()
           const registrationEnd = new Date(c.registration_end)
-          // 1차: 신청 기간 종료 여부 확인
-          // 2차: 정원 마감 여부 확인
-          const is_closed = registrationEnd < now || c.current_participants >= c.max_participants
+          // 신청 기간 종료 '그리고' 정원 마감 둘 다 확인
+          const is_closed = registrationEnd < now && c.current_participants >= c.max_participants
           return [c.id, { title: c.title, is_closed }]
         }) || []
       )
@@ -353,12 +352,11 @@ export default function RefundRequestPage() {
 
           {user && !isDataLoading && registrations.length > 0 && availableRegistrations.length === 0 && (
             <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">신청 가능한 대회의 환불 요청이 완료되었습니다</h2>
-              <p className="text-gray-600 mb-6">접수 마감 대회는 환불 신청 불가능합니다.</p>
+              <Undo2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-gray-900 mb-2">신청 기간 마감으로 환불 신청이 불가합니다</h2>
               <button
                 onClick={() => router.push('/mypage')}
-                className="py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                className="py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium mt-6"
               >
                 마이페이지에서 확인하기
               </button>
