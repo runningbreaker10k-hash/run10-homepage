@@ -512,6 +512,8 @@ export default function CompetitionsPage() {
                               ? '탄천 러닝성지'
                             : competition.title.includes('남양주')
                               ? '왕숙천 러닝성지'
+                            : competition.title.includes('양산')
+                              ? '양산천 러닝성지'
                               : competition.location
                         }
                       </span>
@@ -533,6 +535,8 @@ export default function CompetitionsPage() {
                             : competition.title.includes('성남')
                               ? '※ 선착순 3,000명 모집'
                             : competition.title.includes('남양주')
+                              ? '※ 선착순 3,000명 모집'
+                            : competition.title.includes('양산')
                               ? '※ 선착순 3,000명 모집'
                               : '※ 선착순 2,500명 모집'
                         )}
