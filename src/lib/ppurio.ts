@@ -115,7 +115,7 @@ export async function sendSignupCompleteAlimtalk(
 ): Promise<PpurioSMSResponse> {
   const account = process.env.PPURIO_ACCOUNT;
   const senderProfile = process.env.PPURIO_SENDER_PROFILE;
-  const templateCode = 'ppur_2026011515211520835256389';
+  const templateCode = 'ppur_2026032515141025806895952';
 
   if (!account || !senderProfile) {
     throw new Error('뿌리오 환경 변수가 설정되지 않았습니다');
@@ -235,7 +235,7 @@ export async function sendPaymentConfirmAlimtalk(
 ): Promise<PpurioSMSResponse> {
   const account = process.env.PPURIO_ACCOUNT;
   const senderProfile = process.env.PPURIO_SENDER_PROFILE;
-  const templateCode = 'ppur_2026011417282512849609021';
+  const templateCode = 'ppur_2026030617462620056632163';
 
   if (!account || !senderProfile) {
     throw new Error('뿌리오 환경 변수가 설정되지 않았습니다');
