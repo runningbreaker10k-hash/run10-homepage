@@ -583,7 +583,6 @@ export default function MemberRegistrationForm({
         <ul className="text-xs text-gray-600 space-y-1 leading-relaxed">
           <li>• 회원 신청은 마이페이지에서 조회 및 관리할 수 있습니다</li>
           <li>• 신청 조회 시 [입금확인]이 되면 별도 안내가 없더라도 참가 확정이 된 상태입니다. </li>
-          <li>• 신청 후 취소는 대회 요청게시판을 통해 해주세요</li>
           <li>• 개인정보는 대회 운영 목적으로만 사용됩니다</li>
         </ul>
       </div>
