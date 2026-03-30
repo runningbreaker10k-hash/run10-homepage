@@ -536,8 +536,8 @@ export default function CompetitionsPage() {
                         {isOngoing && (
                           competition.title.includes('청주')
                             ? '※ 선착순 3,500명 모집'
-                            : competition.title.includes('성남')
-                              ? '※ 선착순 3,000명 모집'
+                            : competition.title.includes('대전')
+                              ? '※ 선착순 3,500명 모집'
                             : competition.title.includes('남양주')
                               ? '※ 선착순 3,000명 모집'
                             : competition.title.includes('양산')
