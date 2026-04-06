@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { User, Calendar, Settings, Eye, EyeOff, Trash2 } from 'lucide-react'
@@ -47,9 +47,11 @@ interface Registration {
   id: string
   competition_id: string
   distance?: string
+  shirt_size?: string
   entry_fee?: number
   payment_status: string
   created_at: string
+  is_closed: boolean
   competitions: {
     title: string
     date: string
@@ -78,6 +80,7 @@ interface ReceiptRequest {
 
 interface RefundRequest {
   id: string
+  registration_id: string
   competition_id: string
   name: string
   phone: string
@@ -93,14 +96,25 @@ interface RefundRequest {
   }
 }
 
+interface RegistrationChangeRequest {
+  id: string
+  registration_id: string
+  status: string
+  change_type: string
+}
+
 export default function MyPage() {
   const { user, updateUser, getGradeInfo } = useAuth()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'registrations'>('profile')
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'registrations'>(
+    searchParams.get('tab') === 'registrations' ? 'registrations' : 'profile'
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [receiptRequests, setReceiptRequests] = useState<ReceiptRequest[]>([])
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([])
+  const [registrationChangeRequests, setRegistrationChangeRequests] = useState<RegistrationChangeRequest[]>([])
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -143,6 +157,7 @@ export default function MyPage() {
     loadRegistrations()
     loadReceiptRequests()
     loadRefundRequests()
+    loadRegistrationChangeRequests()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router])
 
@@ -215,6 +230,7 @@ export default function MyPage() {
           id,
           competition_id,
           distance,
+          shirt_size,
           entry_fee,
           payment_status,
           created_at
@@ -238,7 +254,7 @@ export default function MyPage() {
 
       const { data: competitionData, error: competitionError } = await supabase
         .from('competitions')
-        .select('id, title, date, location, bank_name, bank_account, account_holder')
+        .select('id, title, date, location, bank_name, bank_account, account_holder, registration_end, current_participants, max_participants')
         .in('id', competitionIds)
 
       if (competitionError) {
@@ -248,10 +264,16 @@ export default function MyPage() {
 
 
       // Step 3: 데이터 결합
+      const now = new Date()
       const registrationsWithCompetitions = registrationData.map(registration => {
         const competition = competitionData?.find(c => c.id === registration.competition_id)
+        const registrationEnd = competition?.registration_end ? new Date(competition.registration_end) : null
+        const is_closed = registrationEnd !== null
+          && registrationEnd < now
+          && (competition?.current_participants ?? 0) >= (competition?.max_participants ?? Infinity)
         return {
           ...registration,
+          is_closed,
           competitions: competition || {
             title: '알 수 없는 대회',
             date: '',
@@ -320,46 +342,13 @@ export default function MyPage() {
     }
   }
 
-  // 현금영수증 신청 취소
-  const cancelReceiptRequest = async (receiptId: string) => {
-    if (!confirm('현금영수증 신청을 취소하시겠습니까?')) return
-    try {
-      const { error } = await supabase
-        .from('receipt_requests')
-        .delete()
-        .eq('id', receiptId)
-        .eq('status', 'pending')
-
-      if (error) throw error
-      alert('신청이 취소되었습니다.')
-      loadReceiptRequests()
-    } catch (error) {
-      console.error('현금영수증 신청 취소 오류:', error)
-      alert('신청 취소에 실패했습니다.')
-    }
-  }
-
-  // 현금영수증 상태 표시
-  const getReceiptStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { text: '발급완료', color: 'text-green-600 bg-green-100' }
-      case 'pending':
-        return { text: '신청완료', color: 'text-yellow-600 bg-yellow-100' }
-      case 'rejected':
-        return { text: '신청완료', color: 'text-yellow-600 bg-yellow-100' }
-      default:
-        return { text: status, color: 'text-gray-600 bg-gray-100' }
-    }
-  }
-
   // 환불 요청 내역 로드
   const loadRefundRequests = async () => {
     if (!user) return
     try {
       const { data: refundData, error: refundError } = await supabase
         .from('refund_requests')
-        .select('id, competition_id, name, phone, amount, distance, bank_name, account_number, account_holder, status, created_at')
+        .select('id, registration_id, competition_id, name, phone, amount, distance, bank_name, account_number, account_holder, status, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
@@ -394,38 +383,26 @@ export default function MyPage() {
     }
   }
 
-  // 환불 요청 취소
-  const cancelRefundRequest = async (refundId: string) => {
-    if (!confirm('환불 요청을 취소하시겠습니까?')) return
+  // 종목변경 신청 내역 로드
+  const loadRegistrationChangeRequests = async () => {
+    if (!user) return
     try {
-      const { error } = await supabase
-        .from('refund_requests')
-        .delete()
-        .eq('id', refundId)
-        .eq('status', 'pending')
+      const { data, error } = await supabase
+        .from('registration_change_requests')
+        .select('id, registration_id, status, change_type')
+        .eq('user_id', user.id)
 
-      if (error) throw error
-      alert('요청이 취소되었습니다.')
-      loadRefundRequests()
+      if (error) {
+        console.error('종목변경 내역 조회 오류:', error)
+        return
+      }
+      setRegistrationChangeRequests(data || [])
     } catch (error) {
-      console.error('환불 요청 취소 오류:', error)
-      alert('요청 취소에 실패했습니다.')
+      console.error('종목변경 내역 로드 오류:', error)
+      setRegistrationChangeRequests([])
     }
   }
 
-  // 환불 상태 표시
-  const getRefundStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return { text: '완료', color: 'text-green-600 bg-green-100' }
-      case 'processing':
-        return { text: '처리중', color: 'text-orange-600 bg-orange-100' }
-      case 'pending':
-        return { text: '대기', color: 'text-yellow-600 bg-yellow-100' }
-      default:
-        return { text: status, color: 'text-gray-600 bg-gray-100' }
-    }
-  }
 
   // 전화번호 자동 하이픈 추가
   const formatPhoneNumber = (value: string) => {
@@ -665,7 +642,7 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen pt-14 md:pt-16 bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* 히어로 섹션 */}
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-10 md:py-16 overflow-hidden">
         {/* 배경 이미지 공간 */}
@@ -1087,7 +1064,7 @@ export default function MyPage() {
             <h2 className="text-base md:text-lg font-medium text-gray-900">대회 신청 내역</h2>
             <p className="text-xs md:text-sm text-gray-500 mt-1">참가 신청한 대회 목록입니다.</p>
           </div>
-          
+
           {registrations.length === 0 ? (
             <div className="p-6 md:p-8 text-center text-gray-500">
               <Calendar className="w-10 md:w-12 h-10 md:h-12 mx-auto mb-3 md:mb-4 text-gray-300" />
@@ -1097,15 +1074,80 @@ export default function MyPage() {
             <div className="divide-y divide-gray-200">
               {registrations.map((registration) => {
                 const status = getPaymentStatusDisplay(registration.payment_status)
+                const isConfirmed = registration.payment_status === 'confirmed'
+
+                // 이 신청 건에 연결된 요청 내역 조회
+                const receiptForThis = receiptRequests.find(r => r.competition_id === registration.competition_id)
+                const refundForThis = refundRequests.find(r => r.registration_id === registration.id)
+                const hasPendingChange = registrationChangeRequests.some(
+                  r => r.registration_id === registration.id && r.change_type === 'distance' && r.status === 'pending'
+                )
+
+                const isClosed = registration.is_closed
+
+                const handleDistanceChangeClick = () => {
+                  if (hasPendingChange) {
+                    alert('이미 종목변경 신청이 진행 중입니다.\n완료된 후 다시 신청해주세요.')
+                    return
+                  }
+                  router.push(`/request/registration-change?registration_id=${registration.id}&change_type=distance`)
+                }
+
+                const handleShirtChangeClick = () => {
+                  if (isRefundActive) {
+                    alert('환불 신청 중에는 이용할 수 없습니다.')
+                    return
+                  }
+                  router.push(`/request/registration-change?registration_id=${registration.id}&change_type=shirt_size`)
+                }
+
+                const isRefundActive = refundForThis && (refundForThis.status === 'pending' || refundForThis.status === 'processing')
+
+                const handleReceiptClick = () => {
+                  if (isRefundActive) {
+                    alert('환불 신청 중에는 이용할 수 없습니다.')
+                    return
+                  }
+                  if (receiptForThis) {
+                    alert('이미 현금영수증 신청 내역이 있습니다.\n대회당 1번만 신청 가능합니다.')
+                    return
+                  }
+                  router.push(`/request/receipt?registration_id=${registration.id}`)
+                }
+
+                const handleRefundClick = () => {
+                  if (refundForThis) {
+                    alert('이미 환불 신청 내역이 있습니다.\n대회당 1번만 신청 가능합니다.')
+                    return
+                  }
+                  router.push(`/request/refund?registration_id=${registration.id}`)
+                }
+
+                const cancelRefund = async () => {
+                  if (!refundForThis || refundForThis.status !== 'pending') return
+                  if (!confirm('환불 요청을 취소하시겠습니까?')) return
+                  try {
+                    const { error } = await supabase
+                      .from('refund_requests')
+                      .delete()
+                      .eq('id', refundForThis.id)
+                      .eq('status', 'pending')
+                    if (error) throw error
+                    alert('환불 요청이 취소되었습니다.')
+                    loadRefundRequests()
+                  } catch {
+                    alert('취소에 실패했습니다.')
+                  }
+                }
+
                 return (
-                  <div
-                    key={registration.id}
-                    className="group p-4 md:p-6 hover:bg-blue-50 cursor-pointer transition-all duration-200 border-l-4 border-transparent hover:border-blue-500"
-                    onClick={() => router.push(`/competitions/${registration.competition_id}?tab=lookup`)}
-                  >
+                  <div key={registration.id} className="p-4 md:p-6">
                     {/* 제목 + 상태 */}
                     <div className="flex items-start justify-between gap-3 mb-3">
-                      <h3 className="text-base md:text-lg font-semibold text-gray-900 flex-1 break-words">
+                      <h3
+                        className="text-base md:text-lg font-semibold text-gray-900 flex-1 break-words cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => router.push(`/competitions/${registration.competition_id}?tab=lookup`)}
+                      >
                         {registration.competitions.title}
                       </h3>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${status.color}`}>
@@ -1113,226 +1155,124 @@ export default function MyPage() {
                       </span>
                     </div>
 
-                    {/* 신청정보: 날짜, 위치, 거리 */}
+                    {/* 신청정보: 날짜, 위치, 거리, 티셔츠 */}
                     <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-2">
-                      <span className="flex items-center">날짜: {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
+                      <span>날짜: {formatKST(registration.competitions.date, 'yyyy.MM.dd')}</span>
                       <span className="text-gray-300 hidden md:inline">•</span>
-                      <span className="flex items-center">위치: {registration.competitions.location}</span>
+                      <span>위치: {registration.competitions.location}</span>
                       {registration.distance && (
                         <>
                           <span className="text-gray-300 hidden md:inline">•</span>
-                          <span className="flex items-center">거리: {registration.distance}</span>
+                          <span>거리: {registration.distance}</span>
+                        </>
+                      )}
+                      {registration.shirt_size && (
+                        <>
+                          <span className="text-gray-300 hidden md:inline">•</span>
+                          <span>티셔츠: {registration.shirt_size}</span>
                         </>
                       )}
                     </div>
 
                     {/* 신청일 */}
-                    <div className="text-xs text-gray-400 mb-2">
+                    <div className="text-xs text-gray-400 mb-3">
                       신청일: {formatKST(registration.created_at, 'yyyy.MM.dd')}
                     </div>
 
-                    {/* 결제정보 - pending일 때만 강조 표시 */}
+                    {/* 결제정보 - pending일 때만 표시 */}
                     {registration.payment_status === 'pending' && registration.competitions.bank_name && (
-                      <div className="mt-3 p-3 md:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div className="text-xs md:text-sm text-gray-800">
                           <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                            <span className="inline-block">금액: {registration.entry_fee?.toLocaleString()}원</span>
+                            <span>금액: {registration.entry_fee?.toLocaleString()}원</span>
                             <span className="text-yellow-300 hidden md:inline">|</span>
-                            <span className="inline-block">은행: {registration.competitions.bank_name}</span>
+                            <span>은행: {registration.competitions.bank_name}</span>
                             <span className="text-yellow-300 hidden md:inline">|</span>
-                            <span className="inline-block">{registration.competitions.bank_account}</span>
+                            <span>{registration.competitions.bank_account}</span>
                             <span className="text-yellow-300 hidden md:inline">|</span>
-                            <span className="inline-block">예금주: {registration.competitions.account_holder}</span>
+                            <span>예금주: {registration.competitions.account_holder}</span>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    <div className="mt-3 text-xs text-blue-600 cursor-pointer hover:text-blue-700 font-medium">
-                      ▶ 클릭하여 상세 신청 내역 보기
-                    </div>
+                    {/* 입금확인 상태일 때만 액션 버튼 표시 */}
+                    {isConfirmed && (
+                      <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                        {/* 현금영수증 버튼 */}
+                        <button
+                          onClick={handleReceiptClick}
+                          disabled={!!isRefundActive}
+                          className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          현금영수증
+                          {receiptForThis && (
+                            <span className={`ml-1 ${receiptForThis.status === 'completed' ? 'text-green-500' : 'text-orange-500'}`}>
+                              ({receiptForThis.status === 'completed' ? '발급완료' : '신청완료'})
+                            </span>
+                          )}
+                        </button>
+
+                        {/* 환불 버튼 */}
+                        <button
+                          onClick={handleRefundClick}
+                          disabled={isClosed && !refundForThis}
+                          className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          환불
+                          {refundForThis ? (
+                            <span className={`ml-1 ${
+                              refundForThis.status === 'completed' ? 'text-green-500' :
+                              refundForThis.status === 'processing' ? 'text-blue-500' : 'text-orange-500'
+                            }`}>
+                              ({refundForThis.status === 'completed' ? '완료' : refundForThis.status === 'processing' ? '처리중' : '대기중'})
+                            </span>
+                          ) : isClosed ? (
+                            <span className="ml-1 text-red-400">(마감)</span>
+                          ) : null}
+                        </button>
+
+                        {/* 환불 취소 버튼 - 대기중일 때만 */}
+                        {refundForThis?.status === 'pending' && (
+                          <button
+                            onClick={cancelRefund}
+                            className="px-3 py-1.5 text-xs font-medium rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            환불요청취소
+                          </button>
+                        )}
+
+                        {/* 종목변경 버튼 */}
+                        <button
+                          onClick={handleDistanceChangeClick}
+                          disabled={!!isRefundActive || isClosed}
+                          className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          종목변경
+                          {isClosed ? (
+                            <span className="ml-1 text-red-400">(마감)</span>
+                          ) : hasPendingChange ? (
+                            <span className="ml-1 text-orange-500">(대기중)</span>
+                          ) : null}
+                        </button>
+
+                        {/* 티셔츠변경 버튼 */}
+                        <button
+                          onClick={handleShirtChangeClick}
+                          disabled={!!isRefundActive || isClosed}
+                          className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          티셔츠변경
+                          {isClosed && <span className="ml-1 text-red-400">(마감)</span>}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </div>
           )}
         </div>
-
-        {/* 입금완료된 대회가 있을 때만 현금영수증/환불 요청 내역 표시 */}
-        {registrations.some(r => r.payment_status === 'confirmed') && (<>
-        {/* 현금영수증 신청 내역 */}
-        <div className="bg-white rounded-lg shadow mt-5 md:mt-6 overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-gray-200 border-l-4 border-l-emerald-500">
-            <h2 className="text-base md:text-lg font-medium text-gray-900">현금영수증 신청 내역</h2>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">현금영수증 발급 신청 내역입니다.</p>
-          </div>
-
-          {receiptRequests.length === 0 ? (
-            <div className="p-6 md:p-8 text-center text-gray-500">
-              <p className="text-sm md:text-base">현금영수증 신청 내역이 없습니다.</p>
-              <button
-                onClick={() => router.push('/request/receipt')}
-                className="mt-3 md:mt-4 px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                현금영수증 신청하기
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="divide-y divide-gray-200">
-                {receiptRequests.map((receipt) => {
-                  const receiptStatus = getReceiptStatusDisplay(receipt.status)
-                  return (
-                    <div key={receipt.id} className="p-4 md:p-6 hover:bg-emerald-50 transition-colors">
-                      {/* 대회명 + 상태 */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <h3 className="text-sm md:text-base font-semibold text-gray-900 flex-1 break-words">
-                          {receipt.competitions.title}
-                        </h3>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${receiptStatus.color}`}>
-                            {receiptStatus.text}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 신청정보: 타입, 거리, 금액 */}
-                      <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          receipt.receipt_type === 'business' ? 'text-blue-700 bg-blue-100' : 'text-gray-600 bg-gray-100'
-                        }`}>
-                          {receipt.receipt_type === 'business' ? '사업자' : '개인'}
-                        </span>
-                        <span className="text-gray-300 hidden md:inline">•</span>
-                        <span className="flex items-center">거리: {receipt.distance}</span>
-                        <span className="text-gray-300 hidden md:inline">•</span>
-                        <span className="text-gray-800">금액: {receipt.amount.toLocaleString()}원</span>
-                      </div>
-
-                      {/* 신청일 + 취소 버튼 */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-gray-400">
-                          신청일: {formatKST(receipt.created_at, 'yyyy.MM.dd')}
-                        </span>
-                        {receipt.status === 'pending' && (
-                          <button
-                            onClick={() => cancelReceiptRequest(receipt.id)}
-                            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors hover:underline"
-                          >
-                            신청 취소
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="p-3 md:p-4 border-t border-gray-200 text-center">
-                <button
-                  onClick={() => router.push('/request/receipt')}
-                  className="px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  추가 신청하기
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* 환불 요청 내역 */}
-        <div className="bg-white rounded-lg shadow mt-5 md:mt-6 overflow-hidden">
-          <div className="p-4 md:p-6 border-b border-gray-200 border-l-4 border-l-orange-500">
-            <h2 className="text-base md:text-lg font-medium text-gray-900">환불 요청 내역</h2>
-            <p className="text-xs md:text-sm text-gray-500 mt-1">참가비 환불 요청 내역입니다.</p>
-          </div>
-
-          {refundRequests.length === 0 ? (
-            <div className="p-6 md:p-8 text-center text-gray-500">
-              <p className="text-sm md:text-base">환불 요청 내역이 없습니다.</p>
-              <button
-                onClick={() => router.push('/request/refund')}
-                className="mt-3 md:mt-4 px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                환불 요청하기
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="divide-y divide-gray-200">
-                {refundRequests.map((refund) => {
-                  const refundStatus = getRefundStatusDisplay(refund.status)
-                  return (
-                    <div key={refund.id} className="p-4 md:p-6 hover:bg-orange-50 transition-colors">
-                      {/* 대회명 + 상태 */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <h3 className="text-sm md:text-base font-semibold text-gray-900 flex-1 break-words">
-                          {refund.competitions.title}
-                        </h3>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${refundStatus.color}`}>
-                            {refundStatus.text}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 환불정보: 거리, 금액 */}
-                      <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm text-gray-600 mb-3">
-                        <span className="flex items-center">거리: {refund.distance}</span>
-                        <span className="text-gray-300 hidden md:inline">•</span>
-                        <span className="text-gray-800">금액: {refund.amount.toLocaleString()}원</span>
-                      </div>
-
-                      {/* 은행 정보 - 모바일에서도 가시성 있게 */}
-                      <div className="p-3 bg-gray-50 rounded mb-2 border border-gray-200">
-                        <div className="text-xs md:text-sm text-gray-700">
-                          <div className="text-gray-900 mb-1 font-medium">환불 계좌</div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 w-14 flex-shrink-0">은행:</span>
-                              <span className="text-gray-900">{refund.bank_name}</span>
-                            </div>
-                            <div className="flex items-center gap-2 break-all">
-                              <span className="text-gray-500 w-14 flex-shrink-0">계좌:</span>
-                              <span className="text-gray-900">{refund.account_number}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500 w-14 flex-shrink-0">예금주:</span>
-                              <span className="text-gray-900">{refund.account_holder}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 요청일 + 취소 버튼 */}
-                      <div className="flex items-center justify-between gap-2 text-xs">
-                        <span className="text-gray-400">
-                          요청일: {formatKST(refund.created_at, 'yyyy.MM.dd')}
-                        </span>
-                        {refund.status === 'pending' && (
-                          <button
-                            onClick={() => cancelRefundRequest(refund.id)}
-                            className="text-red-500 hover:text-red-700 font-medium transition-colors hover:underline"
-                          >
-                            요청 취소
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="p-3 md:p-4 border-t border-gray-200 text-center">
-                <button
-                  onClick={() => router.push('/request/refund')}
-                  className="px-4 py-2 bg-red-600 text-white text-xs md:text-sm rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  환불 요청하기
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-        </>)}
         </>
       )}
         </div>

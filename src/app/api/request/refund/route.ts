@@ -61,7 +61,17 @@ export async function POST(request: NextRequest) {
         .eq('competition_id', competition_id)
     } catch (receiptError) {
       console.warn('현금영수증 삭제 처리 중 오류 (무시함):', receiptError)
-      // 현금영수증 삭제 실패해도 환불 요청은 성공한 것으로 처리
+    }
+
+    // 환불 요청 시 해당 신청의 종목변경 pending 건 삭제
+    try {
+      await supabase
+        .from('registration_change_requests')
+        .delete()
+        .eq('registration_id', registration_id)
+        .eq('status', 'pending')
+    } catch (changeError) {
+      console.warn('종목변경 삭제 처리 중 오류 (무시함):', changeError)
     }
 
     return NextResponse.json({

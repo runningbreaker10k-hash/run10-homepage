@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { Receipt, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react'
@@ -20,6 +20,8 @@ interface Registration {
 export default function ReceiptRequestPage() {
   const { user } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedRegId = searchParams.get('registration_id')
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -59,7 +61,7 @@ export default function ReceiptRequestPage() {
         .from('registrations')
         .select('id, competition_id, distance, entry_fee, payment_status')
         .eq('user_id', user.id)
-        .neq('payment_status', 'cancelled')
+        .eq('payment_status', 'confirmed')
         .order('created_at', { ascending: false })
 
       if (!regData || regData.length === 0) {
@@ -85,13 +87,21 @@ export default function ReceiptRequestPage() {
 
       const requestedCompIds = new Set(receiptData?.map(r => r.competition_id) || [])
 
-      setRegistrations(
-        regData.map(r => ({
-          ...r,
-          competition_title: compMap.get(r.competition_id) || '알 수 없는 대회',
-          already_requested: requestedCompIds.has(r.competition_id)
-        }))
-      )
+      const mapped = regData.map(r => ({
+        ...r,
+        competition_title: compMap.get(r.competition_id) || '알 수 없는 대회',
+        already_requested: requestedCompIds.has(r.competition_id)
+      }))
+      setRegistrations(mapped)
+
+      // 마이페이지에서 넘어온 registration_id 자동 선택
+      if (preselectedRegId) {
+        const target = mapped.find(r => r.id === preselectedRegId && !r.already_requested)
+        if (target) {
+          setSelectedRegId(target.id)
+          setAmount(target.entry_fee.toLocaleString())
+        }
+      }
     } catch (err) {
       console.error('참가 내역 조회 오류:', err)
     } finally {

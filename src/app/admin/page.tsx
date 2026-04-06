@@ -23,7 +23,8 @@ import {
   BellOff,
   Loader2,
   Receipt,
-  Undo2
+  Undo2,
+  CheckCircle
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Competition, Registration, CompetitionPost, User, Popup, RegistrationWithCompetition, CommunityPostWithRelations } from '@/types'
@@ -40,7 +41,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'competitions' | 'community' | 'members' | 'popups' | 'rank' | 'sms'>('competitions')
   const [competitionSubTab, setCompetitionSubTab] = useState<'management' | 'participants'>('management')
-  const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments' | 'receipts' | 'refunds'>('posts')
+  const [communitySubTab, setCommunitySubTab] = useState<'posts' | 'comments' | 'receipts' | 'refunds' | 'registrationChanges'>('posts')
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   // 랭커 관리 관련 상태
@@ -98,6 +99,9 @@ export default function AdminPage() {
   const [totalRegistrations, setTotalRegistrations] = useState(0)
   const [registrationsPerPage, setRegistrationsPerPage] = useState(100)
   const [participantSearchTerm, setParticipantSearchTerm] = useState('')
+  const [participantSearchField, setParticipantSearchField] = useState<'name' | 'email' | 'phone'>('name')
+  const [confirmedParticipantSearchTerm, setConfirmedParticipantSearchTerm] = useState('')
+  const [confirmedParticipantSearchField, setConfirmedParticipantSearchField] = useState<'name' | 'email' | 'phone'>('name')
   const [showFilters, setShowFilters] = useState(true)
   const [availableParticipationGroups, setAvailableParticipationGroups] = useState<any[]>([])
 
@@ -110,6 +114,11 @@ export default function AdminPage() {
   const [selectedReceipts, setSelectedReceipts] = useState<string[]>([])
   const [currentReceiptPage, setCurrentReceiptPage] = useState(1)
   const [receiptsPerPage, setReceiptsPerPage] = useState(20)
+  // 동기화 관련 상태
+  const [selectedSyncReceipt, setSelectedSyncReceipt] = useState<any>(null)
+  const [syncDifferences, setSyncDifferences] = useState<{ receiptId: string; receiptName: string; field: string; current: any; registration: any }[]>([])
+  const [showSyncModal, setShowSyncModal] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // 환불 요청 관리 관련 상태
   const [refundRequests, setRefundRequests] = useState<any[]>([])
@@ -120,6 +129,17 @@ export default function AdminPage() {
   const [selectedRefunds, setSelectedRefunds] = useState<string[]>([])
   const [currentRefundPage, setCurrentRefundPage] = useState(1)
   const [refundsPerPage, setRefundsPerPage] = useState(20)
+
+  // 종목 변경 요청 관리 관련 상태
+  const [registrationChangeRequests, setRegistrationChangeRequests] = useState<any[]>([])
+  const [registrationChangesLoading, setRegistrationChangesLoading] = useState(false)
+  const [registrationChangeStatusFilter, setRegistrationChangeStatusFilter] = useState<string>('all')
+  const [registrationChangeCompetitionFilter, setRegistrationChangeCompetitionFilter] = useState<string>('all')
+  const [registrationChangeSearchTerm, setRegistrationChangeSearchTerm] = useState('')
+  const [registrationChangeDirectionFilter, setRegistrationChangeDirectionFilter] = useState<string>('all')
+  const [selectedRegistrationChanges, setSelectedRegistrationChanges] = useState<string[]>([])
+  const [currentRegistrationChangePage, setCurrentRegistrationChangePage] = useState(1)
+  const [registrationChangesPerPage, setRegistrationChangesPerPage] = useState(20)
 
   // 회원 상세 정보 모달
   const [selectedMember, setSelectedMember] = useState<User | null>(null)
@@ -157,6 +177,9 @@ export default function AdminPage() {
   const [members, setMembers] = useState<User[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [memberSearchField, setMemberSearchField] = useState<'name' | 'user_id' | 'email' | 'phone'>('name')
+  const [confirmedSearchTerm, setConfirmedSearchTerm] = useState('')
+  const [confirmedMemberSearchField, setConfirmedMemberSearchField] = useState<'name' | 'user_id' | 'email' | 'phone'>('name')
   const [currentMemberPage, setCurrentMemberPage] = useState(1)
   const [totalMembers, setTotalMembers] = useState(0)
   const [membersPerPage, setMembersPerPage] = useState(20)
@@ -206,6 +229,9 @@ export default function AdminPage() {
         } else if (communitySubTab === 'refunds') {
           fetchCompetitions()
           fetchRefundRequests()
+        } else if (communitySubTab === 'registrationChanges') {
+          fetchCompetitions()
+          fetchRegistrationChangeRequests()
         }
       } else if (activeTab === 'members') {
         // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
@@ -219,7 +245,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, participantSearchTerm, registrationsPerPage, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter])
+  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, confirmedParticipantSearchTerm, confirmedParticipantSearchField, registrationsPerPage, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter, registrationChangeStatusFilter, registrationChangeCompetitionFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
@@ -241,7 +267,7 @@ export default function AdminPage() {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, membersPerPage, user, activeTab, searchTerm, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
+  }, [currentMemberPage, membersPerPage, user, activeTab, confirmedSearchTerm, confirmedMemberSearchField, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'rank') {
@@ -254,6 +280,13 @@ export default function AdminPage() {
       fetchSmsSettings()
     }
   }, [user, activeTab])
+
+  useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'registrationChanges') {
+      fetchRegistrationChangeRequests()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRegistrationChangePage, user, activeTab, communitySubTab, registrationChangeStatusFilter, registrationChangeCompetitionFilter, registrationChangeSearchTerm])
 
   // SMS 관리 함수들
   const fetchSmsSettings = async () => {
@@ -587,22 +620,41 @@ export default function AdminPage() {
   }
 
   // 대회 관리 함수들
-  // 현금영수증 요청 목록 조회
+  // 현금영수증 요청 목록 조회 (Supabase는 한 번에 최대 1000개만 반환)
   const fetchReceiptRequests = async () => {
     setReceiptsLoading(true)
     try {
-      let query = supabase
-        .from('receipt_requests')
-        .select('*')
-        .order('created_at', { ascending: false })
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (receiptStatusFilter !== 'all') {
-        query = query.eq('status', receiptStatusFilter)
+      while (hasMore) {
+        let query = supabase
+          .from('receipt_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (receiptStatusFilter !== 'all') {
+          query = query.eq('status', receiptStatusFilter)
+        }
+
+        const { data, error } = await query.range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
       }
 
-      const { data, error } = await query
-
-      if (error) throw error
+      const data = allData
 
       if (!data || data.length === 0) {
         setReceiptRequests([])
@@ -619,14 +671,23 @@ export default function AdminPage() {
 
       const compMap = new Map(compData?.map(c => [c.id, c.title]) || [])
 
-      // 참가신청 정보 조회 (신청자 이름 확인용)
+      // 참가신청 정보 조회 (신청자명 확인용)
       const registrationIds = [...new Set(data.map(r => r.registration_id).filter(Boolean))]
-      const { data: regData } = await supabase
-        .from('registrations')
-        .select('id, name')
-        .in('id', registrationIds)
+      let regData: any[] = []
 
-      const regMap = new Map(regData?.map(r => [r.id, r.name]) || [])
+      if (registrationIds.length > 0) {
+        for (let i = 0; i < registrationIds.length; i += 100) {
+          const chunk = registrationIds.slice(i, i + 100)
+          const { data: chunkData } = await supabase
+            .from('registrations')
+            .select('id, name')
+            .in('id', chunk)
+
+          if (chunkData) regData.push(...chunkData)
+        }
+      }
+
+      const regMap = new Map(regData.map(r => [r.id, r.name]))
 
       let receiptsWithComp = data.map(r => ({
         ...r,
@@ -694,18 +755,37 @@ export default function AdminPage() {
   const fetchRefundRequests = async () => {
     setRefundsLoading(true)
     try {
-      let query = supabase
-        .from('refund_requests')
-        .select('*')
-        .order('created_at', { ascending: false })
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (refundStatusFilter !== 'all') {
-        query = query.eq('status', refundStatusFilter)
+      while (hasMore) {
+        let query = supabase
+          .from('refund_requests')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (refundStatusFilter !== 'all') {
+          query = query.eq('status', refundStatusFilter)
+        }
+
+        const { data, error } = await query.range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
       }
 
-      const { data, error } = await query
-
-      if (error) throw error
+      const data = allData
 
       if (!data || data.length === 0) {
         setRefundRequests([])
@@ -738,7 +818,75 @@ export default function AdminPage() {
     }
   }
 
-  // 환불 일괄 상태 변경
+  // 종목 변경 요청 조회 (Supabase는 한 번에 최대 1000개만 반환)
+  const fetchRegistrationChangeRequests = async () => {
+    setRegistrationChangesLoading(true)
+    try {
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        let query = supabase
+          .from('registration_change_requests')
+          .select(`
+            *,
+            registrations(user_id, name, phone, distance, shirt_size, entry_fee),
+            competitions(id, title)
+          `)
+          .order('created_at', { ascending: false })
+
+        if (registrationChangeStatusFilter !== 'all') {
+          query = query.eq('status', registrationChangeStatusFilter)
+        }
+
+        const { data, error } = await query.range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      const data = allData
+
+      if (!data || data.length === 0) {
+        setRegistrationChangeRequests([])
+        setRegistrationChangesLoading(false)
+        return
+      }
+
+      let changesWithDetails = data.map(r => ({
+        ...r,
+        name: r.registrations?.name || '알 수 없음',
+        phone: r.registrations?.phone || '알 수 없음',
+        current_distance: r.current_distance,
+        current_shirt_size: r.current_shirt_size,
+        entry_fee: r.registrations?.entry_fee || 0,
+        competition_title: r.competitions?.title || '알 수 없는 대회'
+      }))
+
+      if (registrationChangeCompetitionFilter !== 'all') {
+        changesWithDetails = changesWithDetails.filter(r => r.competition_id === registrationChangeCompetitionFilter)
+      }
+
+      setRegistrationChangeRequests(changesWithDetails)
+    } catch (error) {
+      console.error('종목 변경 요청 목록 조회 오류:', error)
+    } finally {
+      setRegistrationChangesLoading(false)
+    }
+  }
+
+  // 환fall 일괄 상태 변경
   const updateBulkRefundStatus = async (newStatus: string) => {
     if (selectedRefunds.length === 0) {
       alert('선택된 항목이 없습니다.')
@@ -767,7 +915,23 @@ export default function AdminPage() {
   const deleteRegistrationForRefund = async (registrationId: string, refundId: string) => {
     if (!confirm('해당 참가신청을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return
     try {
-      // 참가신청 삭제
+      // 1단계: 연결된 현금영수증 신청 먼저 삭제
+      const { error: receiptError } = await supabase
+        .from('receipt_requests')
+        .delete()
+        .eq('registration_id', registrationId)
+
+      if (receiptError) throw receiptError
+
+      // 2단계: 연결된 종목변경 신청 삭제
+      const { error: changeError } = await supabase
+        .from('registration_change_requests')
+        .delete()
+        .eq('registration_id', registrationId)
+
+      if (changeError) throw changeError
+
+      // 3단계: 참가신청 삭제
       const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
@@ -775,7 +939,7 @@ export default function AdminPage() {
 
       if (deleteError) throw deleteError
 
-      // 환불 상태를 '환불완료'로 변경
+      // 4단계: 환불 상태를 '환불완료'로 변경
       const { error: updateError } = await supabase
         .from('refund_requests')
         .update({ status: 'completed' })
@@ -810,6 +974,185 @@ export default function AdminPage() {
     }
   }
 
+  // 현금영수증 동기화 - 확인하기
+  const checkReceiptSync = async (receipt: any) => {
+    try {
+      const { data: registration } = await supabase
+        .from('registrations')
+        .select('distance, entry_fee')
+        .eq('id', receipt.registration_id)
+        .single()
+
+      if (!registration) {
+        alert('대응하는 신청 정보를 찾을 수 없습니다.\n신청자가 삭제되었을 수 있습니다.')
+        return
+      }
+
+      const differences: { receiptId: string; receiptName: string; field: string; current: any; registration: any }[] = []
+      if (receipt.distance !== registration.distance) {
+        differences.push({ receiptId: receipt.id, receiptName: receipt.name, field: '거리', current: receipt.distance, registration: registration.distance })
+      }
+      if (receipt.amount !== registration.entry_fee) {
+        differences.push({ receiptId: receipt.id, receiptName: receipt.name, field: '금액', current: receipt.amount, registration: registration.entry_fee })
+      }
+
+      setSyncDifferences(differences)
+      setSelectedSyncReceipt(receipt)
+      setShowSyncModal(true)
+    } catch (error) {
+      console.error('동기화 확인 오류:', error)
+      alert('동기화 확인에 실패했습니다.')
+    }
+  }
+
+  // 현금영수증 동기화 - 시작하기
+  const startReceiptSync = async () => {
+    if (!selectedSyncReceipt || syncDifferences.length === 0) return
+    if (!confirm('선택된 정보로 동기화하시겠습니까?')) return
+
+    setIsSyncing(true)
+    try {
+      const updateData: any = {}
+      syncDifferences.forEach(diff => {
+        if (diff.field === '거리') updateData.distance = diff.registration
+        if (diff.field === '금액') updateData.amount = diff.registration
+      })
+
+      const { error } = await supabase
+        .from('receipt_requests')
+        .update(updateData)
+        .eq('id', selectedSyncReceipt.id)
+
+      if (error) throw error
+
+      alert('동기화가 완료되었습니다.')
+      setShowSyncModal(false)
+      setSelectedSyncReceipt(null)
+      setSyncDifferences([])
+      fetchReceiptRequests()
+    } catch (error) {
+      console.error('동기화 실행 오류:', error)
+      alert('동기화 실행에 실패했습니다.')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  // 현금영수증 동기화 확인하기 (불일치 항목 조회)
+  const checkBulkReceiptSync = async () => {
+    if (receiptRequests.length === 0) {
+      alert('확인할 항목이 없습니다.')
+      return
+    }
+
+    setReceiptsLoading(true)
+    try {
+      const allDifferences: any[] = []
+      let checkedCount = 0
+      let skipCount = 0
+
+      for (const receipt of receiptRequests) {
+        try {
+          const { data: registration } = await supabase
+            .from('registrations')
+            .select('distance, entry_fee')
+            .eq('id', receipt.registration_id)
+            .single()
+
+          if (!registration) {
+            skipCount++
+            continue
+          }
+
+          // 거리나 금액이 다르면 기록
+          const differences: any[] = []
+          if (receipt.distance !== registration.distance) {
+            differences.push({
+              receiptId: receipt.id,
+              receiptName: receipt.name,
+              field: '거리',
+              current: receipt.distance,
+              registration: registration.distance
+            })
+          }
+          if (receipt.amount !== registration.entry_fee) {
+            differences.push({
+              receiptId: receipt.id,
+              receiptName: receipt.name,
+              field: '금액',
+              current: receipt.amount,
+              registration: registration.entry_fee
+            })
+          }
+
+          if (differences.length > 0) {
+            allDifferences.push(...differences)
+          }
+          checkedCount++
+        } catch (err) {
+          console.error(`확인 실패 (ID: ${receipt.id}):`, err)
+        }
+      }
+
+      if (allDifferences.length === 0) {
+        alert(`확인 완료\n모든 항목이 일치합니다.\n(확인: ${checkedCount}건, 스킵: ${skipCount}건)`)
+      } else {
+        setSyncDifferences(allDifferences)
+        setShowSyncModal(true)
+      }
+    } catch (error) {
+      console.error('동기화 확인 오류:', error)
+      alert('동기화 확인 중 오류가 발생했습니다.')
+    } finally {
+      setReceiptsLoading(false)
+    }
+  }
+
+  // 현금영수증 동기화 시작하기 (불일치 항목 업데이트)
+  const startBulkReceiptSync = async () => {
+    if (syncDifferences.length === 0) return
+    if (!confirm(`${syncDifferences.length}개의 불일치 항목을 동기화하시겠습니까?`)) return
+
+    setIsSyncing(true)
+    try {
+      const receiptIds = [...new Set(syncDifferences.map(d => d.receiptId))]
+      let successCount = 0
+
+      for (const receiptId of receiptIds) {
+        try {
+          const diffs = syncDifferences.filter(d => d.receiptId === receiptId)
+          const updateData: any = {}
+
+          diffs.forEach(diff => {
+            if (diff.field === '거리') updateData.distance = diff.registration
+            if (diff.field === '금액') updateData.amount = diff.registration
+          })
+
+          const { error } = await supabase
+            .from('receipt_requests')
+            .update(updateData)
+            .eq('id', receiptId)
+
+          if (!error) {
+            successCount++
+          }
+        } catch (err) {
+          console.error(`동기화 실패 (ID: ${receiptId}):`, err)
+        }
+      }
+
+      alert(`동기화 완료: ${successCount}/${receiptIds.length}건`)
+      setShowSyncModal(false)
+      setSyncDifferences([])
+      fetchReceiptRequests()
+    } catch (error) {
+      console.error('일괄 동기화 실행 오류:', error)
+      alert('동기화 실행 중 오류가 발생했습니다.')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   // 환불 일괄 완료 처리 (선택된 processing 항목들)
   const completeRefundsInBatch = async (refundIds: string[]) => {
     if (!confirm(`선택된 ${refundIds.length}건의 환불 신청을 완료하시겠습니까?\n대회신청도 함께 삭제됩니다.`)) return
@@ -824,7 +1167,23 @@ export default function AdminPage() {
           const refund = refundRequests.find(r => r.id === refundId)
           if (!refund) continue
 
-          // 1단계: registrations 삭제
+          // 1단계: 연결된 현금영수증 신청 먼저 삭제
+          const { error: receiptError } = await supabase
+            .from('receipt_requests')
+            .delete()
+            .eq('registration_id', refund.registration_id)
+
+          if (receiptError) throw receiptError
+
+          // 2단계: 연결된 종목변경 신청 삭제
+          const { error: changeError } = await supabase
+            .from('registration_change_requests')
+            .delete()
+            .eq('registration_id', refund.registration_id)
+
+          if (changeError) throw changeError
+
+          // 3단계: registrations 삭제
           const { error: deleteError } = await supabase
             .from('registrations')
             .delete()
@@ -832,7 +1191,7 @@ export default function AdminPage() {
 
           if (deleteError) throw deleteError
 
-          // 2단계: refund_requests status를 'completed'로 변경
+          // 4단계: refund_requests status를 'completed'로 변경
           const { error: updateError } = await supabase
             .from('refund_requests')
             .update({ status: 'completed' })
@@ -861,6 +1220,130 @@ export default function AdminPage() {
       alert('환불 처리 중 오류가 발생했습니다.')
     } finally {
       setRefundsLoading(false)
+    }
+  }
+
+  // 종목 변경 요청 승인
+  const approveRegistrationChanges = async (changeIds: string[]) => {
+    if (!confirm(`선택된 ${changeIds.length}건의 종목 변경 요청을 승인하시겠습니까?`)) return
+
+    setRegistrationChangesLoading(true)
+    try {
+      const successIds: string[] = []
+      const failedIds: string[] = []
+
+      for (const changeId of changeIds) {
+        try {
+          const change = registrationChangeRequests.find(r => r.id === changeId)
+          if (!change) continue
+
+          // 1단계: registrations 업데이트
+          const updateData: any = {}
+          if (change.change_type === 'distance') {
+            updateData.distance = change.requested_distance
+            updateData.entry_fee = change.requested_entry_fee
+
+            // 변경된 종목의 participation_group_id 찾아서 업데이트
+            const { data: newGroupData } = await supabase
+              .from('participation_groups')
+              .select('id')
+              .eq('competition_id', change.competition_id)
+              .eq('distance', change.requested_distance)
+              .single()
+
+            if (newGroupData) {
+              updateData.participation_group_id = newGroupData.id
+            }
+          } else if (change.change_type === 'shirt_size') {
+            updateData.shirt_size = change.requested_shirt_size
+          }
+
+          const { error: updateError } = await supabase
+            .from('registrations')
+            .update(updateData)
+            .eq('id', change.registration_id)
+
+          if (updateError) throw updateError
+
+          // 2단계: 거리 변경인 경우 receipt_requests도 동기화
+          if (change.change_type === 'distance') {
+            await supabase
+              .from('receipt_requests')
+              .update({ distance: change.requested_distance, amount: change.requested_entry_fee })
+              .eq('registration_id', change.registration_id)
+          }
+
+          // 3단계: registration_change_requests status를 'approved'로 변경
+          const { error: statusError } = await supabase
+            .from('registration_change_requests')
+            .update({ status: 'approved' })
+            .eq('id', changeId)
+
+          if (statusError) throw statusError
+
+          successIds.push(changeId)
+        } catch (error) {
+          console.error(`종목 변경 ID ${changeId} 처리 오류:`, error)
+          failedIds.push(changeId)
+        }
+      }
+
+      // 결과 알림
+      if (failedIds.length === 0) {
+        alert(`✅ ${successIds.length}건의 종목 변경이 승인되었습니다.`)
+      } else {
+        alert(`⚠️ ${successIds.length}건 승인, ${failedIds.length}건 실패했습니다.`)
+      }
+
+      setSelectedRegistrationChanges([])
+      fetchRegistrationChangeRequests()
+    } catch (error) {
+      console.error('종목 변경 승인 오류:', error)
+      alert('종목 변경 승인 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationChangesLoading(false)
+    }
+  }
+
+  // 종목 변경 요청 거절
+  const rejectRegistrationChanges = async (changeIds: string[]) => {
+    if (!confirm(`선택된 ${changeIds.length}건의 종목 변경 요청을 거절하시겠습니까?`)) return
+
+    setRegistrationChangesLoading(true)
+    try {
+      const successIds: string[] = []
+      const failedIds: string[] = []
+
+      for (const changeId of changeIds) {
+        try {
+          const { error } = await supabase
+            .from('registration_change_requests')
+            .update({ status: 'rejected' })
+            .eq('id', changeId)
+
+          if (error) throw error
+
+          successIds.push(changeId)
+        } catch (error) {
+          console.error(`종목 변경 ID ${changeId} 거절 오류:`, error)
+          failedIds.push(changeId)
+        }
+      }
+
+      // 결과 알림
+      if (failedIds.length === 0) {
+        alert(`✅ ${successIds.length}건의 종목 변경이 거절되었습니다.`)
+      } else {
+        alert(`⚠️ ${successIds.length}건 거절, ${failedIds.length}건 실패했습니다.`)
+      }
+
+      setSelectedRegistrationChanges([])
+      fetchRegistrationChangeRequests()
+    } catch (error) {
+      console.error('종목 변경 거절 오류:', error)
+      alert('종목 변경 거절 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationChangesLoading(false)
     }
   }
 
@@ -1185,18 +1668,113 @@ export default function AdminPage() {
         countQuery = countQuery.eq('gender', genderFilter)
       }
 
-      if (participantSearchTerm) {
-        countQuery = countQuery.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
+      if (confirmedParticipantSearchTerm) {
+        countQuery = countQuery.ilike(`${confirmedParticipantSearchField}`, `%${confirmedParticipantSearchTerm}%`)
       }
 
       const { count } = await countQuery
       setTotalRegistrations(count || 0)
+
+      // 필터링 + 정렬 + 페이지네이션 적용 후 화면에 반영하는 함수
+      const applyAndDisplay = (allData: any[]) => {
+        let filtered = allData
+
+        // 대회 필터
+        if (selectedCompetitionForParticipants) {
+          filtered = filtered.filter(reg => reg.competition_id === selectedCompetitionForParticipants)
+        }
+
+        // 결제 상태 필터
+        if (paymentStatusFilter === 'expired') {
+          const sevenDaysAgo = new Date()
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          filtered = filtered.filter(reg =>
+            reg.payment_status === 'pending' &&
+            new Date(reg.created_at) < sevenDaysAgo
+          )
+        } else if (paymentStatusFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.payment_status === paymentStatusFilter)
+        }
+
+        // 거리 필터
+        if (distanceFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.distance === distanceFilter)
+        }
+
+        // 성별 필터
+        if (genderFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.gender === genderFilter)
+        }
+
+        // 종족(grade) 필터 - users 테이블 JOIN 데이터 사용
+        if (gradeFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.users && reg.users.grade === gradeFilter)
+        }
+
+        // 티셔츠 사이즈 필터
+        if (shirtSizeFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.shirt_size === shirtSizeFilter)
+        }
+
+        // 검색어 필터
+        if (confirmedParticipantSearchTerm) {
+          const searchLower = confirmedParticipantSearchTerm.toLowerCase()
+          filtered = filtered.filter(reg => {
+            if (confirmedParticipantSearchField === 'name') return reg.name?.toLowerCase().includes(searchLower)
+            if (confirmedParticipantSearchField === 'email') return reg.email?.toLowerCase().includes(searchLower)
+            if (confirmedParticipantSearchField === 'phone') return reg.phone?.includes(confirmedParticipantSearchTerm)
+            return false
+          })
+        }
+
+        // 지역 필터 (address 필드에서 검색)
+        if (regionFilter !== 'all') {
+          filtered = filtered.filter(reg => reg.address?.includes(regionFilter))
+        }
+
+        // 나이 필터
+        if (ageFilter !== 'all') {
+          filtered = filtered.filter(reg => {
+            const age = reg.age || 0
+            if (ageFilter === '0-19') return age <= 19
+            if (ageFilter === '20-29') return age >= 20 && age <= 29
+            if (ageFilter === '30-39') return age >= 30 && age <= 39
+            if (ageFilter === '40-49') return age >= 40 && age <= 49
+            if (ageFilter === '50-59') return age >= 50 && age <= 59
+            if (ageFilter === '60+') return age >= 60
+            return true
+          })
+        }
+
+        // 정렬
+        if (sortBy === 'created_at') {
+          filtered.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime()
+            const dateB = new Date(b.created_at).getTime()
+            return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+          })
+        } else if (sortBy === 'distance') {
+          const distanceOrder = ['3km', '5km', '10km', 'half', 'full']
+          filtered.sort((a, b) => {
+            const indexA = a.distance ? distanceOrder.indexOf(a.distance) : 999
+            const indexB = b.distance ? distanceOrder.indexOf(b.distance) : 999
+            return sortOrder === 'asc' ? indexA - indexB : indexB - indexA
+          })
+        }
+
+        // 페이지네이션 적용
+        const startIndex = (currentRegistrationPage - 1) * registrationsPerPage
+        const endIndex = startIndex + registrationsPerPage
+        setRegistrations(filtered.slice(startIndex, endIndex))
+        setTotalRegistrations(filtered.length)
+      }
 
       // Supabase는 한 번에 최대 1000개만 반환하므로 여러 번 나눠서 가져오기
       let allData: any[] = []
       let offset = 0
       const pageSize = 1000
       let hasMore = true
+      let firstBatchLoaded = false
 
       while (hasMore) {
         const { data, error } = await supabase
@@ -1212,6 +1790,7 @@ export default function AdminPage() {
               grade
             )
           `)
+          .order('created_at', { ascending: false })
           .range(offset, offset + pageSize - 1)
 
         if (error) {
@@ -1223,6 +1802,13 @@ export default function AdminPage() {
           allData = [...allData, ...data]
           offset += pageSize
 
+          // 첫 번째 배치가 오면 즉시 화면에 표시하고 로딩 스피너 종료
+          if (!firstBatchLoaded) {
+            firstBatchLoaded = true
+            applyAndDisplay(allData)
+            setRegistrationsLoading(false)
+          }
+
           if (data.length < pageSize) {
             hasMore = false
           }
@@ -1231,100 +1817,9 @@ export default function AdminPage() {
         }
       }
 
-      // 정렬 처리 및 클라이언트 필터링
-      let filtered = allData
+      // 전체 데이터 로드 완료 후 최종 반영
+      applyAndDisplay(allData)
 
-      // 대회 필터
-      if (selectedCompetitionForParticipants) {
-        filtered = filtered.filter(reg => reg.competition_id === selectedCompetitionForParticipants)
-      }
-
-      // 결제 상태 필터
-      if (paymentStatusFilter === 'expired') {
-        // 만료 예정: 7일 이상 입금 대기 중
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-        filtered = filtered.filter(reg =>
-          reg.payment_status === 'pending' &&
-          new Date(reg.created_at) < sevenDaysAgo
-        )
-      } else if (paymentStatusFilter !== 'all') {
-        filtered = filtered.filter(reg => reg.payment_status === paymentStatusFilter)
-      }
-
-      // 거리 필터
-      if (distanceFilter !== 'all') {
-        filtered = filtered.filter(reg => reg.distance === distanceFilter)
-      }
-
-      // 성별 필터
-      if (genderFilter !== 'all') {
-        filtered = filtered.filter(reg => reg.gender === genderFilter)
-      }
-
-      // 종족(grade) 필터 - users 테이블 JOIN 데이터 사용
-      if (gradeFilter !== 'all') {
-        filtered = filtered.filter(reg => {
-          // users가 있고 grade가 일치하는 경우만
-          return reg.users && reg.users.grade === gradeFilter
-        })
-      }
-
-      // 티셔츠 사이즈 필터
-      if (shirtSizeFilter !== 'all') {
-        filtered = filtered.filter(reg => reg.shirt_size === shirtSizeFilter)
-      }
-
-      // 검색어 필터
-      if (participantSearchTerm) {
-        const searchLower = participantSearchTerm.toLowerCase()
-        filtered = filtered.filter(reg =>
-          reg.name?.toLowerCase().includes(searchLower) ||
-          reg.email?.toLowerCase().includes(searchLower) ||
-          reg.phone?.includes(participantSearchTerm)
-        )
-      }
-
-      // 지역 필터 (address 필드에서 검색)
-      if (regionFilter !== 'all') {
-        filtered = filtered.filter(reg => reg.address?.includes(regionFilter))
-      }
-
-      // 나이 필터
-      if (ageFilter !== 'all') {
-        filtered = filtered.filter(reg => {
-          const age = reg.age || 0
-          if (ageFilter === '0-19') return age <= 19
-          if (ageFilter === '20-29') return age >= 20 && age <= 29
-          if (ageFilter === '30-39') return age >= 30 && age <= 39
-          if (ageFilter === '40-49') return age >= 40 && age <= 49
-          if (ageFilter === '50-59') return age >= 50 && age <= 59
-          if (ageFilter === '60+') return age >= 60
-          return true
-        })
-      }
-
-      // 정렬
-      if (sortBy === 'created_at') {
-        filtered.sort((a, b) => {
-          const dateA = new Date(a.created_at).getTime()
-          const dateB = new Date(b.created_at).getTime()
-          return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
-        })
-      } else if (sortBy === 'distance') {
-        const distanceOrder = ['3km', '5km', '10km', 'half', 'full']
-        filtered.sort((a, b) => {
-          const indexA = a.distance ? distanceOrder.indexOf(a.distance) : 999
-          const indexB = b.distance ? distanceOrder.indexOf(b.distance) : 999
-          return sortOrder === 'asc' ? indexA - indexB : indexB - indexA
-        })
-      }
-
-      // 페이지네이션 적용
-      const startIndex = (currentRegistrationPage - 1) * registrationsPerPage
-      const endIndex = startIndex + registrationsPerPage
-      setRegistrations(filtered.slice(startIndex, endIndex))
-      setTotalRegistrations(filtered.length)
     } catch (error) {
       console.error('참가자 로드 오류:', error)
       setRegistrations([])
@@ -1400,9 +1895,10 @@ export default function AdminPage() {
       }
       // 'all'이면 모든 게시글 (조건 추가 안 함)
 
-      // 제목 검색 필터
+      // 제목, 작성자명 검색 필터
       if (postSearchTerm.trim()) {
-        query = query.ilike('title', `%${postSearchTerm}%`)
+        const search = `%${postSearchTerm}%`
+        query = query.or(`title.ilike.${search},author_name.ilike.${search}`)
       }
 
       // 신고된 글만 보기 필터
@@ -2195,13 +2691,13 @@ export default function AdminPage() {
     if (!editedMember) return
 
     // 확인 모달
-    if (!confirm('비밀번호를 \'123456789\'로 초기화하시겠습니까?')) return
+    if (!confirm('비밀번호를 \'1234\'로 초기화하시겠습니까?')) return
 
     try {
       const { error } = await supabase
         .from('users')
         .update({
-          password: '123456789',
+          password: '1234',
         })
         .eq('id', editedMember.id)
 
@@ -2219,11 +2715,67 @@ export default function AdminPage() {
   const fetchMembers = async () => {
     setMembersLoading(true)
     try {
+      // 동기 필터 적용 후 화면에 반영하는 함수 (대회 미참가자 필터 제외)
+      const applyAndDisplay = (allData: any[]) => {
+        let filtered = allData
+
+        // 검색어 필터
+        if (confirmedSearchTerm) {
+          const searchLower = confirmedSearchTerm.toLowerCase()
+          filtered = filtered.filter(member => {
+            if (confirmedMemberSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'phone') return member.phone?.includes(confirmedSearchTerm)
+            return false
+          })
+        }
+
+        // 성별 필터
+        if (memberGenderFilter !== 'all') {
+          filtered = filtered.filter(member => member.gender === memberGenderFilter)
+        }
+
+        // 종족(grade) 필터
+        if (memberGradeFilter !== 'all') {
+          filtered = filtered.filter(member => member.grade === memberGradeFilter)
+        }
+
+        // 지역 필터
+        if (memberRegionFilter !== 'all') {
+          filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+        }
+
+        // 나이 필터
+        if (memberAgeFilter !== 'all') {
+          filtered = filtered.filter(member => {
+            if (!member.birth_date) return false
+            const yy = parseInt(member.birth_date.substring(0, 2))
+            const birthYear = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy
+            const currentYear = new Date().getFullYear()
+            const age = currentYear - birthYear
+            if (memberAgeFilter === '0-19') return age <= 19
+            if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
+            if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
+            if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
+            if (memberAgeFilter === '50-59') return age >= 50 && age <= 59
+            if (memberAgeFilter === '60+') return age >= 60
+            return true
+          })
+        }
+
+        setTotalMembers(filtered.length)
+        const startIndex = (currentMemberPage - 1) * membersPerPage
+        const endIndex = startIndex + membersPerPage
+        setMembers(filtered.slice(startIndex, endIndex))
+      }
+
       // Supabase는 한 번에 최대 1000개만 반환하므로 여러 번 나눠서 가져오기
       let allData: any[] = []
       let offset = 0
       const pageSize = 1000
       let hasMore = true
+      let firstBatchLoaded = false
 
       while (hasMore) {
         const { data, error } = await supabase
@@ -2238,7 +2790,15 @@ export default function AdminPage() {
           allData = [...allData, ...data]
           offset += pageSize
 
-          // 가져온 데이터가 pageSize보다 적으면 마지막 페이지
+          // 첫 번째 배치가 오면 즉시 화면에 표시하고 로딩 스피너 종료
+          // (대회 미참가자 필터가 없을 때만 즉시 표시)
+          if (!firstBatchLoaded && memberCompetitionFilter.length === 0) {
+            firstBatchLoaded = true
+            applyAndDisplay(allData)
+            setRegistrationsLoading(false)
+            setMembersLoading(false)
+          }
+
           if (data.length < pageSize) {
             hasMore = false
           }
@@ -2247,73 +2807,20 @@ export default function AdminPage() {
         }
       }
 
-      let filtered = allData
-
-      // 검색어 필터 (클라이언트 측)
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase()
-        filtered = filtered.filter(member =>
-          member.name?.toLowerCase().includes(searchLower) ||
-          member.user_id?.toLowerCase().includes(searchLower) ||
-          member.email?.toLowerCase().includes(searchLower) ||
-          member.phone?.includes(searchTerm)
-        )
-      }
-
-      // 성별 필터 (클라이언트 측)
-      if (memberGenderFilter !== 'all') {
-        filtered = filtered.filter(member => member.gender === memberGenderFilter)
-      }
-
-      // 종족(grade) 필터 (클라이언트 측)
-      if (memberGradeFilter !== 'all') {
-        filtered = filtered.filter(member => member.grade === memberGradeFilter)
-      }
-
-      // 지역 필터 (클라이언트 측)
-      if (memberRegionFilter !== 'all') {
-        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
-      }
-
-      // 나이 필터 (클라이언트 측)
-      if (memberAgeFilter !== 'all') {
-        filtered = filtered.filter(member => {
-          if (!member.birth_date) return false
-
-          // birth_date 형식: YYMMDD (6자리)
-          const yy = parseInt(member.birth_date.substring(0, 2))
-          // 2000년대생과 1900년대생 구분
-          const birthYear = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy
-          const currentYear = new Date().getFullYear()
-          const age = currentYear - birthYear
-
-          if (memberAgeFilter === '0-19') return age <= 19
-          if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
-          if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
-          if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
-          if (memberAgeFilter === '50-59') return age >= 50 && age <= 59
-          if (memberAgeFilter === '60+') return age >= 60
-          return true
-        })
-      }
-
-      // 대회 미참가자 필터 (클라이언트 측)
+      // 대회 미참가자 필터 (전체 데이터 로드 후 적용)
       if (memberCompetitionFilter.length > 0) {
-        // 선택된 모든 대회의 참가자 목록 가져오기
         const participantIds = new Set<string>()
 
         for (const competitionId of memberCompetitionFilter) {
-          // 각 대회의 참가자 목록 가져오기 (1000개씩 여러 번 조회)
-          let offset = 0
-          const pageSize = 1000
-          let hasMore = true
+          let compOffset = 0
+          let compHasMore = true
 
-          while (hasMore) {
+          while (compHasMore) {
             const { data, error } = await supabase
               .from('registrations')
               .select('user_id')
               .eq('competition_id', competitionId)
-              .range(offset, offset + pageSize - 1)
+              .range(compOffset, compOffset + pageSize - 1)
 
             if (error) {
               console.error('참가자 조회 오류:', error)
@@ -2321,32 +2828,42 @@ export default function AdminPage() {
             }
 
             if (data && data.length > 0) {
-              // 참가한 회원의 UUID(id)를 Set에 추가
               data.forEach(reg => {
-                if (reg.user_id) {
-                  participantIds.add(reg.user_id)
-                }
+                if (reg.user_id) participantIds.add(reg.user_id)
               })
-              offset += pageSize
-
-              if (data.length < pageSize) {
-                hasMore = false
-              }
+              compOffset += pageSize
+              if (data.length < pageSize) compHasMore = false
             } else {
-              hasMore = false
+              compHasMore = false
             }
           }
         }
 
-        // 선택된 대회 중 하나라도 참가한 회원 제외 (미참가자만 필터링)
-        filtered = filtered.filter(member => !participantIds.has(member.id))
-      }
+        let filtered = allData.filter(member => !participantIds.has(member.id))
 
-      // 페이지네이션 적용
-      setTotalMembers(filtered.length)
-      const startIndex = (currentMemberPage - 1) * membersPerPage
-      const endIndex = startIndex + membersPerPage
-      setMembers(filtered.slice(startIndex, endIndex))
+        // 나머지 동기 필터도 적용
+        if (confirmedSearchTerm) {
+          const searchLower = confirmedSearchTerm.toLowerCase()
+          filtered = filtered.filter(member => {
+            if (confirmedMemberSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
+            if (confirmedMemberSearchField === 'phone') return member.phone?.includes(confirmedSearchTerm)
+            return false
+          })
+        }
+        if (memberGenderFilter !== 'all') filtered = filtered.filter(m => m.gender === memberGenderFilter)
+        if (memberGradeFilter !== 'all') filtered = filtered.filter(m => m.grade === memberGradeFilter)
+        if (memberRegionFilter !== 'all') filtered = filtered.filter(m => m.address1?.includes(memberRegionFilter))
+
+        setTotalMembers(filtered.length)
+        const startIndex = (currentMemberPage - 1) * membersPerPage
+        const endIndex = startIndex + membersPerPage
+        setMembers(filtered.slice(startIndex, endIndex))
+      } else {
+        // 전체 데이터 로드 완료 후 최종 반영
+        applyAndDisplay(allData)
+      }
     } catch (error) {
       console.error('회원 로드 오류:', error)
       setMembers([])
@@ -2441,14 +2958,15 @@ export default function AdminPage() {
       let filtered = allData
 
       // 검색어 필터 (클라이언트 측)
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase()
-        filtered = filtered.filter(member =>
-          member.name?.toLowerCase().includes(searchLower) ||
-          member.user_id?.toLowerCase().includes(searchLower) ||
-          member.email?.toLowerCase().includes(searchLower) ||
-          member.phone?.includes(searchTerm)
-        )
+      if (confirmedSearchTerm) {
+        const searchLower = confirmedSearchTerm.toLowerCase()
+        filtered = filtered.filter(member => {
+          if (confirmedMemberSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
+          if (confirmedMemberSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
+          if (confirmedMemberSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
+          if (confirmedMemberSearchField === 'phone') return member.phone?.includes(confirmedSearchTerm)
+          return false
+        })
       }
 
       // 성별 필터 (클라이언트 측)
@@ -2548,7 +3066,7 @@ export default function AdminPage() {
           member.birth_date || '',
           member.gender === 'male' ? '남성' : member.gender === 'female' ? '여성' : '',
           `"${(member.address1 || '') + ' ' + (member.address2 || '')}"`,
-          member.postcode || '',
+          member.postal_code || '',
           gradeMap[member.grade] || member.grade || '',
           member.record_time === 999 ? '미기록' : member.record_time || '',
           member.role === 'admin' ? '관리자' : '일반회원',
@@ -2567,6 +3085,170 @@ export default function AdminPage() {
     } catch (error) {
       console.error('CSV 내보내기 오류:', error)
       alert('CSV 내보내기 중 오류가 발생했습니다.')
+    } finally {
+      setMembersLoading(false)
+    }
+  }
+
+  // 회원 목록 Excel 내보내기
+  const exportMembersToExcel = async () => {
+    try {
+      setMembersLoading(true)
+
+      // XLSX 라이브러리 동적 로드
+      const XLSX = await import('xlsx')
+
+      // Supabase에서 직접 데이터 조회
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + pageSize - 1)
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+
+          if (data.length < pageSize) {
+            hasMore = false
+          }
+        } else {
+          hasMore = false
+        }
+      }
+
+      let filtered = allData
+
+      // 검색어 필터
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase()
+        filtered = filtered.filter(member =>
+          member.name?.toLowerCase().includes(searchLower) ||
+          member.user_id?.toLowerCase().includes(searchLower) ||
+          member.email?.toLowerCase().includes(searchLower) ||
+          member.phone?.includes(searchTerm)
+        )
+      }
+
+      // 성별 필터
+      if (memberGenderFilter !== 'all') {
+        filtered = filtered.filter(member => member.gender === memberGenderFilter)
+      }
+
+      // 종족(grade) 필터
+      if (memberGradeFilter !== 'all') {
+        filtered = filtered.filter(member => member.grade === memberGradeFilter)
+      }
+
+      // 지역 필터
+      if (memberRegionFilter !== 'all') {
+        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+      }
+
+      // 나이 필터
+      if (memberAgeFilter !== 'all') {
+        filtered = filtered.filter(member => {
+          if (!member.birth_date) return false
+          const yy = parseInt(member.birth_date.substring(0, 2))
+          const birthYear = yy >= 0 && yy <= 30 ? 2000 + yy : 1900 + yy
+          const currentYear = new Date().getFullYear()
+          const age = currentYear - birthYear
+
+          if (memberAgeFilter === '0-19') return age <= 19
+          if (memberAgeFilter === '20-29') return age >= 20 && age <= 29
+          if (memberAgeFilter === '30-39') return age >= 30 && age <= 39
+          if (memberAgeFilter === '40-49') return age >= 40 && age <= 49
+          if (memberAgeFilter === '50-59') return age >= 50 && age <= 59
+          if (memberAgeFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // 대회 미참가자 필터
+      if (memberCompetitionFilter.length > 0) {
+        const participantIds = new Set<string>()
+
+        for (const competitionId of memberCompetitionFilter) {
+          let regOffset = 0
+          const regPageSize = 1000
+          let regHasMore = true
+
+          while (regHasMore) {
+            const { data, error } = await supabase
+              .from('registrations')
+              .select('user_id')
+              .eq('competition_id', competitionId)
+              .range(regOffset, regOffset + regPageSize - 1)
+
+            if (error) {
+              console.error('참가자 조회 오류:', error)
+              break
+            }
+
+            if (data && data.length > 0) {
+              data.forEach(reg => {
+                if (reg.user_id) {
+                  participantIds.add(reg.user_id)
+                }
+              })
+              regOffset += regPageSize
+
+              if (data.length < regPageSize) {
+                regHasMore = false
+              }
+            } else {
+              regHasMore = false
+            }
+          }
+        }
+
+        filtered = filtered.filter(member => !participantIds.has(member.id))
+      }
+
+      // CSV와 동일한 매핑
+      const gradeMap: { [key: string]: string } = {
+        'cheetah': '치타족',
+        'horse': '홀스족',
+        'wolf': '울프족',
+        'turtle': '터틀족',
+        'bolt': '볼타족'
+      }
+
+      // Excel 데이터 준비
+      const data = filtered.map(member => ({
+        '이름': member.name || '-',
+        '아이디': member.user_id || '-',
+        '이메일': member.email || '-',
+        '전화번호': member.phone || '-',
+        '생년월일': member.birth_date || '-',
+        '성별': member.gender === 'male' ? '남성' : member.gender === 'female' ? '여성' : '-',
+        '주소': (member.address1 || '') + ' ' + (member.address2 || '') || '-',
+        '우편번호': member.postal_code || '-',
+        '등급': gradeMap[member.grade] || member.grade || '-',
+        '기록시간(초)': member.record_time === 999 ? '미기록' : member.record_time || '-',
+        '권한': member.role === 'admin' ? '관리자' : '일반회원',
+        '가입일시': formatKST(member.created_at, 'yyyy-MM-dd HH:mm:ss')
+      }))
+
+      // Excel 워크북 생성
+      const worksheet = XLSX.utils.json_to_sheet(data)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, '회원')
+
+      // 파일 다운로드
+      XLSX.writeFile(workbook, `회원목록_${new Date().toISOString().split('T')[0]}.xlsx`)
+      alert(`${filtered.length}명의 회원 정보가 다운로드되었습니다.`)
+    } catch (error) {
+      console.error('Excel 내보내기 오류:', error)
+      alert('Excel 내보내기 중 오류가 발생했습니다.')
     } finally {
       setMembersLoading(false)
     }
@@ -2615,8 +3297,8 @@ export default function AdminPage() {
           query = query.eq('gender', genderFilter)
         }
 
-        if (participantSearchTerm) {
-          query = query.or(`name.ilike.%${participantSearchTerm}%,email.ilike.%${participantSearchTerm}%,phone.ilike.%${participantSearchTerm}%`)
+        if (confirmedParticipantSearchTerm) {
+          query = query.ilike(`${confirmedParticipantSearchField}`, `%${confirmedParticipantSearchTerm}%`)
         }
 
         const { data, error } = await query
@@ -2720,6 +3402,147 @@ export default function AdminPage() {
     } catch (error) {
       console.error('CSV 내보내기 오류:', error)
       alert('CSV 내보내기 중 오류가 발생했습니다.')
+    } finally {
+      setRegistrationsLoading(false)
+    }
+  }
+
+  // 참가자 목록 Excel 내보내기
+  const exportParticipantsToExcel = async () => {
+    try {
+      setRegistrationsLoading(true)
+
+      // XLSX 라이브러리 동적 로드
+      const XLSX = await import('xlsx')
+
+      // Supabase에서 직접 데이터 조회 (CSV와 동일하게)
+      let allData: any[] = []
+      let offset = 0
+      const pageSize = 1000
+      let hasMore = true
+
+      while (hasMore) {
+        let query = supabase
+          .from('registrations')
+          .select(`*,competitions(title,date),users(user_id,grade)`)
+          .range(offset, offset + pageSize - 1)
+
+        if (selectedCompetitionForParticipants) {
+          query = query.eq('competition_id', selectedCompetitionForParticipants)
+        }
+        if (paymentStatusFilter !== 'all' && paymentStatusFilter !== 'expired') {
+          query = query.eq('payment_status', paymentStatusFilter)
+        }
+        if (distanceFilter !== 'all') {
+          query = query.eq('distance', distanceFilter)
+        }
+        if (genderFilter !== 'all') {
+          query = query.eq('gender', genderFilter)
+        }
+        if (confirmedParticipantSearchTerm) {
+          query = query.ilike(`${confirmedParticipantSearchField}`, `%${confirmedParticipantSearchTerm}%`)
+        }
+
+        const { data, error } = await query
+
+        if (error) throw error
+        if (data && data.length > 0) {
+          allData = [...allData, ...data]
+          offset += pageSize
+          if (data.length < pageSize) hasMore = false
+        } else {
+          hasMore = false
+        }
+      }
+
+      // CSV와 동일하게 클라이언트 측 필터링
+      let filtered = allData
+
+      // 종족(grade) 필터
+      if (gradeFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          return reg.users && reg.users.grade === gradeFilter
+        })
+      }
+
+      // 지역 필터
+      if (regionFilter !== 'all') {
+        filtered = filtered.filter(reg => reg.address?.includes(regionFilter))
+      }
+
+      // 나이 필터
+      if (ageFilter !== 'all') {
+        filtered = filtered.filter(reg => {
+          const age = reg.age || 0
+          if (ageFilter === '0-19') return age <= 19
+          if (ageFilter === '20-29') return age >= 20 && age <= 29
+          if (ageFilter === '30-39') return age >= 30 && age <= 39
+          if (ageFilter === '40-49') return age >= 40 && age <= 49
+          if (ageFilter === '50-59') return age >= 50 && age <= 59
+          if (ageFilter === '60+') return age >= 60
+          return true
+        })
+      }
+
+      // 만료 예정 필터
+      if (paymentStatusFilter === 'expired') {
+        filtered = filtered.filter(reg => {
+          const createdDate = new Date(reg.created_at)
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          return createdDate < sevenDaysAgo && reg.payment_status === 'pending'
+        })
+      }
+
+      // CSV와 동일한 매핑
+      const distanceMap: { [key: string]: string } = {
+        '3km': '3km',
+        '5km': '5km',
+        '10km': '10km',
+        'half': '하프',
+        'full': '풀코스'
+      }
+      const paymentMap: { [key: string]: string } = {
+        'pending': '대기',
+        'confirmed': '확인'
+      }
+      const gradeMap: { [key: string]: string } = {
+        'cheetah': '치타족',
+        'horse': '홀스족',
+        'wolf': '울프족',
+        'turtle': '터틀족',
+        'bolt': '볼타족'
+      }
+
+      // Excel 데이터 준비
+      const data = filtered.map(reg => ({
+        '대회명': reg.competitions?.title || '-',
+        '대회일자': reg.competitions?.date || '-',
+        '이름': reg.name || '-',
+        '생년월일': reg.birth_date || '-',
+        '나이': reg.age || '-',
+        '성별': reg.gender === 'male' ? '남성' : reg.gender === 'female' ? '여성' : '-',
+        '회원등급': gradeMap[reg.users?.grade] || '비회원',
+        '전화번호': reg.phone || '-',
+        '이메일': reg.email || '-',
+        '주소': reg.address || '-',
+        '신청거리': distanceMap[reg.distance] || reg.distance || '-',
+        '티셔츠사이즈': reg.shirt_size || '-',
+        '결제상태': paymentMap[reg.payment_status] || reg.payment_status || '-',
+        '입금자명': reg.depositor_name || '-',
+        '신청일시': formatKST(reg.created_at, 'yyyy-MM-dd HH:mm:ss')
+      }))
+
+      // Excel 워크북 생성
+      const worksheet = XLSX.utils.json_to_sheet(data)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, '참가자')
+
+      // 파일 다운로드
+      XLSX.writeFile(workbook, `참가자목록_${new Date().toISOString().split('T')[0]}.xlsx`)
+      alert(`${data.length}명의 참가자 정보가 다운로드되었습니다.`)
+    } catch (error) {
+      console.error('Excel 내보내기 오류:', error)
+      alert('Excel 내보내기 중 오류가 발생했습니다.')
     } finally {
       setRegistrationsLoading(false)
     }
@@ -3080,12 +3903,12 @@ export default function AdminPage() {
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">참가자 관리 ({totalRegistrations})</h2>
                     <div className="flex items-center space-x-2 w-full sm:w-auto">
                       <button
-                        onClick={exportParticipantsToCSV}
+                        onClick={exportParticipantsToExcel}
                         disabled={registrationsLoading || totalRegistrations === 0}
                         className="flex items-center space-x-1.5 sm:space-x-2 bg-green-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                       >
                         <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        <span>CSV 내보내기</span>
+                        <span>다운로드</span>
                       </button>
                       {paymentStatusFilter === 'expired' && totalRegistrations > 0 && (
                         <button
@@ -3111,17 +3934,27 @@ export default function AdminPage() {
 
                   {/* 검색 바 */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mb-4">
+                    <select
+                      value={participantSearchField}
+                      onChange={(e) => setParticipantSearchField(e.target.value as 'name' | 'email' | 'phone')}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm text-gray-900 bg-white whitespace-nowrap"
+                    >
+                      <option value="name">이름</option>
+                      <option value="email">이메일</option>
+                      <option value="phone">연락처</option>
+                    </select>
                     <div className="relative flex-1 sm:max-w-md">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="참가자 이름, 이메일, 연락처로 검색..."
+                        placeholder="검색어를 입력 후 검색 버튼을 누르세요..."
                         value={participantSearchTerm}
                         onChange={(e) => setParticipantSearchTerm(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            setConfirmedParticipantSearchTerm(participantSearchTerm)
+                            setConfirmedParticipantSearchField(participantSearchField)
                             setCurrentRegistrationPage(1)
-                            fetchRegistrations()
                           }
                         }}
                         className="w-full pl-9 sm:pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 bg-white"
@@ -3129,8 +3962,9 @@ export default function AdminPage() {
                     </div>
                     <button
                       onClick={() => {
+                        setConfirmedParticipantSearchTerm(participantSearchTerm)
+                        setConfirmedParticipantSearchField(participantSearchField)
                         setCurrentRegistrationPage(1)
-                        fetchRegistrations()
                       }}
                       className="bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
                     >
@@ -3139,6 +3973,9 @@ export default function AdminPage() {
                     <button
                       onClick={() => {
                         setParticipantSearchTerm('')
+                        setParticipantSearchField('name')
+                        setConfirmedParticipantSearchTerm('')
+                        setConfirmedParticipantSearchField('name')
                         setSelectedCompetitionForParticipants('')
                         setPaymentStatusFilter('all')
                         setDistanceFilter('all')
@@ -3496,7 +4333,7 @@ export default function AdminPage() {
                                 {registration.phone || '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {registration.competitions?.title || '-'}
+                                {registration.competitions?.title.replace('JUST RUN10 ', '') || '-'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {registration.distance ? getDistanceLabel(registration.distance) : '-'}
@@ -3661,7 +4498,18 @@ export default function AdminPage() {
                   }`}
                 >
                   <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
-                  환불요청
+                  환불
+                </button>
+                <button
+                  onClick={() => setCommunitySubTab('registrationChanges')}
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    communitySubTab === 'registrationChanges'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2 inline" />
+                  종목변경
                 </button>
               </nav>
             </div>
@@ -4252,27 +5100,68 @@ export default function AdminPage() {
                     />
                     {receiptRequests.length > 0 && (
                       <button
-                        onClick={() => {
-                          const statusText = (s: string) => s === 'completed' ? '발급완료' : '신청완료'
-                          const typeText = (s: string) => s === 'business' ? '사업자' : '개인'
-                          const bom = '\uFEFF'
-                          const header = '이름,발급유형,연락처,사업자번호,대회,거리,금액,요청일,상태'
-                          const rows = receiptRequests.map(r =>
-                            `"${r.name}","${typeText(r.receipt_type)}","${r.phone || ''}","${r.business_number || ''}","${r.competition_title}","${r.distance}","${r.amount}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(r.status)}"`
-                          )
-                          const csv = bom + header + '\n' + rows.join('\n')
-                          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                          const url = URL.createObjectURL(blob)
-                          const a = document.createElement('a')
-                          a.href = url
-                          a.download = `현금영수증_요청_${format(new Date(), 'yyyyMMdd')}.csv`
-                          a.click()
-                          URL.revokeObjectURL(url)
+                        onClick={checkBulkReceiptSync}
+                        disabled={receiptsLoading}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {receiptsLoading ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                            확인중...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            동기화 확인하기
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {(receiptRequests.length > 0 || selectedReceipts.length > 0) && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            // XLSX 라이브러리 로드
+                            const XLSX = await import('xlsx')
+
+                            const statusText = (s: string) => s === 'completed' ? '발급완료' : '신청완료'
+                            const typeText = (s: string) => s === 'business' ? '사업자' : '개인'
+
+                            // 선택된 항목이 있으면 선택된 항목만, 없으면 필터된 전체 목록
+                            const dataToExport = selectedReceipts.length > 0
+                              ? paginatedReceipts.filter(r => selectedReceipts.includes(r.id))
+                              : filteredReceipts
+
+                            // Excel 데이터 준비
+                            const data = dataToExport.map(r => ({
+                              '신청자명': r.registration_name || '-',
+                              '이름': r.name || '-',
+                              '발급유형': typeText(r.receipt_type),
+                              '연락처': r.phone || '-',
+                              '사업자번호': r.business_number || '-',
+                              '대회': r.competition_title?.replace('JUST RUN10 ', '') || '-',
+                              '거리': r.distance || '-',
+                              '금액': r.amount || '-',
+                              '요청일': formatKST(r.created_at, 'yyyy.MM.dd'),
+                              '상태': statusText(r.status)
+                            }))
+
+                            // Excel 워크북 생성
+                            const worksheet = XLSX.utils.json_to_sheet(data)
+                            const workbook = XLSX.utils.book_new()
+                            XLSX.utils.book_append_sheet(workbook, worksheet, '현금영수증')
+
+                            // 파일 다운로드
+                            XLSX.writeFile(workbook, `현금영수증_요청_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+                          } catch (error) {
+                            console.error('Excel 다운로드 중 오류:', error)
+                            alert('Excel 다운로드 중 오류가 발생했습니다.')
+                          }
                         }}
                         className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
                       >
                         <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        CSV
+                        다운로드 {selectedReceipts.length > 0 && `(${selectedReceipts.length}건)`}
                       </button>
                     )}
                   </div>
@@ -4387,7 +5276,7 @@ export default function AdminPage() {
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">
                               {receipt.receipt_type === 'business' ? (receipt.business_number || '-') : (receipt.phone || '-')}
                             </td>
-                            <td className="px-3 sm:px-6 py-3 text-sm text-gray-900 max-w-[150px] truncate">{receipt.competition_title}</td>
+                            <td className="px-3 sm:px-6 py-3 text-sm text-gray-900 max-w-[150px] truncate">{receipt.competition_title?.replace('JUST RUN10 ', '')}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{receipt.distance}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{receipt.amount?.toLocaleString()}원</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(receipt.created_at, 'yyyy.MM.dd')}</td>
@@ -4547,7 +5436,7 @@ export default function AdminPage() {
                     />
                     {refundRequests.length > 0 && (
                       <>
-                        {/* CSV 다운로드 버튼 (pending 포함시 상태 변경) */}
+                        {/* Excel 다운로드 버튼 (pending 포함시 상태 변경) */}
                         <button
                           onClick={async () => {
                             try {
@@ -4555,6 +5444,9 @@ export default function AdminPage() {
                                 alert('다운로드할 항목을 선택해주세요.')
                                 return
                               }
+
+                              // XLSX 라이브러리 로드
+                              const XLSX = await import('xlsx')
 
                               // pending 항목 확인
                               const pendingRefunds = selectedRefunds.filter(id =>
@@ -4571,41 +5463,51 @@ export default function AdminPage() {
                                 if (updateError) throw updateError
                               }
 
-                              // 2단계: CSV 생성 및 다운로드
+                              // 2단계: Excel 생성 및 다운로드
                               const statusText = (s: string) => {
                                 if (s === 'completed') return '완료'
                                 if (s === 'processing') return '처리중'
                                 return '대기'
                               }
                               const selectedRefundData = refundRequests.filter(r => selectedRefunds.includes(r.id))
-                              const bom = '\uFEFF'
-                              const header = '이름,연락처,대회,거리,금액,은행,계좌번호,예금주,요청일,상태'
-                              const rows = selectedRefundData.map(r => {
-                                // pending이 processing으로 변경되었으면 반영
+
+                              // Excel 데이터 준비
+                              const data = selectedRefundData.map(r => {
                                 const status = pendingRefunds.includes(r.id) ? 'processing' : r.status
-                                return `"${r.name}","${r.phone}","${r.competition_title}","${r.distance}","${r.amount}","${r.bank_name}","${r.account_number}","${r.account_holder}","${formatKST(r.created_at, 'yyyy.MM.dd')}","${statusText(status)}"`
+                                return {
+                                  '이름': r.name || '-',
+                                  '연락처': r.phone || '-',
+                                  '대회': r.competition_title?.replace('JUST RUN10 ', '') || '-',
+                                  '거리': r.distance || '-',
+                                  '금액': r.amount || '-',
+                                  '은행': r.bank_name || '-',
+                                  '계좌번호': r.account_number || '-',
+                                  '예금주': r.account_holder || '-',
+                                  '요청일': formatKST(r.created_at, 'yyyy.MM.dd'),
+                                  '상태': statusText(status)
+                                }
                               })
-                              const csv = bom + header + '\n' + rows.join('\n')
-                              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement('a')
-                              a.href = url
-                              a.download = `환불요청_${format(new Date(), 'yyyyMMdd')}.csv`
-                              a.click()
-                              URL.revokeObjectURL(url)
+
+                              // Excel 워크북 생성
+                              const worksheet = XLSX.utils.json_to_sheet(data)
+                              const workbook = XLSX.utils.book_new()
+                              XLSX.utils.book_append_sheet(workbook, worksheet, '환불요청')
+
+                              // 파일 다운로드
+                              XLSX.writeFile(workbook, `환불요청_${format(new Date(), 'yyyyMMdd')}.xlsx`)
 
                               setSelectedRefunds([])
                               fetchRefundRequests()
                             } catch (error) {
-                              console.error('CSV 다운로드 중 오류:', error)
-                              alert('CSV 다운로드 중 오류가 발생했습니다.')
+                              console.error('Excel 다운로드 중 오류:', error)
+                              alert('Excel 다운로드 중 오류가 발생했습니다.')
                             }
                           }}
                           disabled={selectedRefunds.length === 0}
                           className={`px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1 ${selectedRefunds.length === 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
                           <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          CSV
+                          다운로드
                         </button>
 
                         {/* 환불완료(삭제) 일괄 버튼 */}
@@ -4692,7 +5594,7 @@ export default function AdminPage() {
                             </td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">{refund.name}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{refund.phone}</td>
-                            <td className="px-3 sm:px-4 py-3 text-sm text-gray-900 max-w-[120px] truncate">{refund.competition_title}</td>
+                            <td className="px-3 sm:px-4 py-3 text-sm text-gray-900 max-w-[120px] truncate">{refund.competition_title?.replace('JUST RUN10 ', '')}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{refund.distance}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{refund.amount?.toLocaleString()}원</td>
                             <td className="px-3 sm:px-4 py-3 text-sm text-gray-700">
@@ -4827,6 +5729,342 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* 종목 변경 요청 관리 섹션 */}
+        {communitySubTab === 'registrationChanges' && (() => {
+          let filteredChanges = registrationChangeRequests
+          if (registrationChangeStatusFilter !== 'all') {
+            filteredChanges = filteredChanges.filter(r => r.status === registrationChangeStatusFilter)
+          }
+          if (registrationChangeCompetitionFilter !== 'all') {
+            filteredChanges = filteredChanges.filter(r => r.competition_id === registrationChangeCompetitionFilter)
+          }
+          if (registrationChangeDirectionFilter !== 'all') {
+            const [from, to] = registrationChangeDirectionFilter.split('→')
+            filteredChanges = filteredChanges.filter(r =>
+              r.change_type === 'distance' && r.current_distance === from && r.requested_distance === to
+            )
+          }
+          if (registrationChangeSearchTerm) {
+            const searchLower = registrationChangeSearchTerm.toLowerCase()
+            filteredChanges = filteredChanges.filter(r =>
+              r.name?.toLowerCase().includes(searchLower) ||
+              r.phone?.toLowerCase().includes(searchLower)
+            )
+          }
+
+          const totalChangePages = Math.ceil(filteredChanges.length / registrationChangesPerPage)
+          const paginatedChanges = filteredChanges.slice((currentRegistrationChangePage - 1) * registrationChangesPerPage, currentRegistrationChangePage * registrationChangesPerPage)
+          const allChangePageSelected = paginatedChanges.length > 0 && paginatedChanges.every(r => selectedRegistrationChanges.includes(r.id))
+          return (
+          <>
+            <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">종목 변경 요청 관리</h2>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={registrationChangeStatusFilter}
+                  onChange={(e) => { setRegistrationChangeStatusFilter(e.target.value); setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                >
+                  <option value="all">전체 상태</option>
+                  <option value="pending">대기</option>
+                  <option value="approved">승인</option>
+                  <option value="rejected">거절</option>
+                </select>
+                <select
+                  value={registrationChangeCompetitionFilter}
+                  onChange={(e) => { setRegistrationChangeCompetitionFilter(e.target.value); setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                >
+                  <option value="all">전체 대회</option>
+                  {competitions.map((comp) => (
+                    <option key={comp.id} value={comp.id}>{comp.title}</option>
+                  ))}
+                </select>
+                <select
+                  value={registrationChangeDirectionFilter}
+                  onChange={(e) => { setRegistrationChangeDirectionFilter(e.target.value); setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                >
+                  <option value="all">전체 요청</option>
+                  {Array.from(new Set(
+                    registrationChangeRequests
+                      .filter(r => r.change_type === 'distance' && r.current_distance && r.requested_distance)
+                      .map(r => `${r.current_distance}→${r.requested_distance}`)
+                  )).sort().map(direction => (
+                    <option key={direction} value={direction}>{direction}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="이름/연락처 검색"
+                  value={registrationChangeSearchTerm}
+                  onChange={(e) => { setRegistrationChangeSearchTerm(e.target.value); setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm"
+                />
+                {registrationChangeRequests.length > 0 && (
+                  <>
+                    {selectedRegistrationChanges.length > 0 && (
+                      <>
+                        <button
+                          onClick={() => approveRegistrationChanges(selectedRegistrationChanges)}
+                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                          승인
+                        </button>
+                        <button
+                          onClick={() => rejectRegistrationChanges(selectedRegistrationChanges)}
+                          className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-red-700 transition-colors"
+                        >
+                          거절
+                        </button>
+                      </>
+                    )}
+                    <button
+                      onClick={async () => {
+                        try {
+                          // XLSX 라이브러리 로드
+                          const XLSX = await import('xlsx')
+
+                          // 선택된 항목이 있으면 선택된 항목만, 없으면 필터된 전체 목록
+                          const dataToExport = selectedRegistrationChanges.length > 0
+                            ? paginatedChanges.filter(r => selectedRegistrationChanges.includes(r.id))
+                            : filteredChanges
+
+                          // Excel 데이터 준비
+                          const data = dataToExport.map(r => ({
+                            '신청자': r.name || '-',
+                            '연락처': r.phone || '-',
+                            '대회': r.competition_title?.replace('JUST RUN10 ', '') || '-',
+                            '현재 종목': r.change_type === 'distance' ? (r.current_distance || '-') : (r.current_shirt_size || '-'),
+                            '변경 종목': r.change_type === 'distance' ? (r.requested_distance || '-') : (r.requested_shirt_size || '-'),
+                            '관련내용': r.change_type === 'distance'
+                              ? (r.bank_name ? '환불: ₩5,000' : '추가 입금: ₩5,000')
+                              : '-',
+                            '환불 은행': (r.change_type === 'distance' && r.bank_name) ? r.bank_name : '-',
+                            '환불 계좌': (r.change_type === 'distance' && r.account_number) ? r.account_number : '-',
+                            '환불 예금주': (r.change_type === 'distance' && r.account_holder) ? r.account_holder : '-',
+                            '요청일': formatKST(r.created_at, 'yyyy.MM.dd'),
+                            '상태': r.status === 'pending' ? '대기' : r.status === 'approved' ? '승인' : '거절'
+                          }))
+
+                          // Excel 워크북 생성
+                          const worksheet = XLSX.utils.json_to_sheet(data)
+                          const workbook = XLSX.utils.book_new()
+                          XLSX.utils.book_append_sheet(workbook, worksheet, '종목변경')
+
+                          // 파일 다운로드
+                          XLSX.writeFile(workbook, `종목변경_요청_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+                        } catch (error) {
+                          console.error('Excel 다운로드 중 오류:', error)
+                          alert('Excel 다운로드 중 오류가 발생했습니다.')
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1"
+                    >
+                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      다운로드 {selectedRegistrationChanges.length > 0 && `(${selectedRegistrationChanges.length}건)`}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+{registrationChangesLoading ? (
+              <div className="p-8 text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">로딩 중...</p>
+              </div>
+            ) : registrationChangeRequests.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <Edit className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>종목 변경 요청이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="px-3 sm:px-6 py-2 text-xs text-gray-500 border-b">
+                  총 {registrationChangeRequests.length}건
+                </div>
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-2 sm:px-3 py-3 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={allChangePageSelected}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRegistrationChanges([...selectedRegistrationChanges, ...paginatedChanges.map(r => r.id)])
+                            } else {
+                              setSelectedRegistrationChanges(selectedRegistrationChanges.filter(id => !paginatedChanges.map(r => r.id).includes(id)))
+                            }
+                          }}
+                          className="h-4 w-4 text-red-600 rounded"
+                        />
+                      </th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">신청자</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">연락처</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">대회</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">현재 / 변경 요청</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">관련내용</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">요청일</th>
+                      <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">상태</th>
+                      <th className="px-3 sm:px-4 py-3 text-center text-xs font-medium text-gray-700">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200 text-xs sm:text-sm">
+                    {paginatedChanges.map((change) => (
+                      <tr key={change.id} className="hover:bg-gray-50">
+                        <td className="px-2 sm:px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedRegistrationChanges.includes(change.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRegistrationChanges([...selectedRegistrationChanges, change.id])
+                              } else {
+                                setSelectedRegistrationChanges(selectedRegistrationChanges.filter(id => id !== change.id))
+                              }
+                            }}
+                            className="h-4 w-4 text-red-600 rounded"
+                          />
+                        </td>
+                        <td className="px-3 sm:px-4 py-3">{change.name}</td>
+                        <td className="px-3 sm:px-4 py-3">{change.phone}</td>
+                        <td className="px-3 sm:px-4 py-3">{change.competition_title?.replace('JUST RUN10 ', '')}</td>
+                        <td className="px-3 sm:px-4 py-3">
+                          {change.change_type === 'distance'
+                            ? `${change.current_distance} → ${change.requested_distance}`
+                            : `${change.current_shirt_size} → ${change.requested_shirt_size}`
+                          }
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-xs">
+                          {change.change_type === 'distance' ? (
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {change.bank_name
+                                  ? `환불: ₩${(5000).toLocaleString()}`
+                                  : `추가 입금: ₩${(5000).toLocaleString()}`
+                                }
+                              </div>
+                              {change.bank_name && (
+                                <div className="text-gray-600">
+                                  {change.bank_name} {change.account_number} {change.account_holder}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3">
+                          {formatKST(change.created_at, 'yyyy.MM.dd HH:mm')}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            change.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            change.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {change.status === 'pending' ? '대기' :
+                             change.status === 'approved' ? '승인' : '거절'}
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-center space-x-1">
+                          {change.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => approveRegistrationChanges([change.id])}
+                                className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors"
+                              >
+                                승인
+                              </button>
+                              <button
+                                onClick={() => rejectRegistrationChanges([change.id])}
+                                className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                              >
+                                거절
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="px-3 sm:px-6 py-3 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">페이지당</span>
+                  <select
+                    value={registrationChangesPerPage}
+                    onChange={(e) => { setRegistrationChangesPerPage(Number(e.target.value)); setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  >
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-gray-600">건</span>
+                </div>
+                {totalChangePages > 1 && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => { setCurrentRegistrationChangePage(1); setSelectedRegistrationChanges([]); }}
+                      disabled={currentRegistrationChangePage === 1}
+                      className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      처음
+                    </button>
+                    <button
+                      onClick={() => { setCurrentRegistrationChangePage(currentRegistrationChangePage - 1); setSelectedRegistrationChanges([]); }}
+                      disabled={currentRegistrationChangePage === 1}
+                      className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      이전
+                    </button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, totalChangePages) }, (_, i) => {
+                        const pageNum = i + 1
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => { setCurrentRegistrationChangePage(pageNum); setSelectedRegistrationChanges([]); }}
+                            className={`px-2 py-1.5 text-sm rounded ${
+                              currentRegistrationChangePage === pageNum
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      onClick={() => { setCurrentRegistrationChangePage(currentRegistrationChangePage + 1); setSelectedRegistrationChanges([]); }}
+                      disabled={currentRegistrationChangePage === totalChangePages}
+                      className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      다음
+                    </button>
+                    <button
+                      onClick={() => { setCurrentRegistrationChangePage(totalChangePages); setSelectedRegistrationChanges([]); }}
+                      disabled={currentRegistrationChangePage === totalChangePages}
+                      className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      마지막
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+          )
+        })()}
+
         {/* 팝업 관리 섹션 */}
         {activeTab === 'popups' && (
           <div className="bg-white rounded-lg shadow">
@@ -4950,27 +6188,39 @@ export default function AdminPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-semibold text-gray-900">회원 관리 ({totalMembers})</h2>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={memberSearchField}
+                      onChange={(e) => setMemberSearchField(e.target.value as 'name' | 'user_id' | 'email' | 'phone')}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 text-sm text-gray-900 bg-white"
+                    >
+                      <option value="name">이름</option>
+                      <option value="user_id">아이디</option>
+                      <option value="email">이메일</option>
+                      <option value="phone">연락처</option>
+                    </select>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="이름, 아이디, 이메일, 연락처로 검색..."
+                        placeholder="검색어 입력 후 검색 버튼..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                           if (e.key === 'Enter') {
+                            setConfirmedSearchTerm(searchTerm)
+                            setConfirmedMemberSearchField(memberSearchField)
                             setCurrentMemberPage(1)
-                            fetchMembers()
                           }
                         }}
-                        className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                        className="w-52 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
                       />
                     </div>
                     <button
                       onClick={() => {
+                        setConfirmedSearchTerm(searchTerm)
+                        setConfirmedMemberSearchField(memberSearchField)
                         setCurrentMemberPage(1)
-                        fetchMembers()
                       }}
                       className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                     >
@@ -4979,6 +6229,9 @@ export default function AdminPage() {
                     <button
                       onClick={() => {
                         setSearchTerm('')
+                        setMemberSearchField('name')
+                        setConfirmedSearchTerm('')
+                        setConfirmedMemberSearchField('name')
                         setMemberCompetitionFilter([])
                         setMemberRegionFilter('all')
                         setMemberAgeFilter('all')
@@ -4990,12 +6243,12 @@ export default function AdminPage() {
                       전체 초기화
                     </button>
                     <button
-                      onClick={exportMembersToCSV}
+                      onClick={exportMembersToExcel}
                       disabled={membersLoading || totalMembers === 0}
                       className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm whitespace-nowrap"
                     >
                       <Download className="h-4 w-4" />
-                      <span>CSV 내보내기</span>
+                      <span>다운로드</span>
                     </button>
                   </div>
                 </div>
@@ -5238,7 +6491,7 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatKST(member.created_at, 'yyyy.MM.dd')}
+                          {formatKST(member.created_at, 'yyyy.MM.dd HH:mm')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-3">
@@ -6707,6 +7960,80 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
       )}
 
       {/* 작성자 정보 모달 */}
+      {/* 현금영수증 동기화 모달 */}
+      {showSyncModal && syncDifferences.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">현금영수증 정보 동기화</h3>
+                <p className="text-sm text-gray-500 mt-1">{syncDifferences.length}개의 불일치 항목 발견</p>
+              </div>
+              <button
+                onClick={() => setShowSyncModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-2 px-3 font-semibold text-gray-900">신청자</th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-900">항목</th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-900">신청 당시</th>
+                      <th className="text-left py-2 px-3 font-semibold text-gray-900">현재 정보</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {syncDifferences.map((diff, idx) => (
+                      <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-3 text-gray-900">{diff.receiptName}</td>
+                        <td className="py-3 px-3 font-medium text-gray-900">{diff.field}</td>
+                        <td className="py-3 px-3 text-gray-600">{diff.current}</td>
+                        <td className="py-3 px-3 font-medium text-blue-600">{diff.registration}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-700">
+                  💡 "동기화 시작하기"를 누르면 현재 정보로 모두 업데이트됩니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-2 justify-end sticky bottom-0 bg-white">
+              <button
+                onClick={() => setShowSyncModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                취소
+              </button>
+              <button
+                onClick={startBulkReceiptSync}
+                disabled={isSyncing}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isSyncing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    처리 중...
+                  </>
+                ) : (
+                  '동기화 시작하기'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAuthorModal && selectedAuthor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -6801,6 +8128,7 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
           </div>
         </div>
       )}
+
     </div>
   )
 }

@@ -68,6 +68,7 @@ export default function CompetitionDetailPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
   const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const postsPerPage = 10
   const [showMessage, setShowMessage] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
@@ -134,7 +135,7 @@ export default function CompetitionDetailPage() {
     if (activeTab === 'board') {
       fetchBoardPosts()
     }
-  }, [activeTab, currentPage, searchKeyword])
+  }, [activeTab, currentPage, searchKeyword]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 사진 탭 활성화 시 사진 데이터 가져오기
   useEffect(() => {
@@ -816,22 +817,35 @@ export default function CompetitionDetailPage() {
     ),
 
     board: (
-      <div className="space-y-4 sm:space-y-6">
-        {/* 헤더 */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0">
-          <div className="flex items-center">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">요청게시판</h3>
-          </div>
+      <div className="space-y-2 sm:space-y-3">
+        {/* 1줄: 요청게시판 제목 + 글쓰기 */}
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">요청게시판</h3>
           {user && (
             <button
               onClick={() => setShowPostForm(true)}
-              className="px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium touch-manipulation flex items-center space-x-2"
+              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium touch-manipulation flex items-center gap-1 whitespace-nowrap"
             >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <Plus className="w-3.5 h-3.5 flex-shrink-0" />
               <span>글쓰기</span>
             </button>
           )}
         </div>
+
+        {/* 2줄: 대회관련 요청 안내 + 이동 버튼 */}
+        {user && userRegistration?.payment_status === 'confirmed' && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            <p className="text-xs text-red-700 flex-1">
+              대회 관련 요청 (종목 및 티셔츠 사이즈 변경, 환불, 현금영수증 등) 은   "마이페이지-신청내역"에서 가능합니다.
+            </p>
+            <button
+              onClick={() => router.push('/mypage?tab=registrations')}
+              className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors whitespace-nowrap touch-manipulation flex-shrink-0 self-start sm:self-auto"
+            >
+              이동하기
+            </button>
+          </div>
+        )}
 
         {!user ? (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-8 text-center">
@@ -889,25 +903,6 @@ export default function CompetitionDetailPage() {
         ) : (
           <>
 
-        {/* 검색 */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="제목 또는 작성자로 검색..."
-              value={searchKeyword}
-              onChange={(e) => {
-                setSearchKeyword(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-right whitespace-nowrap">
-            총 {totalPosts}개의 게시글
-          </div>
-        </div>
-
         {/* 게시글 목록 */}
         {boardLoading ? (
           <div className="flex justify-center py-8">
@@ -925,111 +920,85 @@ export default function CompetitionDetailPage() {
           </div>
         ) : (
           <>
-            {/* 게시글 목록 헤더 */}
-            <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-              <div className="bg-gray-50 px-3 sm:px-6 py-2 sm:py-3 border-b border-gray-200">
-                <div className="grid grid-cols-12 gap-2 sm:gap-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="col-span-1 text-center">번호</div>
-                  <div className="col-span-9 sm:col-span-6">제목</div>
-                  <div className="col-span-2 text-center hidden sm:block">작성자</div>
-                  <div className="col-span-2 text-center hidden sm:block">작성일</div>
-                  <div className="col-span-1 text-center hidden sm:block">조회</div>
-                </div>
+            {/* 게시글 목록 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {/* 테이블 헤더 - 데스크톱만 */}
+              <div className="hidden sm:grid grid-cols-12 gap-4 bg-gray-50 px-6 py-3 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="col-span-1 text-center">번호</div>
+                <div className="col-span-6">제목</div>
+                <div className="col-span-2 text-center">작성자</div>
+                <div className="col-span-2 text-center">작성일</div>
+                <div className="col-span-1 text-center">조회</div>
               </div>
 
-              {/* 게시글 목록 */}
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-gray-100">
                 {boardPosts.map((post, index) => (
                   <div
                     key={post.id}
-                    className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="hover:bg-gray-50 cursor-pointer transition-colors touch-manipulation"
                     onClick={() => handlePostClick(post)}
                   >
-                    <div className="grid grid-cols-12 gap-2 sm:gap-4 items-center">
-                      {/* 번호 */}
-                      <div className="col-span-1 text-center text-xs sm:text-sm text-gray-500">
-                        {post.is_notice ? (
-                          <Pin className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 mx-auto" />
-                        ) : (
-                          totalPosts - (currentPage - 1) * postsPerPage - index
-                        )}
-                      </div>
-
-                      {/* 제목 */}
-                      <div className="col-span-9 sm:col-span-6 min-w-0">
-                        <div className="flex flex-col space-y-1">
-                          {/* 제목 줄 */}
-                          <div className="flex items-center space-x-1 sm:space-x-2">
-                            {post.is_notice && (
-                              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
-                                공지
-                              </span>
-                            )}
-                            {post.is_private && (
-                              <span className="text-blue-600 flex-shrink-0">🔒</span>
-                            )}
-                            <span className="font-medium text-gray-900 hover:text-blue-600 text-sm sm:text-base truncate">
-                              {post.title}
+                    {/* 모바일 카드 뷰 */}
+                    <div className="sm:hidden px-4 py-3">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
+                          {post.is_notice && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
+                              <Pin className="w-2.5 h-2.5 mr-0.5" />공지
                             </span>
-                            {(post.post_comments?.length || 0) > 0 && (
-                              <span className="flex items-center text-xs text-red-600 flex-shrink-0">
-                                <MessageSquare className="w-3 h-3 mr-0.5" />
-                                {post.post_comments?.length || 0}
-                              </span>
-                            )}
-                            {post.image_url && (
-                              <span className="text-xs text-blue-600 flex-shrink-0">📷</span>
-                            )}
-                          </div>
-                          {/* 정보 줄 - 모바일에서만 */}
-                          <div className="sm:hidden flex items-center space-x-2 text-xs text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              {post.users?.grade && (
-                                <Image
-                                  src={getGradeInfo(post.users.grade, post.users.role).icon}
-                                  alt="등급"
-                                  width={12}
-                                  height={12}
-                                  className="w-3 h-3"
-                                />
-                              )}
-                              <span>{post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}</span>
-                            </div>
-                            <span>•</span>
-                            <span>{formatKST(post.created_at, 'MM.dd')}</span>
-                            <span>•</span>
-                            <span>조회 {post.views || 0}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 작성자 - 데스크톱만 */}
-                      <div className="col-span-2 text-center hidden sm:block">
-                        <div className="flex items-center justify-center space-x-2">
-                          {post.users?.grade && (
-                            <Image
-                              src={getGradeInfo(post.users.grade, post.users.role).icon}
-                              alt="등급"
-                              width={16}
-                              height={16}
-                              className="w-4 h-4"
-                            />
                           )}
-                          <span className="text-sm text-gray-700">
-                            {post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}
-                          </span>
+                          {post.is_private && <span className="text-blue-500 text-xs flex-shrink-0">🔒</span>}
+                          <span className="font-medium text-sm text-gray-900 truncate">{post.title}</span>
+                          {(post.post_comments?.length || 0) > 0 && (
+                            <span className="flex items-center text-xs text-red-500 flex-shrink-0">
+                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.length}
+                            </span>
+                          )}
+                          {post.image_url && <span className="text-xs flex-shrink-0">📷</span>}
                         </div>
                       </div>
-
-                      {/* 작성일 - 데스크톱만 */}
-                      <div className="col-span-2 text-center text-sm text-gray-500 hidden sm:block">
-                        {formatKST(post.created_at, 'yyyy.MM.dd')}
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        {post.users?.grade && (
+                          <Image src={getGradeInfo(post.users.grade, post.users.role).icon} alt="등급" width={12} height={12} className="w-3 h-3" />
+                        )}
+                        <span>{post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}</span>
+                        <span>•</span>
+                        <span>{formatKST(post.created_at, 'MM.dd')}</span>
+                        <span>•</span>
+                        <span>조회 {post.views || 0}</span>
                       </div>
+                    </div>
 
-                      {/* 조회수 - 데스크톱만 */}
-                      <div className="col-span-1 text-center text-sm text-gray-500 hidden sm:block">
-                        {post.views || 0}
+                    {/* 데스크톱 테이블 뷰 */}
+                    <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-4 items-center">
+                      <div className="col-span-1 text-center text-sm text-gray-500">
+                        {post.is_notice ? <Pin className="w-4 h-4 text-red-600 mx-auto" /> : totalPosts - (currentPage - 1) * postsPerPage - index}
                       </div>
+                      <div className="col-span-6 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {post.is_notice && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">공지</span>
+                          )}
+                          {post.is_private && <span className="text-blue-500 flex-shrink-0">🔒</span>}
+                          <span className="font-medium text-gray-900 hover:text-blue-600 text-sm truncate">{post.title}</span>
+                          {(post.post_comments?.length || 0) > 0 && (
+                            <span className="flex items-center text-xs text-red-500 flex-shrink-0">
+                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.length}
+                            </span>
+                          )}
+                          {post.image_url && <span className="text-xs flex-shrink-0">📷</span>}
+                        </div>
+                      </div>
+                      <div className="col-span-2 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {post.users?.grade && (
+                            <Image src={getGradeInfo(post.users.grade, post.users.role).icon} alt="등급" width={16} height={16} className="w-4 h-4" />
+                          )}
+                          <span className="text-sm text-gray-700">{post.users?.name ? maskName(post.users.name) : '삭제된 사용자'}</span>
+                        </div>
+                      </div>
+                      <div className="col-span-2 text-center text-sm text-gray-500">{formatKST(post.created_at, 'yyyy.MM.dd')}</div>
+                      <div className="col-span-1 text-center text-sm text-gray-500">{post.views || 0}</div>
                     </div>
                   </div>
                 ))}
@@ -1096,6 +1065,39 @@ export default function CompetitionDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* 검색 영역 - 페이지네이션 아래 */}
+            <div className="flex justify-center mt-2">
+              <div className="flex gap-1.5 w-full sm:w-1/2">
+                <input
+                  type="text"
+                  placeholder="제목 또는 작성자 검색..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchKeyword(searchInput)
+                      setCurrentPage(1)
+                    }
+                  }}
+                  className="flex-1 px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={() => { setSearchKeyword(searchInput); setCurrentPage(1) }}
+                  className="px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-xs font-medium touch-manipulation whitespace-nowrap flex-shrink-0"
+                >
+                  검색
+                </button>
+                {searchKeyword && (
+                  <button
+                    onClick={() => { setSearchKeyword(''); setSearchInput(''); setCurrentPage(1) }}
+                    className="px-2.5 py-1.5 border border-gray-300 text-gray-500 rounded-lg hover:bg-gray-50 transition-colors text-xs touch-manipulation flex-shrink-0"
+                  >
+                    초기화
+                  </button>
+                )}
+              </div>
+            </div>
           </>
         )}
 

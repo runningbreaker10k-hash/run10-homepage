@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -34,6 +35,8 @@ const lookupSchema = z.object({
 // 참가 관련 정보만 수정 가능 (회원정보는 마이페이지에서 수정)
 const updateSchema = z.object({
   participation_group_id: z.string().min(1, '참가 종목을 선택해주세요'),
+  distance: z.string().optional(),
+  entry_fee: z.number().optional(),
   shirt_size: z.enum(['S', 'M', 'L', 'XL', 'XXL']),
   depositor_name: z.string().min(2, '입금자명을 입력해주세요')
 })
@@ -47,6 +50,7 @@ interface RegistrationLookupProps {
 }
 
 export default function RegistrationLookup({ competition, onCancelRequest }: RegistrationLookupProps) {
+  const router = useRouter()
   const { user, getGradeInfo } = useAuth()
   const [isLooking, setIsLooking] = useState(false)
   const [registration, setRegistration] = useState<RegistrationWithCompetition | null>(null)
@@ -72,7 +76,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
     register: registerUpdate,
     handleSubmit: handleSubmitUpdate,
     formState: { errors: updateErrors },
-    reset: resetUpdate
+    reset: resetUpdate,
+    setValue: setValueUpdate
   } = useForm<UpdateFormData>({
     resolver: zodResolver(updateSchema)
   })
@@ -197,6 +202,8 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
       // 수정 폼에 기존 데이터 설정 (참가 관련 정보만)
       resetUpdate({
         participation_group_id: registrationData.participation_group_id,
+        distance: registrationData.distance,
+        entry_fee: registrationData.entry_fee,
         shirt_size: registrationData.shirt_size,
         depositor_name: registrationData.depositor_name
       })
@@ -409,18 +416,21 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
 
   // 수정 버튼 클릭 핸들러
   const handleEditClick = () => {
+    if (!registration) return
+
+    // 입금 확인 상태: 마이페이지 신청내역으로 이동
+    if (registration.payment_status === 'confirmed') {
+      router.push('/mypage?tab=registrations')
+      return
+    }
+
     // 이미 수정 모드인 경우 (취소 버튼) - 바로 수정 모드 종료
     if (isEditing) {
       setIsEditing(false)
       return
     }
 
-    // 수정 모드 진입 시 - 대회 마감 여부 확인
-    if (!isRegistrationOpen()) {
-      alert('신청이 마감된 대회의 정보 수정은 불가능 합니다')
-      return
-    }
-
+    // 입금 대기: 수정 모드 진입
     setIsEditing(true)
   }
 
@@ -631,16 +641,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                 className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-blue-600 hover:text-blue-800 touch-manipulation"
               >
                 <Edit className="h-4 w-4 sm:h-5 sm:w-5 mr-1 flex-shrink-0" />
-                {isEditing ? '취소' : '수정'}
+                {isEditing ? '뒤로가기' : '수정'}
               </button>
-              {onCancelRequest && (
-                <button
-                  onClick={onCancelRequest}
-                  className="flex items-center px-3 py-2 sm:py-1 text-xs sm:text-sm text-red-600 hover:text-red-800 touch-manipulation"
-                >
-                  {/* 취소신청 */}
-                </button>
-              )}
+
             </div>
           </div>
         </div>
@@ -759,6 +762,14 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
                     <>
                       <select
                         {...registerUpdate('participation_group_id')}
+                        onChange={(e) => {
+                          const selectedId = e.target.value
+                          const group = participationGroups.find(g => g.id === selectedId)
+                          if (group) {
+                            setValueUpdate('distance', group.distance)
+                            setValueUpdate('entry_fee', group.entry_fee)
+                          }
+                        }}
                         className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                       >
                         <option value="">종목을 선택해주세요</option>

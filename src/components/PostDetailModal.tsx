@@ -199,6 +199,15 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     }
   }, [isEditing, editFormData])
 
+  // 모달 열릴 때 히스토리 추가 → 뒤로가기 시 모달 닫기
+  useEffect(() => {
+    if (!isOpen) return
+    window.history.pushState({ modalOpen: true }, '')
+    const handlePopState = () => onClose()
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [isOpen])
+
   if (!isOpen || !post) return null
 
   // 디버깅을 위한 콘솔 로그
@@ -396,27 +405,32 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     <>
       {/* 메인 모달 */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center"
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-lg w-full max-w-5xl mx-4 max-h-[95vh] overflow-y-auto"
+          className="bg-white w-full sm:rounded-lg sm:max-w-5xl sm:mx-4 rounded-t-2xl max-h-[92vh] sm:max-h-[90vh] overflow-y-auto flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* 모바일 드래그 핸들 */}
+          <div className="flex justify-center pt-3 pb-1 sm:hidden">
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          </div>
+
           {/* 헤더 */}
-          <div className="flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="flex justify-between items-center px-4 py-3 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <h2 className="text-base sm:text-2xl font-bold text-gray-900">
               {isCompetitionPost ? '대회 게시판' : '회원게시판'}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-gray-600 p-1"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {isEditing ? (
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 {/* 비밀글 옵션 */}
@@ -540,147 +554,115 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
             ) : (
               <>
                 {/* 게시글 */}
-                <article className="bg-white rounded-lg shadow overflow-hidden mb-8">
+                <article className="bg-white rounded-lg border border-gray-100 overflow-hidden mb-4">
                   {/* 게시글 헤더 */}
-                  <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
+                  <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
                         {isCommunityPost && post.is_notice && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">
                             <Pin className="w-3 h-3 mr-1" />
                             공지
                           </span>
                         )}
                         {post.is_private && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                             🔒 비밀글
                           </span>
                         )}
-                        <h1 className="text-xl font-bold text-gray-900">{post.title}</h1>
+                        <h1 className="text-sm sm:text-lg font-bold text-gray-900 break-words">{post.title}</h1>
                       </div>
                       {user && (user.role === 'admin' || user.id === post.user_id) && (
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={handleEdit}
-                            className="text-gray-500 hover:text-gray-700 p-1"
-                            title="수정"
-                          >
-                            <Edit className="w-4 h-4" />
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={handleEdit} className="text-gray-500 hover:text-gray-700 p-1.5 touch-manipulation" title="수정">
+                            <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
-                          <button
-                            onClick={handleDeleteRequest}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                          <button onClick={handleDeleteRequest} className="text-red-500 hover:text-red-700 p-1.5 touch-manipulation" title="삭제">
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                          {post.users ? (
-                            <>
-                              <img
-                                src={getGradeInfo(post.users.grade, post.users.role).icon}
-                                alt="등급"
-                                className="w-5 h-5"
-                              />
-                              <span className="font-medium">{post.users.name}</span>
-                              <span className="text-xs opacity-75">({getGradeInfo(post.users.grade, post.users.role).display})</span>
-                            </>
-                          ) : (
-                            <span className="font-medium">알 수 없는 사용자</span>
-                          )}
-                        </div>
-                        <span>•</span>
+                    <div className="flex items-center justify-between mt-2 text-xs sm:text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {post.users ? (
+                          <>
+                            <img src={getGradeInfo(post.users.grade, post.users.role).icon} alt="등급" className="w-4 h-4" />
+                            <span className="font-medium text-gray-700">{post.users.name}</span>
+                            <span className="hidden sm:inline opacity-75">({getGradeInfo(post.users.grade, post.users.role).display})</span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-gray-700">알 수 없는 사용자</span>
+                        )}
+                        <span className="text-gray-300">•</span>
                         <span>{formatDate(post.created_at)}</span>
                       </div>
-                      <div className="flex items-center space-x-1 text-gray-500">
-                        <Eye className="w-4 h-4" />
+                      <div className="flex items-center gap-1 text-gray-400 flex-shrink-0">
+                        <Eye className="w-3.5 h-3.5" />
                         <span>{post.views || 0}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* 게시글 내용 */}
-                  <div className="px-6 py-6">
+                  <div className="px-3 sm:px-6 py-4 sm:py-6">
                     {post.image_url && (
-                      <div className="mb-6">
-                        <img
-                          src={post.image_url}
-                          alt="첨부 이미지"
-                          className="max-w-full h-auto rounded-lg shadow-md"
-                        />
+                      <div className="mb-4">
+                        <img src={post.image_url} alt="첨부 이미지" className="max-w-full h-auto rounded-lg" />
                       </div>
                     )}
-
-                    <div className="text-gray-800 leading-relaxed">
+                    <div className="text-sm sm:text-base text-gray-800 leading-relaxed">
                       {formatContent(post.content)}
                     </div>
                   </div>
                 </article>
 
-                {/* 댓글 섹션 - 모든 게시글에서 사용 */}
+                {/* 댓글 섹션 */}
                 {(
-                  <section className="bg-white rounded-lg shadow">
+                  <section className="bg-white rounded-lg border border-gray-100">
                     {/* 댓글 헤더 */}
-                    <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                      <div className="flex items-center space-x-2">
-                        <MessageSquare className="w-5 h-5 text-gray-600" />
-                        <h2 className="text-lg font-medium text-gray-900">
-                          댓글 {comments.length}개
-                        </h2>
+                    <div className="px-3 sm:px-6 py-2.5 sm:py-4 border-b border-gray-200 bg-gray-50">
+                      <div className="flex items-center gap-1.5">
+                        <MessageSquare className="w-4 h-4 text-gray-600" />
+                        <h2 className="text-sm sm:text-base font-medium text-gray-900">댓글 {comments.length}개</h2>
                       </div>
                     </div>
 
                     {/* 댓글 목록 */}
-                    <div className="divide-y divide-gray-200">
+                    <div className="divide-y divide-gray-100">
                       {comments.length === 0 ? (
-                        <div className="px-6 py-8 text-center text-gray-500">
-                          <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p>첫 번째 댓글을 작성해보세요!</p>
+                        <div className="px-4 py-6 text-center text-gray-400">
+                          <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs sm:text-sm">첫 번째 댓글을 작성해보세요!</p>
                         </div>
                       ) : (
                         comments.map((comment) => {
                           const canDeleteComment = user && (user.role === 'admin' || user.id === comment.user_id)
                           const commenterGradeInfo = comment.users ? getGradeInfo(comment.users.grade, comment.users.role) : null
-
                           return (
-                            <div key={comment.id} className="px-6 py-4">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2 mb-2">
+                            <div key={comment.id} className="px-3 sm:px-6 py-3 sm:py-4">
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
                                     {commenterGradeInfo ? (
                                       <>
-                                        <img
-                                          src={commenterGradeInfo.icon}
-                                          alt="등급"
-                                          className="w-5 h-5"
-                                        />
-                                        <span className="font-medium text-gray-900">{comment.users.name}</span>
-                                        <span className="text-xs text-gray-500">({commenterGradeInfo.display})</span>
+                                        <img src={commenterGradeInfo.icon} alt="등급" className="w-4 h-4" />
+                                        <span className="font-medium text-xs sm:text-sm text-gray-900">{comment.users.name}</span>
+                                        <span className="text-xs text-gray-400 hidden sm:inline">({commenterGradeInfo.display})</span>
                                       </>
                                     ) : (
-                                      <span className="font-medium text-gray-900">알 수 없는 사용자</span>
+                                      <span className="font-medium text-xs text-gray-900">알 수 없는 사용자</span>
                                     )}
-                                    <span className="text-sm text-gray-500">
-                                      {formatDate(comment.created_at)}
-                                    </span>
+                                    <span className="text-xs text-gray-400">{formatDate(comment.created_at)}</span>
                                   </div>
-                                  <div className="text-gray-800 text-sm leading-relaxed">
+                                  <div className="text-xs sm:text-sm text-gray-800 leading-relaxed">
                                     {formatContent(comment.content)}
                                   </div>
                                 </div>
                                 {canDeleteComment && (
-                                  <button
-                                    onClick={() => handleDeleteComment(comment.id, comment.user_id)}
-                                    className="text-gray-400 hover:text-red-500 ml-2 p-1"
-                                    title="댓글 삭제"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
+                                  <button onClick={() => handleDeleteComment(comment.id, comment.user_id)} className="text-gray-300 hover:text-red-500 p-1.5 flex-shrink-0 touch-manipulation">
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                               </div>
@@ -692,40 +674,34 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
 
                     {/* 댓글 작성 */}
                     {user ? (
-                      <div className="px-6 py-4 border-t border-gray-200">
-                        <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <img
-                              src={getGradeInfo(user.grade, user.role).icon}
-                              alt="등급"
-                              className="w-5 h-5"
-                            />
-                            <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100">
+                        <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-2">
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <img src={getGradeInfo(user.grade, user.role).icon} alt="등급" className="w-4 h-4" />
+                            <span className="text-xs sm:text-sm font-medium text-gray-700">{user.name}</span>
                           </div>
                           <textarea
                             {...register('content')}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                             placeholder="댓글을 입력하세요..."
                           />
-                          {errors.content && (
-                            <p className="text-red-500 text-sm">{errors.content.message}</p>
-                          )}
+                          {errors.content && <p className="text-red-500 text-xs">{errors.content.message}</p>}
                           <div className="flex justify-end">
                             <button
                               type="submit"
                               disabled={isSubmittingComment}
-                              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-xs sm:text-sm touch-manipulation"
                             >
-                              <Send className="w-4 h-4" />
+                              <Send className="w-3.5 h-3.5" />
                               <span>{isSubmittingComment ? '등록 중...' : '댓글 등록'}</span>
                             </button>
                           </div>
                         </form>
                       </div>
                     ) : (
-                      <div className="px-6 py-4 border-t border-gray-200 bg-yellow-50">
-                        <p className="text-center text-yellow-800">
+                      <div className="px-4 py-3 border-t border-gray-100 bg-yellow-50">
+                        <p className="text-center text-xs sm:text-sm text-yellow-800">
                           댓글을 작성하려면 <strong>로그인</strong>이 필요합니다.
                         </p>
                       </div>
