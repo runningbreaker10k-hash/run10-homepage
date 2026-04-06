@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -17,7 +17,7 @@ interface Registration {
   already_requested: boolean
 }
 
-export default function ReceiptRequestPage() {
+function ReceiptRequestPageContent() {
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -626,5 +626,13 @@ export default function ReceiptRequestPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ReceiptRequestPage() {
+  return (
+    <Suspense>
+      <ReceiptRequestPageContent />
+    </Suspense>
   )
 }

@@ -26,7 +26,7 @@ interface Post {
   post_comments: { id: string }[]
 }
 
-export default function CommunityPage() {
+function CommunityPageContent() {
   return (
     <Suspense fallback={<div className="min-h-screen pt-16 bg-gray-50 flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div></div>}>
       <CommunityContent />
@@ -477,5 +477,13 @@ function CommunityContent() {
         }}
       />
     </div>
+  )
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense>
+      <CommunityPageContent />
+    </Suspense>
   )
 }

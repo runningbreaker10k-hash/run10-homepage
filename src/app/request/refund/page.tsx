@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -25,7 +25,7 @@ const BANK_LIST = [
   '새마을금고', '신협', '우체국', '수협은행', 'KDB산업은행'
 ]
 
-export default function RefundRequestPage() {
+function RefundRequestPageContent() {
   const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -645,5 +645,13 @@ export default function RefundRequestPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function RefundRequestPage() {
+  return (
+    <Suspense>
+      <RefundRequestPageContent />
+    </Suspense>
   )
 }

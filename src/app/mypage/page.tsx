@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -103,7 +103,7 @@ interface RegistrationChangeRequest {
   change_type: string
 }
 
-export default function MyPage() {
+function MyPageContent() {
   const { user, updateUser, getGradeInfo } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1278,5 +1278,13 @@ export default function MyPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function MyPage() {
+  return (
+    <Suspense>
+      <MyPageContent />
+    </Suspense>
   )
 }

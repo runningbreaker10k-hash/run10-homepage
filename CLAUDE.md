@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-**RUN10 (런텐)**은 Next.js 15.5.2와 TypeScript로 구축된 한국 러닝 협회 웹사이트입니다. 러닝 대회 관리, 참가자 등록, 관리자 대시보드, 회원 시스템 기능을 제공합니다.
+**RUN10 (런텐)**은 Next.js 16.0.7와 TypeScript로 구축된 한국 러닝 협회 웹사이트입니다. 러닝 대회 관리, 참가자 등록, 관리자 대시보드, 회원 시스템 기능을 제공합니다.
 
 ### 기술 스택
-- **프레임워크**: Next.js 15.5.2 with TypeScript, App Router
+- **프레임워크**: Next.js 16.0.7 with TypeScript, App Router
 - **스타일링**: Tailwind CSS v4
 - **데이터베이스**: Supabase (PostgreSQL + Storage)
 - **폼 처리**: React Hook Form + Zod 검증
@@ -336,6 +336,19 @@ if (error) {
 ```
 
 ## 개발 가이드라인
+
+### Next.js 16 주의사항
+- `useSearchParams()`, `useParams()` 등 클라이언트 훅은 반드시 `<Suspense>`로 감싸야 함 (빌드 에러 발생)
+  ```tsx
+  // 올바른 패턴
+  function PageContent() {
+    const searchParams = useSearchParams()
+    // ...
+  }
+  export default function Page() {
+    return <Suspense><PageContent /></Suspense>
+  }
+  ```
 
 ### 코드 작성 패턴
 1. **기존 파일 우선 수정**: 새 파일 생성보다 기존 파일 확장 선호
