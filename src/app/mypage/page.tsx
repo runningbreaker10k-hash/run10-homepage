@@ -601,7 +601,16 @@ function MyPageContent() {
     setIsLoading(true)
 
     try {
-      // 회원 데이터 삭제 (cascade로 연관 데이터도 함께 삭제됨)
+      // 입금대기 상태의 신청 내역만 삭제 (입금확인은 유지)
+      const { error: regError } = await supabase
+        .from('registrations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('payment_status', 'pending')
+
+      if (regError) throw regError
+
+      // 회원 데이터 삭제
       const { error } = await supabase
         .from('users')
         .delete()

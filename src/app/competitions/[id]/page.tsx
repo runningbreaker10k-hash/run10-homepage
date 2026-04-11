@@ -647,8 +647,12 @@ function CompetitionDetailPageContent() {
                     <span className="font-semibold">{competition.title}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>거리:</span>
+                    <span>종목:</span>
                     <span className="font-semibold">{userRegistration.participation_groups?.distance || '미설정'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>참가비:</span>
+                    <span className="font-semibold">₩{(userRegistration.participation_groups?.entry_fee || userRegistration.entry_fee || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>결제 상태:</span>
@@ -659,6 +663,14 @@ function CompetitionDetailPageContent() {
                       {userRegistration.payment_status === 'confirmed' ? '입금확인' :
                        userRegistration.payment_status === 'pending' ? '입금대기' : '취소됨'}
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>계좌번호:</span>
+                    <span className="font-semibold">{competition.bank_name || '하나은행'} {competition.bank_account || '734-910008-72504'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>예금주:</span>
+                    <span className="font-semibold">{competition.account_holder || '(주)러닝브레이커'}</span>
                   </div>
                 </div>
               </div>

@@ -5316,6 +5316,7 @@ export default function AdminPage() {
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
+                        <option value={1000}>1000</option>
                       </select>
                       <span className="text-sm text-gray-600">건</span>
                     </div>
@@ -5882,7 +5883,7 @@ export default function AdminPage() {
             ) : (
               <div className="overflow-x-auto">
                 <div className="px-3 sm:px-6 py-2 text-xs text-gray-500 border-b">
-                  총 {registrationChangeRequests.length}건
+                  총 {filteredChanges.length}건
                 </div>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">

@@ -360,12 +360,6 @@ export default function MemberRegistrationForm({
               <div className="break-words">
                 <span className="text-gray-700 font-medium">입금자명:</span> {formData.depositor_name}
               </div>
-              <div className="break-all">
-                <span className="text-gray-700 font-medium">계좌번호:</span> {competition.bank_name || '하나은행'} {competition.bank_account || '734-910008-72504'}
-              </div>
-              <div className="break-words">
-                <span className="text-gray-700 font-medium">예금주:</span> {competition.account_holder || '(주)러닝브레이커'}
-              </div>
               {formData.notes && (
                 <div className="break-words">
                   <span className="text-gray-700 font-medium">기타사항:</span> {formData.notes}
@@ -439,9 +433,6 @@ export default function MemberRegistrationForm({
         </div>
         <p className="text-xs text-blue-600 mt-5">
           ※ 회원 정보가 자동으로 입력됩니다. 정보가 잘못된 경우 마이페이지에서 수정해주세요.
-        </p>
-        <p className="text-xs text-blue-600 mt-2">
-          ※ 신청순서: 참가 신청 후 입금 / 입금 시 아래 입금자명과 동일하게 해주세요. 
         </p>
       </div>
 
@@ -547,8 +538,6 @@ export default function MemberRegistrationForm({
             ) : (
               <p><strong>참가비:</strong> 종목 선택 후 확인 가능</p>
             )}
-            <p className="break-all"><strong>계좌번호:</strong> {competition.bank_name || '하나은행'} {competition.bank_account || '734-910008-72504'}</p>
-            <p className="break-words"><strong>예금주:</strong> {competition.account_holder || '(주)러닝브레이커'}</p>
             <p className="text-xs mt-2">
               ※ 입금 확인 후 참가 확정됩니다.
             </p>
