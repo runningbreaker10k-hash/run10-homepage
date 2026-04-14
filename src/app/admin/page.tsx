@@ -189,6 +189,12 @@ export default function AdminPage() {
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
   const [memberGradeFilter, setMemberGradeFilter] = useState<string>('all')
 
+  // 참가자/회원 검색 결과 상태
+  const [participantDataLoaded, setParticipantDataLoaded] = useState(false)
+  const [memberDataLoaded, setMemberDataLoaded] = useState(false)
+  const [isParticipantResultStale, setIsParticipantResultStale] = useState(false)
+  const [isMemberResultStale, setIsMemberResultStale] = useState(false)
+
   // SMS 관리 관련 상태
   const [smsSettings, setSmsSettings] = useState<any[]>([])
   const [smsSettingsLoading, setSmsSettingsLoading] = useState(false)
@@ -213,9 +219,7 @@ export default function AdminPage() {
     if (user && user.role === 'admin') {
       if (activeTab === 'competitions') {
         fetchCompetitions()
-        if (competitionSubTab === 'participants') {
-          fetchRegistrations()
-        }
+        // 참가자 목록은 검색 버튼으로만 불러옴
       } else if (activeTab === 'community') {
         if (communitySubTab === 'posts') {
           setCurrentPostPage(1)
@@ -236,8 +240,7 @@ export default function AdminPage() {
       } else if (activeTab === 'members') {
         // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
         fetchCompetitions()
-        setCurrentMemberPage(1)
-        fetchMembers()
+        // 회원 목록은 검색 버튼으로만 불러옴
       } else if (activeTab === 'popups') {
         fetchPopups()
         // 팝업 관리에서도 대회 목록이 필요 (대회 선택용)
@@ -245,7 +248,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, communitySubTab, selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder, currentRegistrationPage, confirmedParticipantSearchTerm, confirmedParticipantSearchField, registrationsPerPage, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter, registrationChangeStatusFilter, registrationChangeCompetitionFilter])
+  }, [activeTab, user, competitionSubTab, communitySubTab, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter, registrationChangeStatusFilter, registrationChangeCompetitionFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
@@ -262,12 +265,31 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyReportedComments, commentSearchTerm])
 
+  // 페이지/페이지크기 변경 시 재조회 (데이터가 로드된 경우에만)
   useEffect(() => {
-    if (user && user.role === 'admin' && activeTab === 'members') {
+    if (user && user.role === 'admin' && activeTab === 'members' && memberDataLoaded) {
       fetchMembers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMemberPage, membersPerPage, user, activeTab, confirmedSearchTerm, confirmedMemberSearchField, memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
+  }, [currentMemberPage, membersPerPage])
+
+  useEffect(() => {
+    if (user && user.role === 'admin' && activeTab === 'competitions' && competitionSubTab === 'participants' && participantDataLoaded) {
+      fetchRegistrations()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRegistrationPage, registrationsPerPage])
+
+  // 필터 변경 시 stale 표시 (데이터 로드 후에만)
+  useEffect(() => {
+    if (participantDataLoaded) setIsParticipantResultStale(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCompetitionForParticipants, paymentStatusFilter, distanceFilter, regionFilter, ageFilter, genderFilter, gradeFilter, shirtSizeFilter, sortBy, sortOrder])
+
+  useEffect(() => {
+    if (memberDataLoaded) setIsMemberResultStale(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberCompetitionFilter, memberRegionFilter, memberAgeFilter, memberGenderFilter, memberGradeFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'rank') {
@@ -734,13 +756,19 @@ export default function AdminPage() {
     }
     const statusText = newStatus === 'completed' ? '발급완료' : '신청완료'
     if (!confirm(`선택된 ${selectedReceipts.length}건을 '${statusText}'로 변경하시겠습니까?`)) return
-    try {
-      const { error } = await supabase
-        .from('receipt_requests')
-        .update({ status: newStatus })
-        .in('id', selectedReceipts)
 
-      if (error) throw error
+    setReceiptsLoading(true)
+    try {
+      // 100개씩 나눠서 순차 처리
+      const chunkSize = 100
+      for (let i = 0; i < selectedReceipts.length; i += chunkSize) {
+        const chunk = selectedReceipts.slice(i, i + chunkSize)
+        const { error } = await supabase
+          .from('receipt_requests')
+          .update({ status: newStatus })
+          .in('id', chunk)
+        if (error) throw error
+      }
 
       alert(`${selectedReceipts.length}건이 '${statusText}'로 변경되었습니다.`)
       setSelectedReceipts([])
@@ -748,6 +776,8 @@ export default function AdminPage() {
     } catch (error) {
       console.error('일괄 상태 변경 오류:', error)
       alert('일괄 상태 변경에 실패했습니다.')
+    } finally {
+      setReceiptsLoading(false)
     }
   }
 
@@ -1644,8 +1674,13 @@ export default function AdminPage() {
   }
 
   // 참가자 관리 함수들
-  const fetchRegistrations = async () => {
+  const fetchRegistrations = async (
+    activeSearchTerm = confirmedParticipantSearchTerm,
+    activeSearchField: 'name' | 'email' | 'phone' = confirmedParticipantSearchField
+  ) => {
     setRegistrationsLoading(true)
+    setIsParticipantResultStale(false)
+    setParticipantDataLoaded(true)
     try {
       // 먼저 총 개수를 가져옴 (count)
       let countQuery = supabase
@@ -1668,8 +1703,8 @@ export default function AdminPage() {
         countQuery = countQuery.eq('gender', genderFilter)
       }
 
-      if (confirmedParticipantSearchTerm) {
-        countQuery = countQuery.ilike(`${confirmedParticipantSearchField}`, `%${confirmedParticipantSearchTerm}%`)
+      if (activeSearchTerm) {
+        countQuery = countQuery.ilike(`${activeSearchField}`, `%${activeSearchTerm}%`)
       }
 
       const { count } = await countQuery
@@ -1717,12 +1752,12 @@ export default function AdminPage() {
         }
 
         // 검색어 필터
-        if (confirmedParticipantSearchTerm) {
-          const searchLower = confirmedParticipantSearchTerm.toLowerCase()
+        if (activeSearchTerm) {
+          const searchLower = activeSearchTerm.toLowerCase()
           filtered = filtered.filter(reg => {
-            if (confirmedParticipantSearchField === 'name') return reg.name?.toLowerCase().includes(searchLower)
-            if (confirmedParticipantSearchField === 'email') return reg.email?.toLowerCase().includes(searchLower)
-            if (confirmedParticipantSearchField === 'phone') return reg.phone?.includes(confirmedParticipantSearchTerm)
+            if (activeSearchField === 'name') return reg.name?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'email') return reg.email?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'phone') return reg.phone?.includes(activeSearchTerm)
             return false
           })
         }
@@ -1774,7 +1809,6 @@ export default function AdminPage() {
       let offset = 0
       const pageSize = 1000
       let hasMore = true
-      let firstBatchLoaded = false
 
       while (hasMore) {
         const { data, error } = await supabase
@@ -1802,13 +1836,6 @@ export default function AdminPage() {
           allData = [...allData, ...data]
           offset += pageSize
 
-          // 첫 번째 배치가 오면 즉시 화면에 표시하고 로딩 스피너 종료
-          if (!firstBatchLoaded) {
-            firstBatchLoaded = true
-            applyAndDisplay(allData)
-            setRegistrationsLoading(false)
-          }
-
           if (data.length < pageSize) {
             hasMore = false
           }
@@ -1817,7 +1844,7 @@ export default function AdminPage() {
         }
       }
 
-      // 전체 데이터 로드 완료 후 최종 반영
+      // 전체 데이터 로드 완료 후 화면에 반영
       applyAndDisplay(allData)
 
     } catch (error) {
@@ -2712,21 +2739,26 @@ export default function AdminPage() {
   }
 
   // 회원 관리 함수들
-  const fetchMembers = async () => {
+  const fetchMembers = async (
+    activeSearchTerm = confirmedSearchTerm,
+    activeSearchField: 'name' | 'user_id' | 'email' | 'phone' = confirmedMemberSearchField
+  ) => {
     setMembersLoading(true)
+    setIsMemberResultStale(false)
+    setMemberDataLoaded(true)
     try {
       // 동기 필터 적용 후 화면에 반영하는 함수 (대회 미참가자 필터 제외)
       const applyAndDisplay = (allData: any[]) => {
         let filtered = allData
 
         // 검색어 필터
-        if (confirmedSearchTerm) {
-          const searchLower = confirmedSearchTerm.toLowerCase()
+        if (activeSearchTerm) {
+          const searchLower = activeSearchTerm.toLowerCase()
           filtered = filtered.filter(member => {
-            if (confirmedMemberSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'phone') return member.phone?.includes(confirmedSearchTerm)
+            if (activeSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'phone') return member.phone?.includes(activeSearchTerm)
             return false
           })
         }
@@ -2775,7 +2807,6 @@ export default function AdminPage() {
       let offset = 0
       const pageSize = 1000
       let hasMore = true
-      let firstBatchLoaded = false
 
       while (hasMore) {
         const { data, error } = await supabase
@@ -2789,15 +2820,6 @@ export default function AdminPage() {
         if (data && data.length > 0) {
           allData = [...allData, ...data]
           offset += pageSize
-
-          // 첫 번째 배치가 오면 즉시 화면에 표시하고 로딩 스피너 종료
-          // (대회 미참가자 필터가 없을 때만 즉시 표시)
-          if (!firstBatchLoaded && memberCompetitionFilter.length === 0) {
-            firstBatchLoaded = true
-            applyAndDisplay(allData)
-            setRegistrationsLoading(false)
-            setMembersLoading(false)
-          }
 
           if (data.length < pageSize) {
             hasMore = false
@@ -2842,13 +2864,13 @@ export default function AdminPage() {
         let filtered = allData.filter(member => !participantIds.has(member.id))
 
         // 나머지 동기 필터도 적용
-        if (confirmedSearchTerm) {
-          const searchLower = confirmedSearchTerm.toLowerCase()
+        if (activeSearchTerm) {
+          const searchLower = activeSearchTerm.toLowerCase()
           filtered = filtered.filter(member => {
-            if (confirmedMemberSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
-            if (confirmedMemberSearchField === 'phone') return member.phone?.includes(confirmedSearchTerm)
+            if (activeSearchField === 'name') return member.name?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'user_id') return member.user_id?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'email') return member.email?.toLowerCase().includes(searchLower)
+            if (activeSearchField === 'phone') return member.phone?.includes(activeSearchTerm)
             return false
           })
         }
@@ -3955,6 +3977,7 @@ export default function AdminPage() {
                             setConfirmedParticipantSearchTerm(participantSearchTerm)
                             setConfirmedParticipantSearchField(participantSearchField)
                             setCurrentRegistrationPage(1)
+                            fetchRegistrations(participantSearchTerm, participantSearchField)
                           }
                         }}
                         className="w-full pl-9 sm:pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 bg-white"
@@ -3965,6 +3988,7 @@ export default function AdminPage() {
                         setConfirmedParticipantSearchTerm(participantSearchTerm)
                         setConfirmedParticipantSearchField(participantSearchField)
                         setCurrentRegistrationPage(1)
+                        fetchRegistrations(participantSearchTerm, participantSearchField)
                       }}
                       className="bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-xs sm:text-sm whitespace-nowrap"
                     >
@@ -3985,6 +4009,10 @@ export default function AdminPage() {
                         setSortBy('created_at')
                         setSortOrder('desc')
                         setCurrentRegistrationPage(1)
+                        setParticipantDataLoaded(false)
+                        setIsParticipantResultStale(false)
+                        setRegistrations([])
+                        setTotalRegistrations(0)
                       }}
                       className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm whitespace-nowrap"
                     >
@@ -4275,112 +4303,129 @@ export default function AdminPage() {
                     <div className="text-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
                     </div>
+                  ) : !participantDataLoaded ? (
+                    <div className="text-center py-16 text-gray-400">
+                      <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p className="text-base">필터 설정 후 검색 버튼을 눌러주세요.</p>
+                    </div>
                   ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            참가자 정보
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            연락처
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            대회명
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            신청 종목
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            신청일
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            결제 상태
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            관리
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {registrations.map((registration) => {
-                          const isNameMismatch = registration.depositor_name &&
-                                                 registration.name !== registration.depositor_name
-                          return (
-                            <tr key={registration.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => openParticipantModal(registration)}
-                                    className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
-                                  >
-                                    {registration.name}
-                                  </button>
-                                  {isNameMismatch && (
-                                    <div className="relative group">
-                                      <span className="text-yellow-600 cursor-help">⚠️</span>
-                                      <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-max">
-                                        <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                                          입금자: {registration.depositor_name}
-                                        </div>
-                                        <div className="absolute left-2 top-full w-0 h-0 border-4 border-transparent border-t-gray-900"></div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {registration.phone || '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {registration.competitions?.title.replace('JUST RUN10 ', '') || '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {registration.distance ? getDistanceLabel(registration.distance) : '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {formatKST(registration.created_at, 'yyyy.MM.dd HH:mm')}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  registration.payment_status === 'confirmed'
-                                    ? 'bg-green-100 text-green-800'
-                                    : registration.payment_status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {registration.payment_status === 'confirmed' ? '입금확인' : '입금대기'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div className="flex items-center space-x-2">
-                                  <select
-                                    value={registration.payment_status}
-                                    onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
-                                    className="text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                  >
-                                    <option value="pending">입금대기</option>
-                                    <option value="confirmed">입금확인</option>
-                                  </select>
-                                  <button
-                                    onClick={() => deleteRegistration(registration.id, registration.name)}
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                    title="참가 신청 취소"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </td>
+                    <div className="relative">
+                      {isParticipantResultStale && (
+                        <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-4">
+                          <div className="bg-white border border-orange-200 rounded-lg px-6 py-3 shadow-lg text-center">
+                            <p className="text-sm font-medium text-orange-700">검색 조건이 변경되었습니다. 검색 버튼을 눌러 결과를 갱신해주세요.</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className={isParticipantResultStale ? 'opacity-40 pointer-events-none' : ''}>
+                      {registrations.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">검색 결과가 없습니다.</p>
+                        </div>
+                      ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                참가자 정보
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                연락처
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                대회명
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                신청 종목
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                신청일
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                결제 상태
+                              </th>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                관리
+                              </th>
                             </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  )}
-                  {registrations.length === 0 && !registrationsLoading && (
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">참가자가 없습니다.</p>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {registrations.map((registration) => {
+                              const isNameMismatch = registration.depositor_name &&
+                                                     registration.name !== registration.depositor_name
+                              return (
+                                <tr key={registration.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => openParticipantModal(registration)}
+                                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                                      >
+                                        {registration.name}
+                                      </button>
+                                      {isNameMismatch && (
+                                        <div className="relative group">
+                                          <span className="text-yellow-600 cursor-help">⚠️</span>
+                                          <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-max">
+                                            <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                              입금자: {registration.depositor_name}
+                                            </div>
+                                            <div className="absolute left-2 top-full w-0 h-0 border-4 border-transparent border-t-gray-900"></div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {registration.phone || '-'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {registration.competitions?.title.replace('JUST RUN10 ', '') || '-'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {registration.distance ? getDistanceLabel(registration.distance) : '-'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {formatKST(registration.created_at, 'yyyy.MM.dd HH:mm')}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      registration.payment_status === 'confirmed'
+                                        ? 'bg-green-100 text-green-800'
+                                        : registration.payment_status === 'pending'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {registration.payment_status === 'confirmed' ? '입금확인' : '입금대기'}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div className="flex items-center space-x-2">
+                                      <select
+                                        value={registration.payment_status}
+                                        onChange={(e) => updatePaymentStatus(registration.id, e.target.value)}
+                                        className="text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                      >
+                                        <option value="pending">입금대기</option>
+                                        <option value="confirmed">입금확인</option>
+                                      </select>
+                                      <button
+                                        onClick={() => deleteRegistration(registration.id, registration.name)}
+                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                        title="참가 신청 취소"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -5173,14 +5218,18 @@ export default function AdminPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateBulkReceiptStatus('completed')}
-                        className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors"
+                        disabled={receiptsLoading}
+                        className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       >
+                        {receiptsLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                         발급완료 처리
                       </button>
                       <button
                         onClick={() => updateBulkReceiptStatus('pending')}
-                        className="px-3 py-1.5 bg-yellow-500 text-white text-xs sm:text-sm rounded-lg hover:bg-yellow-600 transition-colors"
+                        disabled={receiptsLoading}
+                        className="px-3 py-1.5 bg-yellow-500 text-white text-xs sm:text-sm rounded-lg hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       >
+                        {receiptsLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                         신청완료로
                       </button>
                       <button
@@ -6212,6 +6261,7 @@ export default function AdminPage() {
                             setConfirmedSearchTerm(searchTerm)
                             setConfirmedMemberSearchField(memberSearchField)
                             setCurrentMemberPage(1)
+                            fetchMembers(searchTerm, memberSearchField)
                           }
                         }}
                         className="w-52 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
@@ -6222,6 +6272,7 @@ export default function AdminPage() {
                         setConfirmedSearchTerm(searchTerm)
                         setConfirmedMemberSearchField(memberSearchField)
                         setCurrentMemberPage(1)
+                        fetchMembers(searchTerm, memberSearchField)
                       }}
                       className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
                     >
@@ -6238,6 +6289,10 @@ export default function AdminPage() {
                         setMemberAgeFilter('all')
                         setMemberGenderFilter('all')
                         setCurrentMemberPage(1)
+                        setMemberDataLoaded(false)
+                        setIsMemberResultStale(false)
+                        setMembers([])
+                        setTotalMembers(0)
                       }}
                       className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors text-sm whitespace-nowrap"
                     >
@@ -6438,90 +6493,107 @@ export default function AdminPage() {
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
                 </div>
+              ) : !memberDataLoaded ? (
+                <div className="text-center py-16 text-gray-400">
+                  <Search className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-base">필터 설정 후 검색 버튼을 눌러주세요.</p>
+                </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        회원정보
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        연락처
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        등급
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        가입일
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        권한/관리
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {members.map((member) => (
-                      <tr key={member.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <button
-                            onClick={() => openMemberModal(member)}
-                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
-                          >
-                            {member.name}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {member.phone}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-2">
-                            <select
-                              value={member.grade}
-                              onChange={(e) => updateMemberGrade(member.id, e.target.value)}
-                              className="w-full text-sm border border-gray-300 rounded px-2 py-1 bg-white"
-                            >
-                              <option value="cheetah">치타족</option>
-                              <option value="horse">홀스족</option>
-                              <option value="wolf">울프족</option>
-                              <option value="turtle">터틀족</option>
-                              <option value="bolt">볼타족</option>
-                            </select>
-                            <div className="text-xs text-gray-500">
-                              기록: {member.record_time !== 999 ? `${Math.floor(member.record_time / 60)}분 ${member.record_time % 60}초` : '미기록'}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatKST(member.created_at, 'yyyy.MM.dd HH:mm')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-3">
-                            <select
-                              value={member.role}
-                              onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                              className="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
-                            >
-                              <option value="user">일반회원</option>
-                              <option value="admin">관리자</option>
-                            </select>
-                            <button
-                              onClick={() => deleteMember(member.id)}
-                              className="text-red-600 hover:text-red-800"
-                              title="회원 삭제"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {members.length === 0 && !membersLoading && (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">회원이 없습니다.</p>
+                <div className="relative">
+                  {isMemberResultStale && (
+                    <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-4">
+                      <div className="bg-white border border-orange-200 rounded-lg px-6 py-3 shadow-lg text-center">
+                        <p className="text-sm font-medium text-orange-700">검색 조건이 변경되었습니다. 검색 버튼을 눌러 결과를 갱신해주세요.</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className={isMemberResultStale ? 'opacity-40 pointer-events-none' : ''}>
+                  {members.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">검색 결과가 없습니다.</p>
+                    </div>
+                  ) : (
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            회원정보
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            연락처
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            등급
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            가입일
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            권한/관리
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {members.map((member) => (
+                          <tr key={member.id}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button
+                                onClick={() => openMemberModal(member)}
+                                className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer text-left"
+                              >
+                                {member.name}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {member.phone}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="space-y-2">
+                                <select
+                                  value={member.grade}
+                                  onChange={(e) => updateMemberGrade(member.id, e.target.value)}
+                                  className="w-full text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                                >
+                                  <option value="cheetah">치타족</option>
+                                  <option value="horse">홀스족</option>
+                                  <option value="wolf">울프족</option>
+                                  <option value="turtle">터틀족</option>
+                                  <option value="bolt">볼타족</option>
+                                </select>
+                                <div className="text-xs text-gray-500">
+                                  기록: {member.record_time !== 999 ? `${Math.floor(member.record_time / 60)}분 ${member.record_time % 60}초` : '미기록'}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatKST(member.created_at, 'yyyy.MM.dd HH:mm')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center space-x-3">
+                                <select
+                                  value={member.role}
+                                  onChange={(e) => updateMemberRole(member.id, e.target.value)}
+                                  className="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                                >
+                                  <option value="user">일반회원</option>
+                                  <option value="admin">관리자</option>
+                                </select>
+                                <button
+                                  onClick={() => deleteMember(member.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  title="회원 삭제"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                  </div>
                 </div>
               )}
             </div>
