@@ -429,7 +429,7 @@ export default function CompetitionsPage() {
                     'bg-blue-600'
                   }`}>
                     <h4 className="text-base font-bold">
-                      런텐대회 No. {getCompetitionNumber(competition.date)}
+                      런텐대회 No. {isUpcoming ? `${new Date(competition.date).getFullYear()}-0000` : getCompetitionNumber(competition.date)}
                     </h4>
                   </div>
 
@@ -495,7 +495,7 @@ export default function CompetitionsPage() {
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-medium text-gray-700 w-12">일시</span>
                       <span className="flex-1">
-                        {format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })}
+                        {isUpcoming ? '하반기 예정' : format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })}
                       </span>
                     </div>
 
