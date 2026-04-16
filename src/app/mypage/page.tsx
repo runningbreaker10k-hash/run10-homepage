@@ -1216,8 +1216,8 @@ function MyPageContent() {
                         >
                           현금영수증
                           {receiptForThis && (
-                            <span className={`ml-1 ${receiptForThis.status === 'completed' ? 'text-green-500' : 'text-orange-500'}`}>
-                              ({receiptForThis.status === 'completed' ? '발급완료' : '신청완료'})
+                            <span className={`ml-1 ${receiptForThis.status === 'completed' ? 'text-green-500' : receiptForThis.status === 'processing' ? 'text-blue-500' : 'text-orange-500'}`}>
+                              ({receiptForThis.status === 'completed' ? '발급완료' : receiptForThis.status === 'processing' ? '처리중' : '신청완료'})
                             </span>
                           )}
                         </button>

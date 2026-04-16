@@ -27,10 +27,11 @@ interface ParticipationGroup {
 }
 
 const BANK_LIST = [
-  '카카오뱅크', '토스뱅크', '국민은행', '신한은행', '우리은행', '하나은행', '케이뱅크',
-  'NH농협은행', 'IBK기업은행', 'SC제일은행', '씨티은행',
-  '경남은행', '광주은행', '대구은행', '부산은행', '전북은행', '제주은행',
-  '새마을금고', '신협', '우체국', '수협은행', 'KDB산업은행'
+  '카카오뱅크', '케이뱅크', '토스뱅크', '기업은행', 
+  '국민은행', '우리은행', '신한은행', '하나은행', '농협은행', 
+  '지역농축협', 'SC은행', '한국씨티은행', '우체국', '경남은행', 
+  '광주은행', 'iM[구 대구은행]', '부산은행', '산림조합', '산업은행', 
+  '저축은행', '새마을금고', '수협', '신협', '전북은행', '제주은행'
 ]
 
 function RegistrationChangeRequestPageContent() {
@@ -52,7 +53,6 @@ function RegistrationChangeRequestPageContent() {
   const [requestedDistance, setRequestedDistance] = useState('')
   const [requestedEntryFee, setRequestedEntryFee] = useState(0)
   const [bankName, setBankName] = useState('')
-  const [customBankName, setCustomBankName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
 
@@ -223,7 +223,7 @@ function RegistrationChangeRequestPageContent() {
             current_distance: registration.distance,
             requested_distance: requestedDistance,
             requested_entry_fee: requestedEntryFee,
-            bank_name: requestedEntryFee < registration.entry_fee ? (bankName === '기타' ? customBankName : bankName) : null,
+            bank_name: requestedEntryFee < registration.entry_fee ? bankName : null,
             account_number: requestedEntryFee < registration.entry_fee ? accountNumber : null,
             account_holder: requestedEntryFee < registration.entry_fee ? accountHolder : null,
             status: 'pending'
@@ -491,21 +491,8 @@ function RegistrationChangeRequestPageContent() {
                           {BANK_LIST.map((bank) => (
                             <option key={bank} value={bank}>{bank}</option>
                           ))}
-                          <option value="기타">기타</option>
                         </select>
                       </div>
-
-                      {bankName === '기타' && (
-                        <div>
-                          <input
-                            type="text"
-                            value={customBankName}
-                            onChange={(e) => setCustomBankName(e.target.value)}
-                            placeholder="은행명"
-                            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                          />
-                        </div>
-                      )}
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">

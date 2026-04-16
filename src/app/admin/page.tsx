@@ -45,10 +45,9 @@ export default function AdminPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
 
   // 랭커 관리 관련 상태
-  const [maleFile, setMaleFile] = useState<File | null>(null)
-  const [femaleFile, setFemaleFile] = useState<File | null>(null)
-  const [maleUploading, setMaleUploading] = useState(false)
-  const [femaleUploading, setFemaleUploading] = useState(false)
+  const [rankFile, setRankFile] = useState<File | null>(null)
+  const [rankUploading, setRankUploading] = useState(false)
+  const [rankDownloading, setRankDownloading] = useState(false)
   const [maleUpdatedAt, setMaleUpdatedAt] = useState<string>('')
   const [femaleUpdatedAt, setFemaleUpdatedAt] = useState<string>('')
 
@@ -80,6 +79,7 @@ export default function AdminPage() {
 
   // 참가자 관리 관련 상태
   const [registrations, setRegistrations] = useState<RegistrationWithCompetition[]>([])
+  const [allFilteredRegistrations, setAllFilteredRegistrations] = useState<RegistrationWithCompetition[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
   const [selectedCompetitionForParticipants, setSelectedCompetitionForParticipants] = useState<string>('')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
@@ -235,7 +235,6 @@ export default function AdminPage() {
           fetchRefundRequests()
         } else if (communitySubTab === 'registrationChanges') {
           fetchCompetitions()
-          fetchRegistrationChangeRequests()
         }
       } else if (activeTab === 'members') {
         // 회원관리 탭에서도 대회 목록이 필요 (대회 필터용)
@@ -248,7 +247,7 @@ export default function AdminPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, user, competitionSubTab, communitySubTab, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter, registrationChangeStatusFilter, registrationChangeCompetitionFilter])
+  }, [activeTab, user, competitionSubTab, communitySubTab, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
@@ -387,9 +386,9 @@ export default function AdminPage() {
   // 랭커 관리 함수들
   const fetchRankUpdatedDates = async () => {
     try {
-      const maleResponse = await fetch('/data/rank-male.json')
-      if (maleResponse.ok) {
-        const maleData = await maleResponse.json()
+      const { data: maleBlob } = await supabase.storage.from('rank-data').download('rank-male.json')
+      if (maleBlob) {
+        const maleData = JSON.parse(await maleBlob.text())
         setMaleUpdatedAt(maleData.updated_at || '')
       }
     } catch (error) {
@@ -397,9 +396,9 @@ export default function AdminPage() {
     }
 
     try {
-      const femaleResponse = await fetch('/data/rank-female.json')
-      if (femaleResponse.ok) {
-        const femaleData = await femaleResponse.json()
+      const { data: femaleBlob } = await supabase.storage.from('rank-data').download('rank-female.json')
+      if (femaleBlob) {
+        const femaleData = JSON.parse(await femaleBlob.text())
         setFemaleUpdatedAt(femaleData.updated_at || '')
       }
     } catch (error) {
@@ -407,29 +406,22 @@ export default function AdminPage() {
     }
   }
 
-  const handleMaleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRankFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setMaleFile(e.target.files[0])
+      setRankFile(e.target.files[0])
     }
   }
 
-  const handleFemaleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFemaleFile(e.target.files[0])
-    }
-  }
-
-  const handleMaleUpload = async () => {
-    if (!maleFile) {
-      alert('남자 랭커 CSV 파일을 선택해주세요.')
+  const handleRankUpload = async () => {
+    if (!rankFile) {
+      alert('엑셀 파일을 선택해주세요.')
       return
     }
 
-    setMaleUploading(true)
+    setRankUploading(true)
     try {
       const formData = new FormData()
-      formData.append('file', maleFile)
-      formData.append('gender', 'male')
+      formData.append('file', rankFile)
 
       const response = await fetch('/api/rank/upload', {
         method: 'POST',
@@ -440,56 +432,57 @@ export default function AdminPage() {
 
       if (response.ok) {
         alert(result.message)
-        setMaleFile(null)
+        setRankFile(null)
         setMaleUpdatedAt(result.updated_at)
-        // 파일 input 초기화
-        const fileInput = document.getElementById('male-file-input') as HTMLInputElement
+        setFemaleUpdatedAt(result.updated_at)
+        const fileInput = document.getElementById('rank-file-input') as HTMLInputElement
         if (fileInput) fileInput.value = ''
       } else {
-        alert(`업로드 실패: ${result.error}\n${result.details ? JSON.stringify(result.details, null, 2) : ''}`)
+        const details = result.details
+          ? Array.isArray(result.details) ? result.details.join('\n') : JSON.stringify(result.details, null, 2)
+          : ''
+        alert(`업로드 실패: ${result.error}${details ? '\n\n' + details : ''}`)
       }
     } catch (error) {
       console.error('Upload error:', error)
       alert('업로드 중 오류가 발생했습니다.')
     } finally {
-      setMaleUploading(false)
+      setRankUploading(false)
     }
   }
 
-  const handleFemaleUpload = async () => {
-    if (!femaleFile) {
-      alert('여자 랭커 CSV 파일을 선택해주세요.')
-      return
-    }
-
-    setFemaleUploading(true)
+  const handleRankDownload = async () => {
+    setRankDownloading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', femaleFile)
-      formData.append('gender', 'female')
+      const XLSX = await import('xlsx')
 
-      const response = await fetch('/api/rank/upload', {
-        method: 'POST',
-        body: formData,
-      })
+      const { data: maleBlob, error: maleError } = await supabase.storage.from('rank-data').download('rank-male.json')
+      const { data: femaleBlob, error: femaleError } = await supabase.storage.from('rank-data').download('rank-female.json')
 
-      const result = await response.json()
-
-      if (response.ok) {
-        alert(result.message)
-        setFemaleFile(null)
-        setFemaleUpdatedAt(result.updated_at)
-        // 파일 input 초기화
-        const fileInput = document.getElementById('female-file-input') as HTMLInputElement
-        if (fileInput) fileInput.value = ''
-      } else {
-        alert(`업로드 실패: ${result.error}\n${result.details ? JSON.stringify(result.details, null, 2) : ''}`)
+      if (maleError || femaleError) {
+        alert('랭커 데이터를 불러오는 중 오류가 발생했습니다.')
+        return
       }
+
+      const maleJson = JSON.parse(await maleBlob!.text())
+      const femaleJson = JSON.parse(await femaleBlob!.text())
+
+      const toRows = (data: { rank: number; name: string; tier: string; record: string; birth_date: string }[]) =>
+        data.map(r => ({ rank: r.rank, name: r.name, tier: r.tier, record: r.record, birth_date: r.birth_date }))
+
+      const maleSheet = XLSX.utils.json_to_sheet(toRows(maleJson.data || []))
+      const femaleSheet = XLSX.utils.json_to_sheet(toRows(femaleJson.data || []))
+
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, maleSheet, '남자')
+      XLSX.utils.book_append_sheet(workbook, femaleSheet, '여자')
+
+      XLSX.writeFile(workbook, `랭커_${maleJson.updated_at || new Date().toISOString().split('T')[0]}.xlsx`)
     } catch (error) {
-      console.error('Upload error:', error)
-      alert('업로드 중 오류가 발생했습니다.')
+      console.error('Download error:', error)
+      alert('다운로드 중 오류가 발생했습니다.')
     } finally {
-      setFemaleUploading(false)
+      setRankDownloading(false)
     }
   }
 
@@ -740,7 +733,8 @@ export default function AdminPage() {
 
       if (error) throw error
 
-      alert(`상태가 '${newStatus === 'completed' ? '발급완료' : '신청완료'}'로 변경되었습니다.`)
+      const label = newStatus === 'completed' ? '발급완료' : newStatus === 'processing' ? '처리중' : '신청완료'
+      alert(`상태가 '${label}'로 변경되었습니다.`)
       fetchReceiptRequests()
     } catch (error) {
       console.error('상태 변경 오류:', error)
@@ -754,7 +748,7 @@ export default function AdminPage() {
       alert('선택된 항목이 없습니다.')
       return
     }
-    const statusText = newStatus === 'completed' ? '발급완료' : '신청완료'
+    const statusText = newStatus === 'completed' ? '발급완료' : newStatus === 'processing' ? '처리중' : '신청완료'
     if (!confirm(`선택된 ${selectedReceipts.length}건을 '${statusText}'로 변경하시겠습니까?`)) return
 
     setReceiptsLoading(true)
@@ -1800,6 +1794,7 @@ export default function AdminPage() {
         // 페이지네이션 적용
         const startIndex = (currentRegistrationPage - 1) * registrationsPerPage
         const endIndex = startIndex + registrationsPerPage
+        setAllFilteredRegistrations(filtered)
         setRegistrations(filtered.slice(startIndex, endIndex))
         setTotalRegistrations(filtered.length)
       }
@@ -2319,17 +2314,8 @@ export default function AdminPage() {
     try {
       setRegistrationsLoading(true)
 
-      // 7일 이상 경과한 입금 대기 신청 조회
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-
-      const { data: expiredRegs, error: fetchError } = await supabase
-        .from('registrations')
-        .select('id, competition_id, participation_group_id, payment_status')
-        .eq('payment_status', 'pending')
-        .lt('created_at', sevenDaysAgo.toISOString())
-
-      if (fetchError) throw fetchError
+      // 현재 화면에 필터링된 만료 신청 목록 사용 (모든 필터 반영)
+      const expiredRegs = allFilteredRegistrations
 
       if (!expiredRegs || expiredRegs.length === 0) {
         alert('삭제할 만료 신청이 없습니다.')
@@ -2337,12 +2323,13 @@ export default function AdminPage() {
         return
       }
 
-      // 삭제 실행
+      const expiredIds = expiredRegs.map(r => r.id)
+
+      // 삭제 실행 (필터된 ID 기준)
       const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
-        .eq('payment_status', 'pending')
-        .lt('created_at', sevenDaysAgo.toISOString())
+        .in('id', expiredIds)
 
       if (deleteError) throw deleteError
 
@@ -3939,7 +3926,7 @@ export default function AdminPage() {
                           className="flex items-center space-x-1.5 sm:space-x-2 bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                         >
                           <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <span>만료 신청 삭제 ({totalRegistrations}건)</span>
+                          <span>7일 지남 삭제 ({totalRegistrations}건)</span>
                         </button>
                       )}
                       <button
@@ -4081,7 +4068,7 @@ export default function AdminPage() {
                               { value: 'all', label: '전체' },
                               { value: 'pending', label: '입금대기' },
                               { value: 'confirmed', label: '입금확인' },
-                              { value: 'expired', label: '만료예정 (7일+)' }
+                              { value: 'expired', label: '신청한지7일지남' }
                             ].map((status) => (
                               <button
                                 key={status.value}
@@ -5124,6 +5111,7 @@ export default function AdminPage() {
                     >
                       <option value="all">전체 상태</option>
                       <option value="pending">신청완료</option>
+                      <option value="processing">처리중</option>
                       <option value="completed">발급완료</option>
                     </select>
                     <select
@@ -5169,7 +5157,11 @@ export default function AdminPage() {
                             // XLSX 라이브러리 로드
                             const XLSX = await import('xlsx')
 
-                            const statusText = (s: string) => s === 'completed' ? '발급완료' : '신청완료'
+                            const statusText = (s: string) => {
+                              if (s === 'completed') return '발급완료'
+                              if (s === 'processing') return '처리중'
+                              return '신청완료'
+                            }
                             const typeText = (s: string) => s === 'business' ? '사업자' : '개인'
 
                             // 선택된 항목이 있으면 선택된 항목만, 없으면 필터된 전체 목록
@@ -5198,6 +5190,23 @@ export default function AdminPage() {
 
                             // 파일 다운로드
                             XLSX.writeFile(workbook, `현금영수증_요청_${format(new Date(), 'yyyyMMdd')}.xlsx`)
+
+                            // 다운로드된 항목 중 신청완료(pending) 상태인 것만 처리중으로 변경
+                            const pendingIds = dataToExport
+                              .filter(r => r.status === 'pending')
+                              .map(r => r.id)
+
+                            if (pendingIds.length > 0) {
+                              const chunkSize = 100
+                              for (let i = 0; i < pendingIds.length; i += chunkSize) {
+                                const chunk = pendingIds.slice(i, i + chunkSize)
+                                await supabase
+                                  .from('receipt_requests')
+                                  .update({ status: 'processing' })
+                                  .in('id', chunk)
+                              }
+                              fetchReceiptRequests()
+                            }
                           } catch (error) {
                             console.error('Excel 다운로드 중 오류:', error)
                             alert('Excel 다운로드 중 오류가 발생했습니다.')
@@ -5222,7 +5231,15 @@ export default function AdminPage() {
                         className="px-3 py-1.5 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       >
                         {receiptsLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                        발급완료 처리
+                        발급완료로
+                      </button>
+                      <button
+                        onClick={() => updateBulkReceiptStatus('processing')}
+                        disabled={receiptsLoading}
+                        className="px-3 py-1.5 bg-blue-500 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        {receiptsLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                        처리중으로
                       </button>
                       <button
                         onClick={() => updateBulkReceiptStatus('pending')}
@@ -5331,9 +5348,11 @@ export default function AdminPage() {
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(receipt.created_at, 'yyyy.MM.dd')}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                receipt.status === 'completed' ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+                                receipt.status === 'completed' ? 'text-green-600 bg-green-100' :
+                                receipt.status === 'processing' ? 'text-blue-600 bg-blue-100' :
+                                'text-yellow-600 bg-yellow-100'
                               }`}>
-                                {receipt.status === 'completed' ? '발급완료' : '신청완료'}
+                                {receipt.status === 'completed' ? '발급완료' : receipt.status === 'processing' ? '처리중' : '신청완료'}
                               </span>
                             </td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
@@ -5780,7 +5799,7 @@ export default function AdminPage() {
         )}
 
         {/* 종목 변경 요청 관리 섹션 */}
-        {communitySubTab === 'registrationChanges' && (() => {
+        {activeTab === 'community' && communitySubTab === 'registrationChanges' && (() => {
           let filteredChanges = registrationChangeRequests
           if (registrationChangeStatusFilter !== 'all') {
             filteredChanges = filteredChanges.filter(r => r.status === registrationChangeStatusFilter)
@@ -6666,102 +6685,70 @@ export default function AdminPage() {
             <div className="px-6 py-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">랭커 관리</h2>
 
-              {/* 남자 랭커 업로드 */}
-              <div className="mb-8 p-6 border border-gray-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">남자 랭커 CSV 업로드</h3>
+              {/* 업로드 및 다운로드 */}
+              <div className="mb-6 p-6 border border-gray-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">엑셀 업로드 / 다운로드</h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      CSV 파일 선택
+                      엑셀 파일 선택 (.xlsx)
                     </label>
                     <input
-                      id="male-file-input"
+                      id="rank-file-input"
                       type="file"
-                      accept=".csv"
-                      onChange={handleMaleFileChange}
+                      accept=".xlsx"
+                      onChange={handleRankFileChange}
                       className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none p-2"
                     />
                     <p className="mt-2 text-xs text-gray-500">
-                      CSV 형식: rank,name,tier,record,birth_date
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      예시: 1,홍길동,치타족,00:35:42,900515 (또는 cheetah)
+                      Sheet1: 남자 랭커, Sheet2: 여자 랭커
                     </p>
                   </div>
-                  {maleFile && (
+                  {rankFile && (
                     <div className="text-sm text-gray-700">
-                      선택된 파일: <span className="font-medium">{maleFile.name}</span>
+                      선택된 파일: <span className="font-medium">{rankFile.name}</span>
                     </div>
                   )}
-                  <button
-                    onClick={handleMaleUpload}
-                    disabled={!maleFile || maleUploading}
-                    className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
-                      !maleFile || maleUploading
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    {maleUploading ? '업로드 중...' : '업로드'}
-                  </button>
-                  {maleUpdatedAt && (
-                    <div className="text-sm text-gray-600">
-                      현재 업로드: <span className="font-medium">{maleUpdatedAt}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 여자 랭커 업로드 */}
-              <div className="p-6 border border-gray-200 rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">여자 랭커 CSV 업로드</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      CSV 파일 선택
-                    </label>
-                    <input
-                      id="female-file-input"
-                      type="file"
-                      accept=".csv"
-                      onChange={handleFemaleFileChange}
-                      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none p-2"
-                    />
-                    <p className="mt-2 text-xs text-gray-500">
-                      CSV 형식: rank,name,tier,record,birth_date
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      예시: 1,김영희,홀스족,00:42:30,920315 (또는 horse)
-                    </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleRankUpload}
+                      disabled={!rankFile || rankUploading}
+                      className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
+                        !rankFile || rankUploading
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {rankUploading ? '업로드 중...' : '업로드'}
+                    </button>
+                    <button
+                      onClick={handleRankDownload}
+                      disabled={rankDownloading}
+                      className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
+                        rankDownloading
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-green-600 hover:bg-green-700'
+                      }`}
+                    >
+                      {rankDownloading ? '다운로드 중...' : '현재 데이터 다운로드'}
+                    </button>
                   </div>
-                  {femaleFile && (
-                    <div className="text-sm text-gray-700">
-                      선택된 파일: <span className="font-medium">{femaleFile.name}</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={handleFemaleUpload}
-                    disabled={!femaleFile || femaleUploading}
-                    className={`px-6 py-2 rounded-lg font-medium text-white transition-colors ${
-                      !femaleFile || femaleUploading
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
-                  >
-                    {femaleUploading ? '업로드 중...' : '업로드'}
-                  </button>
-                  {femaleUpdatedAt && (
-                    <div className="text-sm text-gray-600">
-                      현재 업로드: <span className="font-medium">{femaleUpdatedAt}</span>
-                    </div>
-                  )}
+                  <div className="flex gap-6 text-sm text-gray-600">
+                    {maleUpdatedAt && (
+                      <span>남자 업데이트: <span className="font-medium">{maleUpdatedAt}</span></span>
+                    )}
+                    {femaleUpdatedAt && (
+                      <span>여자 업데이트: <span className="font-medium">{femaleUpdatedAt}</span></span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* 안내 사항 */}
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">CSV 파일 작성 가이드</h4>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">엑셀 파일 작성 가이드</h4>
                 <ul className="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Sheet1에 남자 랭커, Sheet2에 여자 랭커 데이터를 입력합니다</li>
                   <li>필수 컬럼: rank, name, tier, record, birth_date</li>
                   <li>순위: 1-100 사이의 숫자 (중복 허용)</li>
                   <li>이름: 공백 포함 가능</li>

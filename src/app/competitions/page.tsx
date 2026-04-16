@@ -495,7 +495,13 @@ export default function CompetitionsPage() {
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-medium text-gray-700 w-12">일시</span>
                       <span className="flex-1">
-                        {isUpcoming ? '하반기 예정' : format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })}
+                        {
+                          isUpcoming ? (
+                            competition.title.includes('오산')
+                              ? '2026년 6월 예정'
+                            : '하반기 예정')
+                          : format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })
+                        }
                       </span>
                     </div>
 
@@ -518,7 +524,7 @@ export default function CompetitionsPage() {
                               ? '금호강 러닝성지'
                             : competition.title.includes('대전')
                               ? '갑천 러닝성지'
-                              : competition.location
+                            : competition.location
                         }
                       </span>
                     </div>

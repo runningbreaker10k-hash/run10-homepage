@@ -19,10 +19,11 @@ interface Registration {
 }
 
 const BANK_LIST = [
-  '카카오뱅크', '토스뱅크', '국민은행', '신한은행', '우리은행', '하나은행', '케이뱅크',
-  'NH농협은행', 'IBK기업은행', 'SC제일은행', '씨티은행',
-  '경남은행', '광주은행', '대구은행', '부산은행', '전북은행', '제주은행',
-  '새마을금고', '신협', '우체국', '수협은행', 'KDB산업은행'
+  '카카오뱅크', '케이뱅크', '토스뱅크', '기업은행', 
+  '국민은행', '우리은행', '신한은행', '하나은행', '농협은행', 
+  '지역농축협', 'SC은행', '한국씨티은행', '우체국', '경남은행', 
+  '광주은행', 'iM[구 대구은행]', '부산은행', '산림조합', '산업은행', 
+  '저축은행', '새마을금고', '수협', '신협', '전북은행', '제주은행'
 ]
 
 function RefundRequestPageContent() {
@@ -36,7 +37,6 @@ function RefundRequestPageContent() {
   const [amount, setAmount] = useState('')
   const [selectedRegId, setSelectedRegId] = useState('')
   const [bankName, setBankName] = useState('')
-  const [customBankName, setCustomBankName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const [accountHolder, setAccountHolder] = useState('')
 
@@ -153,11 +153,6 @@ function RefundRequestPageContent() {
 
     if (!name || !phone || !amount || !bankName || !accountNumber || !accountHolder) {
       setError('모든 항목을 입력해주세요')
-      return
-    }
-
-    if (bankName === '기타' && !customBankName) {
-      setError('은행명을 입력해주세요')
       return
     }
 
@@ -472,12 +467,7 @@ function RefundRequestPageContent() {
                   </label>
                   <select
                     value={bankName}
-                    onChange={(e) => {
-                      setBankName(e.target.value)
-                      if (e.target.value !== '기타') {
-                        setCustomBankName('')
-                      }
-                    }}
+                    onChange={(e) => setBankName(e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
                     required
                   >
@@ -485,26 +475,8 @@ function RefundRequestPageContent() {
                     {BANK_LIST.map((bank) => (
                       <option key={bank} value={bank}>{bank}</option>
                     ))}
-                    <option value="기타">기타 (직접 입력)</option>
                   </select>
                 </div>
-
-                {/* 기타 은행 직접 입력 */}
-                {bankName === '기타' && (
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      은행명 입력 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={customBankName}
-                      onChange={(e) => setCustomBankName(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
-                      placeholder="은행명을 입력하세요 (예: 외환은행)"
-                      required
-                    />
-                  </div>
-                )}
 
                 {/* 계좌번호 */}
                 <div className="mb-3">
@@ -610,7 +582,7 @@ function RefundRequestPageContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">은행:</span>
-                  <span className="font-medium text-gray-900">{bankName === '기타' ? customBankName : bankName}</span>
+                  <span className="font-medium text-gray-900">{bankName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">계좌번호:</span>
