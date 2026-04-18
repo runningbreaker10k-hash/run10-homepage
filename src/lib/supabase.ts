@@ -98,6 +98,7 @@ export type Database = {
           current_participants: number
           registration_start: string
           registration_end: string
+          refund_deadline?: string
           entry_fee: number
           course_description: string
           course_image_url?: string
@@ -127,6 +128,7 @@ export type Database = {
           current_participants?: number
           registration_start: string
           registration_end: string
+          refund_deadline?: string
           entry_fee: number
           course_description: string
           course_image_url?: string
@@ -156,6 +158,7 @@ export type Database = {
           current_participants?: number
           registration_start?: string
           registration_end?: string
+          refund_deadline?: string
           entry_fee?: number
           course_description?: string
           course_image_url?: string

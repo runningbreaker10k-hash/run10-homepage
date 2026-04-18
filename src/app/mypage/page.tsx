@@ -254,7 +254,7 @@ function MyPageContent() {
 
       const { data: competitionData, error: competitionError } = await supabase
         .from('competitions')
-        .select('id, title, date, location, bank_name, bank_account, account_holder, registration_end, current_participants, max_participants')
+        .select('id, title, date, location, bank_name, bank_account, account_holder, registration_end, refund_deadline, current_participants, max_participants')
         .in('id', competitionIds)
 
       if (competitionError) {
@@ -267,10 +267,8 @@ function MyPageContent() {
       const now = new Date()
       const registrationsWithCompetitions = registrationData.map(registration => {
         const competition = competitionData?.find(c => c.id === registration.competition_id)
-        const registrationEnd = competition?.registration_end ? new Date(competition.registration_end) : null
-        const is_closed = registrationEnd !== null
-          && registrationEnd < now
-          && (competition?.current_participants ?? 0) >= (competition?.max_participants ?? Infinity)
+        const deadline = competition?.refund_deadline || competition?.registration_end
+        const is_closed = deadline ? new Date(deadline) < now : false
         return {
           ...registration,
           is_closed,

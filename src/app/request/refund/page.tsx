@@ -81,15 +81,14 @@ function RefundRequestPageContent() {
       const competitionIds = [...new Set(regData.map(r => r.competition_id))]
       const { data: compData } = await supabase
         .from('competitions')
-        .select('id, title, current_participants, max_participants, registration_end')
+        .select('id, title, registration_end, refund_deadline')
         .in('id', competitionIds)
 
       const compMap = new Map(
         compData?.map(c => {
           const now = new Date()
-          const registrationEnd = new Date(c.registration_end)
-          // 신청 기간 종료 '그리고' 정원 마감 둘 다 확인
-          const is_closed = registrationEnd < now && c.current_participants >= c.max_participants
+          const deadline = c.refund_deadline || c.registration_end
+          const is_closed = deadline ? new Date(deadline) < now : false
           return [c.id, { title: c.title, is_closed }]
         }) || []
       )

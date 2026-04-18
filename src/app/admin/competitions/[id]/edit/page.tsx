@@ -30,6 +30,7 @@ const competitionSchema = z.object({
   location: z.string().min(2, '대회 장소를 입력해주세요'),
   registration_start: z.string().min(1, '신청 시작일을 선택해주세요'),
   registration_end: z.string().min(1, '신청 마감일을 선택해주세요'),
+  refund_deadline: z.string().optional(),
   entry_fee: z.number().min(0, '참가비는 0원 이상이어야 합니다'),
   course_description: z.string(),
   course_image_url: z.string().optional(),
@@ -71,6 +72,7 @@ export default function EditCompetitionPage() {
   }>>([])
   const [showGroupForm, setShowGroupForm] = useState(false)
   const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
+  const [refundDeadlineSameAsEnd, setRefundDeadlineSameAsEnd] = useState(true)
   const [photos, setPhotos] = useState<Array<{
     id: string
     image_url: string
@@ -326,6 +328,15 @@ export default function EditCompetitionPage() {
         return `${year}-${month}-${day}T${hours}:${minutes}`
       }
 
+      // refund_deadline이 있으면 신청마감일과 다른 것으로 간주
+      if (data.refund_deadline) {
+        const isSame = data.refund_deadline === data.registration_end ||
+          formatDateForInput(data.refund_deadline) === formatDateForInput(data.registration_end)
+        setRefundDeadlineSameAsEnd(isSame)
+      } else {
+        setRefundDeadlineSameAsEnd(true)
+      }
+
       reset({
         title: data.title,
         description: data.description,
@@ -333,6 +344,7 @@ export default function EditCompetitionPage() {
         location: data.location,
         registration_start: formatDateForInput(data.registration_start),
         registration_end: formatDateForInput(data.registration_end),
+        refund_deadline: data.refund_deadline ? formatDateForInput(data.refund_deadline) : '',
         entry_fee: data.entry_fee,
         course_description: data.course_description,
         course_image_url: data.course_image_url || '',
@@ -400,6 +412,7 @@ export default function EditCompetitionPage() {
       // 1. 대회 기본 정보 업데이트
       const competitionData = {
         ...data,
+        refund_deadline: refundDeadlineSameAsEnd ? null : (data.refund_deadline || null),
         max_participants: participationGroups.reduce((sum, group) => sum + group.maxParticipants, 0)
       }
 
@@ -852,6 +865,34 @@ export default function EditCompetitionPage() {
                   <p className="mt-1 text-sm text-red-600">{errors.registration_end.message}</p>
                 )}
               </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                환불/변경 마감일
+              </label>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="refund_deadline_same"
+                  checked={refundDeadlineSameAsEnd}
+                  onChange={e => {
+                    setRefundDeadlineSameAsEnd(e.target.checked)
+                    if (e.target.checked) setValue('refund_deadline', '')
+                  }}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label htmlFor="refund_deadline_same" className="text-sm text-gray-600 cursor-pointer">
+                  신청 마감일과 동일 (별도 마감일 없음)
+                </label>
+              </div>
+              {!refundDeadlineSameAsEnd && (
+                <input
+                  {...register('refund_deadline')}
+                  type="datetime-local"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              )}
             </div>
           </div>
 
