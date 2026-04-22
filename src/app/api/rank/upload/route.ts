@@ -12,6 +12,34 @@ type RankRow = {
 
 const VALID_TIERS = ['cheetah', 'horse', 'wolf', 'turtle', 'bolt']
 
+// Excel time serial (0~1 fraction) or "H:MM:SS AM/PM" string → "HH:MM:SS"
+function toTimeString(val: unknown): string {
+  if (typeof val === 'number') {
+    const totalSeconds = Math.round(val * 86400)
+    const h = Math.floor(totalSeconds / 3600)
+    const m = Math.floor((totalSeconds % 3600) / 60)
+    const s = totalSeconds % 60
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  const str = String(val).trim()
+  // "12:32:23 AM" / "12:32:23 PM" → 24h
+  const ampm = str.match(/^(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i)
+  if (ampm) {
+    let h = parseInt(ampm[1])
+    const m = ampm[2], s = ampm[3], period = ampm[4].toUpperCase()
+    if (period === 'AM' && h === 12) h = 0
+    if (period === 'PM' && h !== 12) h += 12
+    return `${String(h).padStart(2, '0')}:${m}:${s}`
+  }
+  return str
+}
+
+// Excel birth_date number (e.g. 90515) or string → 6-digit padded string "090515"
+function toBirthDate(val: unknown): string {
+  if (typeof val === 'number') return String(val).padStart(6, '0')
+  return String(val).trim().padStart(6, '0')
+}
+
 // 한글 티어명 -> 영문 코드 매핑
 const TIER_MAPPING: Record<string, string> = {
   '치타족': 'cheetah',
@@ -66,12 +94,13 @@ function validateAndTransformRows(rows: RankRow[], sheetName: string): { errors:
       row.tier = convertedTier
     }
 
-    if (!/^\d{1,2}:\d{2}:\d{2}$/.test(String(row.record))) {
+    row.record = toTimeString(row.record)
+    if (!/^\d{1,2}:\d{2}:\d{2}$/.test(row.record)) {
       errors.push(`[${sheetName}] ${rowNum}행: 기록 형식이 올바르지 않습니다. (HH:MM:SS 형식, 예: 00:35:42)`)
     }
 
-    const birthDate = String(row.birth_date).trim()
-    if (!/^\d{6}$/.test(birthDate)) {
+    row.birth_date = toBirthDate(row.birth_date)
+    if (!/^\d{6}$/.test(row.birth_date)) {
       errors.push(`[${sheetName}] ${rowNum}행: 생년월일 형식이 올바르지 않습니다. (YYMMDD 형식, 예: 900515)`)
     }
   })
@@ -93,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // xlsx 파일 파싱
     const arrayBuffer = await file.arrayBuffer()
-    const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: false })
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: true })
 
     if (workbook.SheetNames.length < 2) {
       return NextResponse.json(
