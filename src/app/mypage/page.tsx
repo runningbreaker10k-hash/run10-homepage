@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { User, Calendar, Settings, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { User, Calendar, Settings, Eye, EyeOff, Trash2, Lock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -525,9 +525,9 @@ function MyPageContent() {
         grade: grade
       }
 
-      // record_minutes, record_seconds 제거 (DB에 없는 필드)
+      // record_minutes, record_seconds, name 제거 (DB에 없는 필드 또는 수정 불가 필드)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { record_minutes, record_seconds, ...dbData } = updateData
+      const { record_minutes, record_seconds, name, ...dbData } = updateData
 
       await updateUser(dbData)
       alert('회원 정보가 수정되었습니다.')
@@ -734,15 +734,16 @@ function MyPageContent() {
             {/* 성명 */}
             <div>
               <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">성명</label>
-              <input
-                {...profileForm.register('name')}
-                type="text"
-                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-sm"
-                placeholder="성명을 입력하세요"
-              />
-              {profileForm.formState.errors.name && (
-                <p className="text-red-500 text-sm mt-1">{profileForm.formState.errors.name.message}</p>
-              )}
+              <div className="relative">
+                <input
+                  {...profileForm.register('name')}
+                  type="text"
+                  readOnly
+                  className="input-locked w-full px-3 md:px-4 py-2.5 md:py-3 pr-10 border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed text-sm"
+                />
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              <p className="text-gray-400 text-xs mt-1">변경을 원하시면 관리자에게 문의해 주세요.</p>
             </div>
 
             {/* 주소 */}

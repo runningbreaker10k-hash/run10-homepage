@@ -12,6 +12,11 @@ input, textarea, select {
   background-color: #ffffff !important;
 }
 
+/* 잠금(읽기전용) 입력 필드 배경색 */
+input.input-locked {
+  background-color: #f3f4f6 !important; /* gray-100 */
+}
+
 /* placeholder 색상도 조정 */
 input::placeholder, textarea::placeholder {
   color: #6b7280 !important;
