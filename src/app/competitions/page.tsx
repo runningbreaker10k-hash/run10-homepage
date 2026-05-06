@@ -532,14 +532,11 @@ export default function CompetitionsPage() {
                     {/* 5. 현황 */}
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-medium text-gray-700 w-12">현황</span>
-                      <span className={`flex-1 ${isOngoing ? 'text-red-600 font-medium' : ''}`}>
-                        {isUpcoming && (
-                          <>
-                            {'접수 예정'}
-                          </>
-                        )}
-                        {isClosed && '마감 종료'}
-                        {isOngoing && (
+                      <span className={`flex-1 ${actualStatus === 'ongoing' || actualStatus === 'deadline_approaching' ? 'text-red-600 font-medium' : ''}`}>
+                        {isUpcoming && '접수 예정'}
+                        {isClosed && '종료'}
+                        {actualStatus === 'registration_closed' && '모집 마감'}
+                        {(actualStatus === 'ongoing' || actualStatus === 'deadline_approaching') && (
                           competition.title.includes('청주')
                             ? '※ 선착순 3,500명 모집'
                             : competition.title.includes('대전')
