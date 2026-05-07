@@ -830,9 +830,9 @@ function CompetitionDetailPageContent() {
 
     board: (
       <div className="space-y-2 sm:space-y-3">
-        {/* 1줄: 요청게시판 제목 + 글쓰기 */}
+        {/* 1줄: 대회게시판 제목 + 글쓰기 */}
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">요청게시판</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">대회게시판</h3>
           {user && (
             <button
               onClick={() => setShowPostForm(true)}
@@ -1326,7 +1326,7 @@ function CompetitionDetailPageContent() {
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'register', label: '신청', icon: Users },
               { key: 'lookup', label: '조회', icon: Search },
-              { key: 'board', label: '요청게시판', icon: MessageCircle }
+              { key: 'board', label: '대회게시판', icon: MessageCircle }
             ]).map(({ key, label, icon: Icon }) => (
               <button
                 key={key}

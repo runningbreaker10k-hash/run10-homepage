@@ -41,10 +41,15 @@ export default function CommunityWritePage() {
     }
   })
 
-  // 로그인하지 않은 경우 리다이렉트
+  // 관리자만 접근 가능
   useEffect(() => {
     if (!user) {
       alert('로그인 후 이용해주세요')
+      router.push('/community')
+      return
+    }
+    if (user.role !== 'admin') {
+      alert('관리자만 글을 작성할 수 있습니다')
       router.push('/community')
       return
     }

@@ -377,7 +377,7 @@ export default function CommunityPostPage() {
     )
   }
 
-  const canEditPost = user && (user.role === 'admin' || user.id === post.user_id)
+  const canEditPost = user && user.role === 'admin'
   const authorGradeInfo = getGradeInfo(post.users.grade, post.users.role)
 
   return (

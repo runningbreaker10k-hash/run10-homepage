@@ -46,7 +46,7 @@ export default function Footer() {
                 런텐 랭커
               </Link>
               <Link href="/community" className="block text-gray-300 hover:text-white hover:text-red-200 transition-colors text-sm">
-                자유게시판
+                공지게시판
               </Link>
               
             </div>

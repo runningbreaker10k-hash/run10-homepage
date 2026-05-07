@@ -1716,7 +1716,7 @@ export default function AdminPage() {
         // 결제 상태 필터
         if (paymentStatusFilter === 'expired') {
           const sevenDaysAgo = new Date()
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 14)
           filtered = filtered.filter(reg =>
             reg.payment_status === 'pending' &&
             new Date(reg.created_at) < sevenDaysAgo
@@ -2305,7 +2305,7 @@ export default function AdminPage() {
     // 확인 모달
     const confirmed = confirm(
       `만료된 신청 ${totalRegistrations}건을 삭제하시겠습니까?\n\n` +
-      `7일 이상 입금 대기 중인 신청이 모두 삭제됩니다.\n` +
+      `14일 이상 입금 대기 중인 신청이 모두 삭제됩니다.\n` +
       `이 작업은 되돌릴 수 없습니다.`
     )
 
@@ -3926,7 +3926,7 @@ export default function AdminPage() {
                           className="flex items-center space-x-1.5 sm:space-x-2 bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-xs sm:text-sm flex-1 sm:flex-initial justify-center"
                         >
                           <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                          <span>7일 지남 삭제 ({totalRegistrations}건)</span>
+                          <span>14일 지남 삭제 ({totalRegistrations}건)</span>
                         </button>
                       )}
                       <button
@@ -4068,7 +4068,7 @@ export default function AdminPage() {
                               { value: 'all', label: '전체' },
                               { value: 'pending', label: '입금대기' },
                               { value: 'confirmed', label: '입금확인' },
-                              { value: 'expired', label: '신청한지7일지남' }
+                              { value: 'expired', label: '신청한지14일지남' }
                             ].map((status) => (
                               <button
                                 key={status.value}

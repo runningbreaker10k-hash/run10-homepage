@@ -4,9 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { MessageCircle, Search, Plus, MessageSquare, Pin } from 'lucide-react'
+import { MessageCircle, Search, Plus, MessageSquare, Pin, ExternalLink } from 'lucide-react'
 import { formatPostDate } from '@/lib/dateUtils'
-import AuthModal from '@/components/AuthModal'
 
 interface Post {
   id: string
@@ -42,8 +41,7 @@ function CommunityContent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [totalPosts, setTotalPosts] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [authDefaultTab, setAuthDefaultTab] = useState<'login' | 'signup'>('login')
+  const [activeCompetitions, setActiveCompetitions] = useState<{ id: string; title: string }[]>([])
   const postsPerPage = 15
 
   // URL에서 페이지 번호 읽기
@@ -64,6 +62,21 @@ function CommunityContent() {
   useEffect(() => {
     loadPosts()
   }, [currentPage, searchTerm])
+
+  useEffect(() => {
+    const fetchActiveCompetitions = async () => {
+      const now = new Date().toISOString()
+      const { data } = await supabase
+        .from('competitions')
+        .select('id, title')
+        .eq('status', 'published')
+        .gt('date', now)
+        .lte('registration_start', now)
+        .order('date', { ascending: true })
+      setActiveCompetitions(data || [])
+    }
+    fetchActiveCompetitions()
+  }, [])
 
   const loadPosts = async () => {
     setIsLoading(true)
@@ -160,7 +173,7 @@ function CommunityContent() {
         <div className="absolute inset-0 opacity-20">
           <img
             src="/images/community-hero-bg.jpg"
-            alt="자유게시판 배경"
+            alt="공지게시판 배경"
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
@@ -168,9 +181,9 @@ function CommunityContent() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">자유게시판</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">공지게시판</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
-            런텐 회원들과 자유롭게 소통해보세요
+            런텐 운영진의 공지사항을 확인하세요
           </p>
         </div>
       </section>
@@ -182,9 +195,9 @@ function CommunityContent() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 space-y-4 sm:space-y-0">
             <div className="flex items-center">
               <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 mr-2 flex-shrink-0" />
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">자유게시판</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">공지게시판</h3>
             </div>
-            {user && (
+            {user?.role === 'admin' && (
               <button
                 onClick={handleWritePost}
                 className="px-4 py-2 sm:px-6 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base font-medium touch-manipulation flex items-center space-x-2"
@@ -195,61 +208,28 @@ function CommunityContent() {
             )}
           </div>
 
-          {!user ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-8 text-center mb-6">
-              <MessageCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-400 mx-auto mb-4 sm:mb-6" />
-              <h4 className="text-lg sm:text-2xl font-bold text-red-900 mb-2 sm:mb-4">
-                회원만 게시판을 이용할 수 있습니다
-              </h4>
-              <p className="text-red-700 text-sm sm:text-lg mb-4 sm:mb-6">
-                회원가입 후 자유롭게 소통하고 다른 회원들과 정보를 공유하세요.
+          {/* 활성 대회 게시판 바로가기 */}
+          {activeCompetitions.length > 0 && (
+            <div className="mb-4 sm:mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+              <p className="text-xs sm:text-sm font-medium text-blue-700 mb-2 flex items-center gap-1">
+                <ExternalLink className="w-3.5 h-3.5" />
+                진행 중인 대회 게시판
               </p>
-
-              <div className="bg-white rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                <h5 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">게시판에서 가능한 활동</h5>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <div className="flex items-center text-gray-700">
-                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                    자유로운 소통과 대화
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                    러닝 정보 및 팁 공유
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                    운영진 공지사항 확인
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
-                    후기 및 사진 공유
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-                <button
-                  onClick={() => {
-                    setAuthDefaultTab('signup')
-                    setShowAuthModal(true)
-                  }}
-                  className="px-6 sm:px-8 py-2 sm:py-3 bg-red-600 text-white rounded-lg text-sm sm:text-lg font-semibold hover:bg-red-700 transition-colors shadow-lg text-center touch-manipulation"
-                >
-                  회원가입하기
-                </button>
-                <button
-                  onClick={() => {
-                    setAuthDefaultTab('login')
-                    setShowAuthModal(true)
-                  }}
-                  className="px-6 sm:px-8 py-2 sm:py-3 bg-white text-red-600 border-2 border-red-600 rounded-lg text-sm sm:text-lg font-semibold hover:bg-red-50 transition-colors text-center touch-manipulation"
-                >
-                  로그인
-                </button>
+              <div className="flex flex-wrap gap-2">
+                {activeCompetitions.map(c => (
+                  <a
+                    key={c.id}
+                    href={`/competitions/${c.id}?tab=board`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-blue-300 text-blue-700 rounded-full text-xs sm:text-sm hover:bg-blue-100 transition-colors"
+                  >
+                    {c.title}
+                  </a>
+                ))}
               </div>
             </div>
-          ) : (
-            <>
+          )}
+
+          <>
               {/* 검색 */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4 sm:mb-6">
                 <div className="flex-1">
@@ -461,21 +441,8 @@ function CommunityContent() {
                 </>
               )}
             </>
-          )}
         </div>
       </section>
-
-      {/* 인증 모달 */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        defaultTab={authDefaultTab}
-        onSuccess={() => {
-          setShowAuthModal(false)
-          // 로그인 성공 시 페이지 새로고침으로 상태 업데이트
-          window.location.reload()
-        }}
-      />
     </div>
   )
 }
