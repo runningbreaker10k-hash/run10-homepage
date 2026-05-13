@@ -333,7 +333,7 @@ function CompetitionDetailPageContent() {
       let query = supabase
         .from('community_posts')
         .select(`
-          id, title, content, created_at, updated_at, views, is_notice, is_private, post_password,
+          id, title, content, image_url, created_at, updated_at, views, is_notice, is_private, post_password,
           user_id, users(user_id, name, grade, role),
           post_comments(id)
         `, { count: 'exact' })

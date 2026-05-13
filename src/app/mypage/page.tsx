@@ -1095,7 +1095,7 @@ function MyPageContent() {
 
                 const handleDistanceChangeClick = () => {
                   if (hasPendingChange) {
-                    alert('이미 종목변경 신청이 진행 중입니다.\n완료된 후 다시 신청해주세요.')
+                    alert('이미 종목변경 신청이 진행 중입니다.\n신청 취소를 원하시면 관리자에게 문의 해주세요.')
                     return
                   }
                   router.push(`/request/registration-change?registration_id=${registration.id}&change_type=distance`)
@@ -1125,7 +1125,7 @@ function MyPageContent() {
 
                 const handleRefundClick = () => {
                   if (refundForThis) {
-                    alert('이미 환불 신청 내역이 있습니다.\n대회당 1번만 신청 가능합니다.')
+                    alert('이미 환불 신청 내역이 있습니다.\n신청 취소를 원하시면 관리자에게 문의 해주세요.')
                     return
                   }
                   router.push(`/request/refund?registration_id=${registration.id}`)
