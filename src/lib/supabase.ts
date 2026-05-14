@@ -299,6 +299,7 @@ export type Database = {
           views: number
           is_notice: boolean
           is_private: boolean
+          is_hidden: boolean
           post_password?: string
           report_count: number
           created_at: string
@@ -314,6 +315,7 @@ export type Database = {
           views?: number
           is_notice?: boolean
           is_private?: boolean
+          is_hidden?: boolean
           post_password?: string
           report_count?: number
           created_at?: string
@@ -329,6 +331,7 @@ export type Database = {
           views?: number
           is_notice?: boolean
           is_private?: boolean
+          is_hidden?: boolean
           post_password?: string
           report_count?: number
           created_at?: string

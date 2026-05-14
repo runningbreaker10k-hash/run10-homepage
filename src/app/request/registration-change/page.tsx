@@ -225,6 +225,8 @@ function RegistrationChangeRequestPageContent() {
             user_id: user.id,
             registration_id: registration.id,
             competition_id: registration.competition_id,
+            name,
+            phone,
             change_type: 'distance',
             current_distance: registration.distance,
             requested_distance: requestedDistance,

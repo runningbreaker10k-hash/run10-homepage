@@ -95,6 +95,15 @@ function CommunityContent() {
         `, { count: 'exact' })
         .is('competition_id', null)  // 대회 ID가 없는 글만 표시 (회원게시판)
 
+      // 관리자가 아닌 경우 숨김 글 제외 (본인 글은 표시)
+      if (!user || user.role !== 'admin') {
+        if (user) {
+          query = query.or(`is_hidden.eq.false,user_id.eq.${user.id}`)
+        } else {
+          query = query.eq('is_hidden', false)
+        }
+      }
+
       // 검색 필터
       if (searchTerm) {
         query = query.or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%`)

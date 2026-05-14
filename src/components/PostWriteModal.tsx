@@ -41,7 +41,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
     type: 'info' as 'success' | 'error' | 'warning' | 'info',
     message: ''
   })
-  const [isPrivate, setIsPrivate] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(true)
   const [postPassword, setPostPassword] = useState('')
   const [postPasswordConfirm, setPostPasswordConfirm] = useState('')
 
@@ -248,7 +248,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
       // 폼 초기화
       reset()
       removeImage()
-      setIsPrivate(false)
+      setIsPrivate(true)
       setPostPassword('')
       setPostPasswordConfirm('')
       onPostCreated()

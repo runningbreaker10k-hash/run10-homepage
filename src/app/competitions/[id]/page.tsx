@@ -333,11 +333,20 @@ function CompetitionDetailPageContent() {
       let query = supabase
         .from('community_posts')
         .select(`
-          id, title, content, image_url, created_at, updated_at, views, is_notice, is_private, post_password,
+          id, title, content, image_url, created_at, updated_at, views, is_notice, is_private, is_hidden, post_password,
           user_id, users(user_id, name, grade, role),
           post_comments(id)
         `, { count: 'exact' })
         .eq('competition_id', competitionId)
+
+      // 관리자가 아닌 경우 숨김 글 제외 (본인 글은 표시)
+      if (!user || user.role !== 'admin') {
+        if (user) {
+          query = query.or(`is_hidden.eq.false,user_id.eq.${user.id}`)
+        } else {
+          query = query.eq('is_hidden', false)
+        }
+      }
 
       // 검색 키워드가 있으면 필터링
       if (searchKeyword.trim()) {

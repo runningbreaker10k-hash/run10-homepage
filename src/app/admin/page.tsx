@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Settings,
   Eye,
+  EyeOff,
   Edit,
   UserCheck,
   Trash2,
@@ -890,8 +891,8 @@ export default function AdminPage() {
 
       let changesWithDetails = data.map(r => ({
         ...r,
-        name: r.registrations?.name || '알 수 없음',
-        phone: r.registrations?.phone || '알 수 없음',
+        name: r.name || r.registrations?.name || '알 수 없음',
+        phone: r.phone || r.registrations?.phone || '알 수 없음',
         current_distance: r.current_distance,
         current_shirt_size: r.current_shirt_size,
         entry_fee: r.registrations?.entry_fee || 0,
@@ -947,15 +948,7 @@ export default function AdminPage() {
 
       if (receiptError) throw receiptError
 
-      // 2단계: 연결된 종목변경 신청 삭제
-      const { error: changeError } = await supabase
-        .from('registration_change_requests')
-        .delete()
-        .eq('registration_id', registrationId)
-
-      if (changeError) throw changeError
-
-      // 3단계: 참가신청 삭제
+      // 2단계: 참가신청 삭제
       const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
@@ -1199,15 +1192,7 @@ export default function AdminPage() {
 
           if (receiptError) throw receiptError
 
-          // 2단계: 연결된 종목변경 신청 삭제
-          const { error: changeError } = await supabase
-            .from('registration_change_requests')
-            .delete()
-            .eq('registration_id', refund.registration_id)
-
-          if (changeError) throw changeError
-
-          // 3단계: registrations 삭제
+          // 2단계: registrations 삭제
           const { error: deleteError } = await supabase
             .from('registrations')
             .delete()
@@ -2075,6 +2060,25 @@ export default function AdminPage() {
     }
   }
 
+  const toggleHidden = async (postId: string, currentStatus: boolean) => {
+    if (!confirm(currentStatus ? '게시글을 공개하시겠습니까?' : '게시글을 숨기시겠습니까?\n작성자와 관리자만 볼 수 있습니다.')) return
+
+    try {
+      const { error } = await supabase
+        .from('community_posts')
+        .update({ is_hidden: !currentStatus })
+        .eq('id', postId)
+
+      if (error) throw error
+
+      fetchCommunityPosts()
+      alert(!currentStatus ? '게시글이 숨김 처리되었습니다.' : '게시글이 공개되었습니다.')
+    } catch (error) {
+      console.error('숨김 설정 오류:', error)
+      alert('숨김 설정 중 오류가 발생했습니다.')
+    }
+  }
+
   // 댓글 관리 함수들
   const fetchComments = async () => {
     setCommentsLoading(true)
@@ -2225,15 +2229,7 @@ export default function AdminPage() {
 
       if (receiptDeleteError) throw receiptDeleteError
 
-      // 2단계: 환불 요청 삭제
-      const { error: refundDeleteError } = await supabase
-        .from('refund_requests')
-        .delete()
-        .eq('registration_id', registrationId)
-
-      if (refundDeleteError) throw refundDeleteError
-
-      // 3단계: 참가 신청 삭제
+      // 2단계: 참가 신청 삭제
       const { error: deleteError } = await supabase
         .from('registrations')
         .delete()
@@ -4788,14 +4784,15 @@ export default function AdminPage() {
                                 <span className="hidden sm:inline">{post.is_notice ? '공지해제' : '공지설정'}</span>
                               </button>
                               <button
-                                onClick={() => {
-                                  setSelectedPost(post)
-                                  setShowPostDetail(true)
-                                }}
-                                className="inline-flex items-center justify-center px-2 sm:px-3 py-1 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded text-xs font-medium transition-colors"
+                                onClick={() => toggleHidden(post.id, post.is_hidden || false)}
+                                className={`inline-flex items-center justify-center px-2 sm:px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                  post.is_hidden
+                                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                }`}
                               >
-                                <Eye className="h-3 w-3 sm:mr-1" />
-                                <span className="hidden sm:inline">보기</span>
+                                <EyeOff className="h-3 w-3 sm:mr-1" />
+                                <span className="hidden sm:inline">{post.is_hidden ? '공개' : '숨김'}</span>
                               </button>
                               <button
                                 onClick={() => deletePost(post.id)}
@@ -6096,7 +6093,8 @@ export default function AdminPage() {
                     </button>
                     <div className="flex items-center space-x-1">
                       {Array.from({ length: Math.min(5, totalChangePages) }, (_, i) => {
-                        const pageNum = i + 1
+                        const startPage = Math.max(1, Math.min(currentRegistrationChangePage - 2, totalChangePages - 4))
+                        const pageNum = startPage + i
                         return (
                           <button
                             key={pageNum}

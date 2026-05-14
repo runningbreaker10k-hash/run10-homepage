@@ -20,6 +20,12 @@ const getDistanceLabel = (distance: string) => {
   return labels[distance] || distance
 }
 
+// 대회 티셔츠 사이즈별 한도 설정 (대회 제목에 키워드가 포함되면 적용)
+const SHIRT_LIMIT_CONFIG: Record<string, Record<string, number>> = {
+  '대전': { S: 500, M: 1200, L: 1600, XL: 1400, XXL: 700 },
+  // '서울': { S: 300, M: 800, L: 1000, XL: 900, XXL: 400 },  //예시임 이렇게 추가하면 됨
+}
+
 // 티셔츠 사이즈 라벨 매핑
 const getShirtSizeLabel = (size: string) => {
   const labels: { [key: string]: string } = {
@@ -76,6 +82,10 @@ export default function MemberRegistrationForm({
   const [selectedGroup, setSelectedGroup] = useState<any>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [formData, setFormData] = useState<any>(null)
+  const [shirtSizeCounts, setShirtSizeCounts] = useState<Record<string, number>>({})
+
+  const shirtLimitKey = Object.keys(SHIRT_LIMIT_CONFIG).find(k => competition.title.includes(k))
+  const activeShirtLimits = shirtLimitKey ? SHIRT_LIMIT_CONFIG[shirtLimitKey] : null
 
   const {
     register,
@@ -101,6 +111,25 @@ export default function MemberRegistrationForm({
       setValue('depositor_name', userDetails.name)
     }
   }, [userDetails, setValue])
+
+  // 대회: 티셔츠 사이즈별 신청 현황 조회
+  useEffect(() => {
+    if (!activeShirtLimits) return
+    const loadShirtCounts = async () => {
+      const counts: Record<string, number> = {}
+      await Promise.all(['S', 'M', 'L', 'XL', 'XXL'].map(async (size) => {
+        const { count } = await supabase
+          .from('registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('competition_id', competition.id)
+          .eq('shirt_size', size)
+          .neq('payment_status', 'cancelled')
+        counts[size] = count || 0
+      }))
+      setShirtSizeCounts(counts)
+    }
+    loadShirtCounts()
+  }, [competition.id, shirtLimitKey])
 
   const loadUserDetails = async () => {
     if (!user) return
@@ -473,19 +502,28 @@ export default function MemberRegistrationForm({
             <span>티셔츠 사이즈 <span className="text-red-500 ml-1">*</span></span>
           </label>
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-            {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
-              <label key={size} className="relative">
-                <input
-                  {...register('shirt_size')}
-                  type="radio"
-                  value={size}
-                  className="sr-only peer"
-                />
-                <div className="w-full py-2 sm:py-3 px-2 sm:px-3 text-center text-xs sm:text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 transition-colors">
-                  {getShirtSizeLabel(size)}
-                </div>
-              </label>
-            ))}
+            {['S', 'M', 'L', 'XL', 'XXL'].map((size) => {
+              const isSoldOut = !!activeShirtLimits && (shirtSizeCounts[size] || 0) >= activeShirtLimits[size]
+              return (
+                <label key={size} className={`relative ${isSoldOut ? 'cursor-not-allowed' : ''}`}>
+                  <input
+                    {...register('shirt_size')}
+                    type="radio"
+                    value={size}
+                    disabled={isSoldOut}
+                    className="sr-only peer"
+                  />
+                  <div className={`w-full py-2 sm:py-3 px-2 sm:px-3 text-center text-xs sm:text-sm font-medium border rounded-md transition-colors ${
+                    isSoldOut
+                      ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                      : 'cursor-pointer peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500'
+                  }`}>
+                    {getShirtSizeLabel(size)}
+                    {isSoldOut && <span className="block text-xs text-red-400 mt-0.5">현재 선택 불가능</span>}
+                  </div>
+                </label>
+              )
+            })}
           </div>
           {errors.shirt_size && (
             <p className="text-red-500 text-xs sm:text-sm mt-1 break-words">{errors.shirt_size.message}</p>
