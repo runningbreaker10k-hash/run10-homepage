@@ -335,7 +335,7 @@ function CompetitionDetailPageContent() {
         .select(`
           id, title, content, image_url, created_at, updated_at, views, is_notice, is_private, is_hidden, post_password,
           user_id, users(user_id, name, grade, role),
-          post_comments(id)
+          post_comments(id, is_hidden)
         `, { count: 'exact' })
         .eq('competition_id', competitionId)
 
@@ -970,9 +970,9 @@ function CompetitionDetailPageContent() {
                           )}
                           {post.is_private && <span className="text-blue-500 text-xs flex-shrink-0">🔒</span>}
                           <span className="font-medium text-sm text-gray-900 truncate">{post.title}</span>
-                          {(post.post_comments?.length || 0) > 0 && (
+                          {(post.post_comments?.filter((c: any) => !c.is_hidden).length || 0) > 0 && (
                             <span className="flex items-center text-xs text-red-500 flex-shrink-0">
-                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.length}
+                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.filter((c: any) => !c.is_hidden).length}
                             </span>
                           )}
                           {post.image_url && <span className="text-xs flex-shrink-0">📷</span>}
@@ -1002,9 +1002,9 @@ function CompetitionDetailPageContent() {
                           )}
                           {post.is_private && <span className="text-blue-500 flex-shrink-0">🔒</span>}
                           <span className="font-medium text-gray-900 hover:text-blue-600 text-sm truncate">{post.title}</span>
-                          {(post.post_comments?.length || 0) > 0 && (
+                          {(post.post_comments?.filter((c: any) => !c.is_hidden).length || 0) > 0 && (
                             <span className="flex items-center text-xs text-red-500 flex-shrink-0">
-                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.length}
+                              <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.filter((c: any) => !c.is_hidden).length}
                             </span>
                           )}
                           {post.image_url && <span className="text-xs flex-shrink-0">📷</span>}

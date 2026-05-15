@@ -22,7 +22,7 @@ interface Post {
     grade: 'cheetah' | 'horse' | 'wolf' | 'turtle' | 'bolt'
     role: 'admin' | 'user'
   }
-  post_comments: { id: string }[]
+  post_comments: { id: string; is_hidden: boolean }[]
 }
 
 function CommunityPageContent() {
@@ -91,7 +91,7 @@ function CommunityContent() {
             grade,
             role
           ),
-          post_comments (id)
+          post_comments (id, is_hidden)
         `, { count: 'exact' })
         .is('competition_id', null)  // 대회 ID가 없는 글만 표시 (회원게시판)
 
@@ -324,10 +324,10 @@ function CommunityContent() {
                                   <span className="font-medium text-gray-900 hover:text-red-600 text-sm sm:text-base truncate">
                                     {post.title}
                                   </span>
-                                  {post.post_comments?.length > 0 && (
+                                  {post.post_comments?.filter(c => !c.is_hidden).length > 0 && (
                                     <span className="flex items-center text-xs text-red-600 flex-shrink-0">
                                       <MessageSquare className="w-3 h-3 mr-0.5" />
-                                      {post.post_comments.length}
+                                      {post.post_comments.filter(c => !c.is_hidden).length}
                                     </span>
                                   )}
                                   {post.image_url && (
