@@ -155,7 +155,7 @@ export default function AdminPage() {
   const [showPostDetail, setShowPostDetail] = useState(false)
   const [currentPostPage, setCurrentPostPage] = useState(1)
   const [totalPosts, setTotalPosts] = useState(0)
-  const [showOnlyReportedPosts, setShowOnlyReportedPosts] = useState(false)
+  const [showOnlyHiddenPosts, setShowOnlyHiddenPosts] = useState(false)
   const [boardFilter, setBoardFilter] = useState<string>('all') // 'all', 'free', competition_id
   const [competitionsWithPosts, setCompetitionsWithPosts] = useState<any[]>([])
   const [postSearchTerm, setPostSearchTerm] = useState('')
@@ -170,7 +170,7 @@ export default function AdminPage() {
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [currentCommentPage, setCurrentCommentPage] = useState(1)
   const [totalComments, setTotalComments] = useState(0)
-  const [showOnlyReportedComments, setShowOnlyReportedComments] = useState(false)
+  const [showOnlyHiddenComments, setShowOnlyHiddenComments] = useState(false)
   const [commentSearchTerm, setCommentSearchTerm] = useState('')
   const commentsPerPage = 10
 
@@ -256,14 +256,14 @@ export default function AdminPage() {
       fetchCommunityPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPostPage, user, activeTab, communitySubTab, showOnlyReportedPosts, boardFilter, postSearchTerm])
+  }, [currentPostPage, user, activeTab, communitySubTab, showOnlyHiddenPosts, boardFilter, postSearchTerm])
 
   useEffect(() => {
     if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'comments') {
       fetchComments()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyReportedComments, commentSearchTerm])
+  }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyHiddenComments, commentSearchTerm])
 
   // 페이지/페이지크기 변경 시 재조회 (데이터가 로드된 경우에만)
   useEffect(() => {
@@ -1908,14 +1908,14 @@ export default function AdminPage() {
         query = query.or(`title.ilike.${search},author_name.ilike.${search}`)
       }
 
-      // 신고된 글만 보기 필터
-      if (showOnlyReportedPosts) {
-        query = query.gte('report_count', 1)
+      // 숨김 글만 보기 필터
+      if (showOnlyHiddenPosts) {
+        query = query.eq('is_hidden', true)
       }
 
       const { data, error, count } = await query
         .range(from, to)
-        .order(showOnlyReportedPosts ? 'report_count' : 'created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setPosts(data || [])
@@ -2094,9 +2094,9 @@ export default function AdminPage() {
           community_posts!inner(title, id)
         `, { count: 'exact' })
 
-      // 신고된 댓글만 보기 필터
-      if (showOnlyReportedComments) {
-        query = query.gte('report_count', 1)
+      // 숨김 댓글만 보기 필터
+      if (showOnlyHiddenComments) {
+        query = query.eq('is_hidden', true)
       }
 
       // 검색 필터
@@ -2106,7 +2106,7 @@ export default function AdminPage() {
 
       const { data, error, count } = await query
         .range(from, to)
-        .order(showOnlyReportedComments ? 'report_count' : 'created_at', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setComments(data || [])
@@ -2136,6 +2136,22 @@ export default function AdminPage() {
     } catch (error) {
       console.error('댓글 삭제 오류:', error)
       alert('댓글 삭제 중 오류가 발생했습니다.')
+    }
+  }
+
+  const toggleCommentHidden = async (commentId: string, currentStatus: boolean) => {
+    if (!confirm(currentStatus ? '댓글을 공개하시겠습니까?' : '댓글을 숨기시겠습니까?\n작성자와 관리자만 볼 수 있습니다.')) return
+    try {
+      const { error } = await supabase
+        .from('post_comments')
+        .update({ is_hidden: !currentStatus })
+        .eq('id', commentId)
+      if (error) throw error
+      fetchComments()
+      alert(!currentStatus ? '댓글이 숨김 처리되었습니다.' : '댓글이 공개되었습니다.')
+    } catch (error) {
+      console.error('댓글 숨김 설정 오류:', error)
+      alert('숨김 설정 중 오류가 발생했습니다.')
     }
   }
 
@@ -4587,18 +4603,18 @@ export default function AdminPage() {
                           </select>
                         </div>
 
-                        {/* 신고된 글 필터 */}
+                        {/* 숨김 글 필터 */}
                         <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
                           <input
                             type="checkbox"
-                            checked={showOnlyReportedPosts}
+                            checked={showOnlyHiddenPosts}
                             onChange={(e) => {
-                              setShowOnlyReportedPosts(e.target.checked)
+                              setShowOnlyHiddenPosts(e.target.checked)
                               setCurrentPostPage(1)
                             }}
                             className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                           />
-                          <span className="text-sm text-gray-700">신고된 글만</span>
+                          <span className="text-sm text-gray-700">숨김 글만</span>
                         </label>
                       </div>
 
@@ -4892,14 +4908,14 @@ export default function AdminPage() {
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={showOnlyReportedComments}
+                          checked={showOnlyHiddenComments}
                           onChange={(e) => {
-                            setShowOnlyReportedComments(e.target.checked)
+                            setShowOnlyHiddenComments(e.target.checked)
                             setCurrentCommentPage(1)
                           }}
                           className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                         />
-                        <span className="text-sm text-gray-700 whitespace-nowrap">신고된 댓글 모아보기</span>
+                        <span className="text-sm text-gray-700 whitespace-nowrap">숨김 댓글 모아보기</span>
                       </label>
                       <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
                         총 {totalComments}개
@@ -4954,10 +4970,17 @@ export default function AdminPage() {
                         {comments.map((comment: any) => {
                           const reportCount = comment.report_count || 0
                           return (
-                            <tr key={comment.id} className="hover:bg-gray-50">
+                            <tr key={comment.id} className={`hover:bg-gray-50 ${comment.is_hidden ? 'bg-gray-50 opacity-70' : ''}`}>
                               <td className="px-3 sm:px-6 py-4">
-                                <div className="text-sm text-gray-900 line-clamp-2">
-                                  {comment.content}
+                                <div className="flex items-center gap-1.5">
+                                  {comment.is_hidden && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600 flex-shrink-0">
+                                      <EyeOff className="w-3 h-3 mr-0.5" />숨김
+                                    </span>
+                                  )}
+                                  <div className="text-sm text-gray-900 line-clamp-2">
+                                    {comment.content}
+                                  </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500 lg:hidden mt-1">
                                   {comment.users?.name && (
@@ -5001,6 +5024,14 @@ export default function AdminPage() {
                                   >
                                     보기
                                   </a>
+                                  <button
+                                    onClick={() => toggleCommentHidden(comment.id, comment.is_hidden || false)}
+                                    className={comment.is_hidden ? 'text-green-600 hover:text-green-800 transition-colors' : 'text-gray-500 hover:text-gray-700 transition-colors'}
+                                    title={comment.is_hidden ? '공개로 전환' : '숨김 처리'}
+                                  >
+                                    {comment.is_hidden ? <Eye className="h-4 w-4 inline" /> : <EyeOff className="h-4 w-4 inline" />}
+                                    <span className="ml-1">{comment.is_hidden ? '공개' : '숨김'}</span>
+                                  </button>
                                   <button
                                     onClick={() => deleteComment(comment.id)}
                                     className="text-red-600 hover:text-red-800 transition-colors"

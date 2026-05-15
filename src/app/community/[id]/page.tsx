@@ -123,7 +123,7 @@ export default function CommunityPostPage() {
 
   const loadComments = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('post_comments')
         .select(`
           *,
@@ -136,6 +136,16 @@ export default function CommunityPostPage() {
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
+
+      if (!user || user.role !== 'admin') {
+        if (user) {
+          query = query.or(`is_hidden.eq.false,user_id.eq.${user.id}`)
+        } else {
+          query = query.eq('is_hidden', false)
+        }
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 

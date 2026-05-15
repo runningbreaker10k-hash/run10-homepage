@@ -113,7 +113,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     if (!post) return
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('post_comments')
         .select(`
           *,
@@ -126,6 +126,16 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: true })
+
+      if (!user || user.role !== 'admin') {
+        if (user) {
+          query = query.or(`is_hidden.eq.false,user_id.eq.${user.id}`)
+        } else {
+          query = query.eq('is_hidden', false)
+        }
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
 

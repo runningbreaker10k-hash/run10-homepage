@@ -214,7 +214,7 @@ export default function Header() {
                 >
                   <div className="flex items-center space-x-2">
                     <MessageCircle className="h-4 w-4" />
-                    <span>자유게시판</span>
+                    <span>공지게시판</span>
                   </div>
                 </Link>
 
