@@ -2176,6 +2176,11 @@ export default function AdminPage() {
               date,
               location
             )
+          ),
+          competitions (
+            title,
+            date,
+            location
           )
         `)
         .eq('id', registrationId)
@@ -2193,9 +2198,12 @@ export default function AdminPage() {
       // pending → confirmed로 변경될 때만 알림톡 발송
       if (registration.payment_status === 'pending' && newStatus === 'confirmed') {
         try {
-          const participationGroup = registration.participation_groups?.[0]
-          const competitions = participationGroup?.competitions
-          const competition = Array.isArray(competitions) ? competitions[0] : competitions
+          const participationGroup = (registration.participation_groups as any[])?.[0]
+          const compViaGroup = participationGroup?.competitions
+          const competitionFromGroup = Array.isArray(compViaGroup) ? compViaGroup[0] : compViaGroup
+          const compDirect = registration.competitions as any
+          const competitionDirect = Array.isArray(compDirect) ? compDirect[0] : compDirect
+          const competition = competitionFromGroup || competitionDirect
           if (competition && registration.phone) {
             await fetch('/api/alimtalk/payment-confirm', {
               method: 'POST',
