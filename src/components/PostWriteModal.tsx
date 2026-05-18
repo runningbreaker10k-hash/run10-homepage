@@ -320,29 +320,22 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
             </div>
           )}
 
-          {/* 비밀글 옵션 */}
+          {/* 비밀글 옵션 - 항상 비밀글로 고정 */}
           <div className="space-y-2 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
                 id="is_private"
                 checked={isPrivate}
-                onChange={(e) => {
-                  setIsPrivate(e.target.checked)
-                  if (!e.target.checked) {
-                    setPostPassword('')
-                    setPostPasswordConfirm('')
-                  }
-                }}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded touch-manipulation"
+                onChange={() => {}}
+                className="hidden"
               />
-              <label htmlFor="is_private" className="text-xs sm:text-sm font-medium text-blue-900 cursor-pointer">
+              <label className="text-xs sm:text-sm font-medium text-blue-900">
                 🔒 비밀글로 작성
               </label>
             </div>
 
-            {isPrivate && (
-              <div className="mt-2 space-y-2">
+            <div className="mt-2 space-y-2">
                 <div>
                   <label htmlFor="post_password" className="block text-xs font-medium text-blue-800 mb-1">
                     비밀번호 (4자리 숫자)
@@ -385,7 +378,6 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
                   작성자와 관리자만 게시글을 볼 수 있습니다
                 </p>
               </div>
-            )}
           </div>
 
           {/* 제목 */}

@@ -171,6 +171,8 @@ export default function AdminPage() {
   const [currentCommentPage, setCurrentCommentPage] = useState(1)
   const [totalComments, setTotalComments] = useState(0)
   const [showOnlyHiddenComments, setShowOnlyHiddenComments] = useState(false)
+  const [commentBoardFilter, setCommentBoardFilter] = useState<string>('all')
+  const [excludeAdminComments, setExcludeAdminComments] = useState(false)
   const [commentSearchTerm, setCommentSearchTerm] = useState('')
   const commentsPerPage = 10
 
@@ -251,8 +253,10 @@ export default function AdminPage() {
   }, [activeTab, user, competitionSubTab, communitySubTab, receiptStatusFilter, receiptCompetitionFilter, refundStatusFilter, refundCompetitionFilter])
 
   useEffect(() => {
-    if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
+    if (user && user.role === 'admin' && activeTab === 'community' && (communitySubTab === 'posts' || communitySubTab === 'comments')) {
       fetchCompetitionsWithPosts()
+    }
+    if (user && user.role === 'admin' && activeTab === 'community' && communitySubTab === 'posts') {
       fetchCommunityPosts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,7 +267,7 @@ export default function AdminPage() {
       fetchComments()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyHiddenComments, commentSearchTerm])
+  }, [currentCommentPage, user, activeTab, communitySubTab, showOnlyHiddenComments, commentBoardFilter, excludeAdminComments, commentSearchTerm])
 
   // 페이지/페이지크기 변경 시 재조회 (데이터가 로드된 경우에만)
   useEffect(() => {
@@ -2090,13 +2094,25 @@ export default function AdminPage() {
         .from('post_comments')
         .select(`
           *,
-          users!inner(name, user_id, grade),
-          community_posts!inner(title, id)
+          users!inner(name, user_id, grade, role),
+          community_posts!inner(title, id, competition_id)
         `, { count: 'exact' })
 
       // 숨김 댓글만 보기 필터
       if (showOnlyHiddenComments) {
         query = query.eq('is_hidden', true)
+      }
+
+      // 대회별 필터
+      if (commentBoardFilter === 'free') {
+        query = query.is('community_posts.competition_id', null)
+      } else if (commentBoardFilter !== 'all') {
+        query = query.eq('community_posts.competition_id', commentBoardFilter)
+      }
+
+      // 관리자 댓글 제외
+      if (excludeAdminComments) {
+        query = query.neq('users.role', 'admin')
       }
 
       // 검색 필터
@@ -4593,7 +4609,7 @@ export default function AdminPage() {
                             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                           >
                             <option value="all">전체 보기</option>
-                            <option value="free">자유게시판</option>
+                            <option value="free">공지게시판</option>
                             {competitionsWithPosts.length > 0 && (
                               <>
                                 <option disabled>──────────────</option>
@@ -4910,26 +4926,73 @@ export default function AdminPage() {
             {communitySubTab === 'comments' && (
               <>
                 <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">댓글 관리</h2>
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={showOnlyHiddenComments}
+                    <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">총 {totalComments}개</div>
+                  </div>
+
+                  {/* 필터 영역 */}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* 대회별 필터 */}
+                      <div className="flex-1">
+                        <select
+                          value={commentBoardFilter}
                           onChange={(e) => {
-                            setShowOnlyHiddenComments(e.target.checked)
+                            setCommentBoardFilter(e.target.value)
                             setCurrentCommentPage(1)
                           }}
-                          className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                        />
-                        <span className="text-sm text-gray-700 whitespace-nowrap">숨김 댓글 모아보기</span>
-                      </label>
-                      <div className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
-                        총 {totalComments}개
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        >
+                          <option value="all">전체 보기</option>
+                          <option value="free">공지게시판</option>
+                          {competitionsWithPosts.length > 0 && (
+                            <>
+                              <option disabled>──────────────</option>
+                              {competitionsWithPosts.map((comp) => {
+                                const isEnded = new Date(comp.registration_end) < new Date()
+                                const statusText = isEnded ? '종료' : '진행중'
+                                return (
+                                  <option key={comp.id} value={comp.id}>
+                                    [{statusText}] {comp.title}
+                                  </option>
+                                )
+                              })}
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      {/* 체크박스 필터들 */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={showOnlyHiddenComments}
+                            onChange={(e) => {
+                              setShowOnlyHiddenComments(e.target.checked)
+                              setCurrentCommentPage(1)
+                            }}
+                            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          />
+                          <span className="text-sm text-gray-700">숨김만</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={excludeAdminComments}
+                            onChange={(e) => {
+                              setExcludeAdminComments(e.target.checked)
+                              setCurrentCommentPage(1)
+                            }}
+                            className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                          />
+                          <span className="text-sm text-gray-700">관리자 제외</span>
+                        </label>
                       </div>
                     </div>
                   </div>
+
                   {/* 검색 */}
                   <div className="mt-3">
                     <input

@@ -969,7 +969,9 @@ function CompetitionDetailPageContent() {
                             </span>
                           )}
                           {post.is_private && <span className="text-blue-500 text-xs flex-shrink-0">🔒</span>}
-                          <span className="font-medium text-sm text-gray-900 truncate">{post.title}</span>
+                          <span className="font-medium text-sm text-gray-900 truncate">
+                            {post.is_private && user?.role !== 'admin' ? '비밀글입니다.' : post.title}
+                          </span>
                           {(post.post_comments?.filter((c: any) => !c.is_hidden).length || 0) > 0 && (
                             <span className="flex items-center text-xs text-red-500 flex-shrink-0">
                               <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.filter((c: any) => !c.is_hidden).length}
@@ -1001,7 +1003,9 @@ function CompetitionDetailPageContent() {
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 flex-shrink-0">공지</span>
                           )}
                           {post.is_private && <span className="text-blue-500 flex-shrink-0">🔒</span>}
-                          <span className="font-medium text-gray-900 hover:text-blue-600 text-sm truncate">{post.title}</span>
+                          <span className="font-medium text-gray-900 hover:text-blue-600 text-sm truncate">
+                            {post.is_private && user?.role !== 'admin' ? '비밀글입니다.' : post.title}
+                          </span>
                           {(post.post_comments?.filter((c: any) => !c.is_hidden).length || 0) > 0 && (
                             <span className="flex items-center text-xs text-red-500 flex-shrink-0">
                               <MessageSquare className="w-3 h-3 mr-0.5" />{post.post_comments?.filter((c: any) => !c.is_hidden).length}
