@@ -52,6 +52,8 @@ interface Registration {
   payment_status: string
   created_at: string
   is_closed: boolean
+  is_event_closed: boolean
+  is_shirt_closed: boolean
   competitions: {
     title: string
     date: string
@@ -254,7 +256,7 @@ function MyPageContent() {
 
       const { data: competitionData, error: competitionError } = await supabase
         .from('competitions')
-        .select('id, title, date, location, bank_name, bank_account, account_holder, registration_end, refund_deadline, current_participants, max_participants')
+        .select('id, title, date, location, bank_name, bank_account, account_holder, registration_end, refund_deadline, change_event_deadline, change_shirt_deadline, current_participants, max_participants')
         .in('id', competitionIds)
 
       if (competitionError) {
@@ -267,11 +269,17 @@ function MyPageContent() {
       const now = new Date()
       const registrationsWithCompetitions = registrationData.map(registration => {
         const competition = competitionData?.find(c => c.id === registration.competition_id)
-        const deadline = competition?.refund_deadline || competition?.registration_end
-        const is_closed = deadline ? new Date(deadline) < now : false
+        const refundDeadline = competition?.refund_deadline || competition?.registration_end
+        const eventDeadline = competition?.change_event_deadline || competition?.registration_end
+        const shirtDeadline = competition?.change_shirt_deadline || competition?.registration_end
+        const is_closed = refundDeadline ? new Date(refundDeadline) < now : false
+        const is_event_closed = eventDeadline ? new Date(eventDeadline) < now : false
+        const is_shirt_closed = shirtDeadline ? new Date(shirtDeadline) < now : false
         return {
           ...registration,
           is_closed,
+          is_event_closed,
+          is_shirt_closed,
           competitions: competition || {
             title: '알 수 없는 대회',
             date: '',
@@ -1092,6 +1100,8 @@ function MyPageContent() {
                 )
 
                 const isClosed = registration.is_closed
+                const isEventClosed = registration.is_event_closed
+                const isShirtClosed = registration.is_shirt_closed
 
                 const handleDistanceChangeClick = () => {
                   if (hasPendingChange) {
@@ -1253,11 +1263,11 @@ function MyPageContent() {
                         {/* 종목변경 버튼 */}
                         <button
                           onClick={handleDistanceChangeClick}
-                          disabled={!!isRefundActive || isClosed}
+                          disabled={!!isRefundActive || isEventClosed}
                           className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           종목변경
-                          {isClosed ? (
+                          {isEventClosed ? (
                             <span className="ml-1 text-red-400">(마감)</span>
                           ) : hasPendingChange ? (
                             <span className="ml-1 text-orange-500">(대기중)</span>
@@ -1267,11 +1277,11 @@ function MyPageContent() {
                         {/* 티셔츠변경 버튼 */}
                         <button
                           onClick={handleShirtChangeClick}
-                          disabled={!!isRefundActive || isClosed}
+                          disabled={!!isRefundActive || isShirtClosed}
                           className="px-3 py-1.5 text-xs font-medium rounded border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           티셔츠변경
-                          {isClosed && <span className="ml-1 text-red-400">(마감)</span>}
+                          {isShirtClosed && <span className="ml-1 text-red-400">(마감)</span>}
                         </button>
                       </div>
                     )}

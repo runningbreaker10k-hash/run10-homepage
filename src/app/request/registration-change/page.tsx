@@ -86,7 +86,7 @@ function RegistrationChangeRequestPageContent() {
           shirt_size,
           entry_fee,
           payment_status,
-          competitions(title, bank_name, bank_account, account_holder, registration_end, refund_deadline)
+          competitions(title, bank_name, bank_account, account_holder, registration_end, change_event_deadline, change_shirt_deadline)
         `)
         .eq('id', registrationId)
         .eq('user_id', user.id)
@@ -105,9 +105,12 @@ function RegistrationChangeRequestPageContent() {
       }
 
       const competition = Array.isArray(regData.competitions) ? regData.competitions[0] : regData.competitions
-      const deadline = competition?.refund_deadline || competition?.registration_end
+      const changeType = changeTypeParam === 'shirt_size' ? 'shirt_size' : 'distance'
+      const deadline = changeType === 'shirt_size'
+        ? (competition?.change_shirt_deadline || competition?.registration_end)
+        : (competition?.change_event_deadline || competition?.registration_end)
       if (deadline && new Date(deadline) < new Date()) {
-        setError('환불/변경 마감일이 지나 신청할 수 없습니다')
+        setError(changeType === 'shirt_size' ? '티셔츠변경 마감일이 지나 신청할 수 없습니다' : '종목변경 마감일이 지나 신청할 수 없습니다')
         setIsDataLoading(false)
         return
       }

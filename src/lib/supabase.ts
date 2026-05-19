@@ -99,6 +99,8 @@ export type Database = {
           registration_start: string
           registration_end: string
           refund_deadline?: string
+          change_event_deadline?: string
+          change_shirt_deadline?: string
           entry_fee: number
           course_description: string
           course_image_url?: string
@@ -129,6 +131,8 @@ export type Database = {
           registration_start: string
           registration_end: string
           refund_deadline?: string
+          change_event_deadline?: string
+          change_shirt_deadline?: string
           entry_fee: number
           course_description: string
           course_image_url?: string
@@ -159,6 +163,8 @@ export type Database = {
           registration_start?: string
           registration_end?: string
           refund_deadline?: string
+          change_event_deadline?: string
+          change_shirt_deadline?: string
           entry_fee?: number
           course_description?: string
           course_image_url?: string

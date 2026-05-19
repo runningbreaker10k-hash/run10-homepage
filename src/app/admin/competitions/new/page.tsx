@@ -28,6 +28,8 @@ const competitionSchema = z.object({
   registration_start: z.string().min(1, '신청 시작일을 선택해주세요'),
   registration_end: z.string().min(1, '신청 마감일을 선택해주세요'),
   refund_deadline: z.string().optional(),
+  change_event_deadline: z.string().optional(),
+  change_shirt_deadline: z.string().optional(),
   entry_fee: z.number().min(0, '참가비는 0원 이상이어야 합니다'),
   course_description: z.string(),
   course_image_url: z.string().optional(),
@@ -63,6 +65,8 @@ export default function NewCompetitionPage() {
   const [showGroupForm, setShowGroupForm] = useState(false)
   const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
   const [refundDeadlineSameAsEnd, setRefundDeadlineSameAsEnd] = useState(true)
+  const [changeEventDeadlineSameAsEnd, setChangeEventDeadlineSameAsEnd] = useState(true)
+  const [changeShirtDeadlineSameAsEnd, setChangeShirtDeadlineSameAsEnd] = useState(true)
 
   const {
     register,
@@ -145,6 +149,8 @@ export default function NewCompetitionPage() {
       const competitionData = {
         ...data,
         refund_deadline: refundDeadlineSameAsEnd ? null : (data.refund_deadline || null),
+        change_event_deadline: changeEventDeadlineSameAsEnd ? null : (data.change_event_deadline || null),
+        change_shirt_deadline: changeShirtDeadlineSameAsEnd ? null : (data.change_shirt_deadline || null),
         max_participants: participationGroups.reduce((sum, group) => sum + group.maxParticipants, 0)
       }
 
@@ -489,32 +495,84 @@ export default function NewCompetitionPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                환불/변경 마감일
-              </label>
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="checkbox"
-                  id="refund_deadline_same"
-                  checked={refundDeadlineSameAsEnd}
-                  onChange={e => {
-                    setRefundDeadlineSameAsEnd(e.target.checked)
-                    if (e.target.checked) setValue('refund_deadline', '')
-                  }}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-                <label htmlFor="refund_deadline_same" className="text-sm text-gray-600 cursor-pointer">
-                  신청 마감일과 동일 (별도 마감일 없음)
-                </label>
+            <div className="mt-6 grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">환불 마감일</label>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="refund_deadline_same"
+                    checked={refundDeadlineSameAsEnd}
+                    onChange={e => {
+                      setRefundDeadlineSameAsEnd(e.target.checked)
+                      if (e.target.checked) setValue('refund_deadline', '')
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <label htmlFor="refund_deadline_same" className="text-sm text-gray-600 cursor-pointer">
+                    신청 마감일과 동일
+                  </label>
+                </div>
+                {!refundDeadlineSameAsEnd && (
+                  <input
+                    {...register('refund_deadline')}
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
               </div>
-              {!refundDeadlineSameAsEnd && (
-                <input
-                  {...register('refund_deadline')}
-                  type="datetime-local"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">종목변경 마감일</label>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="change_event_deadline_same"
+                    checked={changeEventDeadlineSameAsEnd}
+                    onChange={e => {
+                      setChangeEventDeadlineSameAsEnd(e.target.checked)
+                      if (e.target.checked) setValue('change_event_deadline', '')
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <label htmlFor="change_event_deadline_same" className="text-sm text-gray-600 cursor-pointer">
+                    신청 마감일과 동일
+                  </label>
+                </div>
+                {!changeEventDeadlineSameAsEnd && (
+                  <input
+                    {...register('change_event_deadline')}
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">티셔츠변경 마감일</label>
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="change_shirt_deadline_same"
+                    checked={changeShirtDeadlineSameAsEnd}
+                    onChange={e => {
+                      setChangeShirtDeadlineSameAsEnd(e.target.checked)
+                      if (e.target.checked) setValue('change_shirt_deadline', '')
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <label htmlFor="change_shirt_deadline_same" className="text-sm text-gray-600 cursor-pointer">
+                    신청 마감일과 동일
+                  </label>
+                </div>
+                {!changeShirtDeadlineSameAsEnd && (
+                  <input
+                    {...register('change_shirt_deadline')}
+                    type="datetime-local"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                )}
+              </div>
             </div>
           </div>
 
