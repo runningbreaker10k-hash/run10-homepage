@@ -5444,7 +5444,7 @@ export default function AdminPage() {
                             <td className="px-3 sm:px-6 py-3 text-sm text-gray-900 max-w-[150px] truncate">{receipt.competition_title?.replace('JUST RUN10 ', '')}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{receipt.distance}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{receipt.amount?.toLocaleString()}원</td>
-                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(receipt.created_at, 'yyyy.MM.dd')}</td>
+                            <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(receipt.created_at, 'yyyy.MM.dd HH:mm')}</td>
                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 receipt.status === 'completed' ? 'text-green-600 bg-green-100' :
@@ -5772,7 +5772,7 @@ export default function AdminPage() {
                                 <div className="text-gray-400">{refund.account_holder}</div>
                               </div>
                             </td>
-                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(refund.created_at, 'yyyy.MM.dd')}</td>
+                            <td className="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">{formatKST(refund.created_at, 'yyyy.MM.dd HH:mm')}</td>
                             <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 refund.status === 'completed' ? 'text-green-600 bg-green-100' :
@@ -5824,6 +5824,7 @@ export default function AdminPage() {
                         <option value={20}>20</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
+                        <option value={1000}>1000</option>
                       </select>
                       <span className="text-sm text-gray-600">건</span>
                     </div>
@@ -6174,6 +6175,7 @@ export default function AdminPage() {
                     <option value={20}>20</option>
                     <option value={50}>50</option>
                     <option value={100}>100</option>
+                    <option value={1000}>1000</option>
                   </select>
                   <span className="text-sm text-gray-600">건</span>
                 </div>
