@@ -309,7 +309,15 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
           {isAdmin && (
             <div className="flex items-center space-x-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <input
-                {...register('is_notice')}
+                {...register('is_notice', {
+                  onChange: (e) => {
+                    setIsPrivate(!e.target.checked)
+                    if (e.target.checked) {
+                      setPostPassword('')
+                      setPostPasswordConfirm('')
+                    }
+                  }
+                })}
                 type="checkbox"
                 id="is_notice"
                 className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded touch-manipulation"
@@ -320,7 +328,8 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
             </div>
           )}
 
-          {/* 비밀글 옵션 - 항상 비밀글로 고정 */}
+          {/* 비밀글 옵션 - 공지글이 아닐 때만 표시 */}
+          {isPrivate && (
           <div className="space-y-2 p-2 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center space-x-2">
               <input
@@ -379,6 +388,7 @@ export default function PostWriteModal({ isOpen, onClose, competitionId, onPostC
                 </p>
               </div>
           </div>
+          )}
 
           {/* 제목 */}
           <div>

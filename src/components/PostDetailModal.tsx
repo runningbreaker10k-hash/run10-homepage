@@ -35,6 +35,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
   const [editFormData, setEditFormData] = useState({
     title: post?.title || '',
     content: post?.content || '',
+    is_notice: post?.is_notice || false,
     is_private: post?.is_private || false,
     post_password: post?.post_password || ''
   })
@@ -74,6 +75,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
       const newFormData = {
         title: post.title || '',
         content: post.content || '',
+        is_notice: post.is_notice || false,
         is_private: post.is_private || false,
         post_password: post.post_password || ''
       }
@@ -239,6 +241,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     const newFormData = {
       title: post.title || '',
       content: post.content || '',
+      is_notice: post.is_notice || false,
       is_private: post.is_private || false,
       post_password: post.post_password || ''
     }
@@ -343,6 +346,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
         .update({
           title: editFormData.title,
           content: editFormData.content,
+          is_notice: editFormData.is_notice,
           is_private: editFormData.is_private,
           post_password: editFormData.is_private ? editFormData.post_password : null,
           // 로컬 타임존으로 업데이트 시간 설정 (UTC 변환 방지)
@@ -443,7 +447,33 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
           <div className="p-4 sm:p-6">
             {isEditing ? (
               <form onSubmit={handleEditSubmit} className="space-y-4">
-                {/* 비밀글 옵션 - 항상 비밀글로 고정 */}
+                {/* 관리자 공지글 옵션 */}
+                {user?.role === 'admin' && (
+                  <div className="flex items-center space-x-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="edit-is_notice"
+                      checked={editFormData.is_notice}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setEditFormData(prev => ({
+                          ...prev,
+                          is_notice: checked,
+                          is_private: !checked,
+                          ...(checked ? { post_password: '' } : {})
+                        }))
+                        if (checked) setEditPasswordConfirm('')
+                      }}
+                      className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded touch-manipulation"
+                    />
+                    <label htmlFor="edit-is_notice" className="text-xs sm:text-sm font-medium text-amber-900 cursor-pointer">
+                      📢 공지글로 작성
+                    </label>
+                  </div>
+                )}
+
+                {/* 비밀글 옵션 - 공지글이 아닐 때만 표시 */}
+                {editFormData.is_private && (
                 <div className="space-y-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <input
@@ -504,6 +534,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                       </p>
                     </div>
                 </div>
+                )}
 
                 <div>
                   <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">
