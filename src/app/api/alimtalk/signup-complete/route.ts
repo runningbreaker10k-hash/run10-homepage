@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const maxDuration = 30;
 import { supabase } from '@/lib/supabase';
 import { sendSignupCompleteAlimtalk } from '@/lib/ppurio';
 

@@ -183,6 +183,13 @@ export default function CompetitionsPage() {
 
     // 마감 임박
     if (actualStatus === 'deadline_approaching') {
+      if (competition.title.includes('대구')) {
+        return (
+          <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-red-600 text-white shadow-md">
+            추가 모집
+          </span>
+        )
+      }
       return (
         <span className="inline-flex items-center px-4 py-2 rounded-full text-base font-bold bg-white text-red-700 shadow-md">
           <span className="animate-pulse-deadline">마감 임박</span>

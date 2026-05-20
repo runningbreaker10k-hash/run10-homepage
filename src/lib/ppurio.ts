@@ -214,7 +214,7 @@ export async function sendCompetitionRegistrationAlimtalk(
         },
       },
     ],
-    refKey: `comp_${Date.now()}`,
+    refKey: `comp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
   };
 
   const result = await callPpurioProxy('/v1/kakao', requestBody);
@@ -268,7 +268,7 @@ export async function sendPaymentConfirmAlimtalk(
         },
       },
     ],
-    refKey: `pay_${Date.now()}`,
+    refKey: `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
   };
 
   const result = await callPpurioProxy('/v1/kakao', requestBody);

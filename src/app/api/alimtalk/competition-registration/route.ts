@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const maxDuration = 30;
 import { sendCompetitionRegistrationAlimtalk } from '@/lib/ppurio';
 import { createClient } from '@supabase/supabase-js';
 
