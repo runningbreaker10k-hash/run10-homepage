@@ -550,8 +550,8 @@ export default function CompetitionsPage() {
                               ? '※ 선착순 3,500명 모집'
                             : competition.title.includes('남양주')
                               ? '※ 선착순 3,000명 모집'
-                            : competition.title.includes('양산')
-                              ? '※ 선착순 3,000명 모집'
+                            : competition.title.includes('대구')
+                              ? '※ 선착순 100명 추가 모집'
                               : '※ 선착순 3,000명 모집'
                         )}
                       </span>
