@@ -108,17 +108,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsLoading(false)
   }, [])
 
-  // 사용자가 감지되면 접속 IP 저장 (로그인/자동로그인/세션복원 모두 포함)
-  useEffect(() => {
-    if (!user) return
-
-    fetch('/api/auth/log-ip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id }),
-    }).catch(() => {})
-  }, [user?.id])
-
   // 사용자가 로그인되면 localStorage의 UTM 데이터를 DB에 저장
   useEffect(() => {
     if (!user) return
