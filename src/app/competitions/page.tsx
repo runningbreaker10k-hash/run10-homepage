@@ -72,6 +72,12 @@ export default function CompetitionsPage() {
     return `${year}-${month}${day}`
   }
 
+  // 상반기/하반기 구분 (월 기준, 1~6월: 상반기, 7~12월: 하반기)
+  const getSemester = (dateString: string) => {
+    const month = new Date(dateString).getMonth() + 1
+    return month <= 6 ? '상반기' : '하반기'
+  }
+
   // 종목 표시 (거리만 모아서)
   const getDistancesText = (competition: CompetitionWithGroups) => {
     if (!competition.participation_groups || competition.participation_groups.length === 0) {
@@ -436,7 +442,7 @@ export default function CompetitionsPage() {
                     'bg-blue-600'
                   }`}>
                     <h4 className="text-base font-bold">
-                      런텐대회 No. {isUpcoming ? `${new Date(competition.date).getFullYear()}-0000` : getCompetitionNumber(competition.date)}
+                      [{getSemester(competition.date)}] 런텐대회 No. {isUpcoming ? `${new Date(competition.date).getFullYear()}-0000` : getCompetitionNumber(competition.date)}
                     </h4>
                   </div>
 
