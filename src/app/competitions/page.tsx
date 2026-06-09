@@ -74,8 +74,10 @@ export default function CompetitionsPage() {
 
   // 상반기/하반기 구분 (월 기준, 1~6월: 상반기, 7~12월: 하반기)
   const getSemester = (dateString: string) => {
-    const month = new Date(dateString).getMonth() + 1
-    return month <= 6 ? '상반기' : '하반기'
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    return `${year}${month <= 6 ? '상반기' : '하반기'}`
   }
 
   // 종목 표시 (거리만 모아서)
