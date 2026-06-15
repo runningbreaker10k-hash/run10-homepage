@@ -279,8 +279,8 @@ export default function WebMainPage() {
                       <p>도시관광도 즐기고 PB에 도전하세요!</p>
                     </div>
                     <div className="space-y-2 text-base sm:text-xl md:text-2xl lg:text-3xl font-medium" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                      <p>2026 상반기</p>
-                      <p>세종, 청주, 성남, 남양주, 양산, 대구, 대전에서 열립니다</p>
+                      <p>2026 하반기</p>
+                      <p>세종, 김해, 구미, 청주, 김포, 전주, 대전에서 열립니다</p>
                     </div>
                   </div>
                 </div>
