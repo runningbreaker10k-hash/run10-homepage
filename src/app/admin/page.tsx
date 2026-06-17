@@ -4029,6 +4029,8 @@ export default function AdminPage() {
                         setRegionFilter('all')
                         setAgeFilter('all')
                         setGenderFilter('all')
+                        setGradeFilter('all')
+                        setShirtSizeFilter('all')
                         setSortBy('created_at')
                         setSortOrder('desc')
                         setCurrentRegistrationPage(1)

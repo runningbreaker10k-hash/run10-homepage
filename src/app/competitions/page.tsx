@@ -525,21 +525,22 @@ export default function CompetitionsPage() {
                       <span className="font-medium text-gray-700 w-12">장소</span>
                       <span className="flex-1">
                         {
-                          competition.title.includes('세종')
-                            ? '금강 러닝성지'
-                            : competition.title.includes('청주')
-                              ? '무심천 러닝성지'
-                            : competition.title.includes('성남')
-                              ? '탄천 러닝성지'
-                            : competition.title.includes('남양주')
-                              ? '왕숙천 러닝성지'
-                            : competition.title.includes('양산')
-                              ? '양산천 러닝성지'
-                            : competition.title.includes('대구')
-                              ? '금호강 러닝성지'
-                            : competition.title.includes('대전')
-                              ? '갑천 러닝성지'
-                            : competition.location
+                          getSemester(competition.date).includes('상반기')
+                            ? (
+                              competition.title.includes('세종') ? '금강 러닝성지'
+                              : competition.title.includes('청주') ? '무심천 러닝성지'
+                              : competition.title.includes('성남') ? '탄천 러닝성지'
+                              : competition.title.includes('남양주') ? '왕숙천 러닝성지'
+                              : competition.title.includes('양산') ? '양산천 러닝성지'
+                              : competition.title.includes('대구') ? '금호강 러닝성지'
+                              : competition.title.includes('대전') ? '갑천 러닝성지'
+                              : competition.location
+                            )
+                            : (
+                              competition.title.includes('천안') ? '천안'
+                              : competition.title.includes('아산') ? '아산'
+                              : competition.location
+                            )
                         }
                       </span>
                     </div>
@@ -556,10 +557,6 @@ export default function CompetitionsPage() {
                             ? '※ 선착순 3,500명 모집'
                             : competition.title.includes('대전')
                               ? '※ 선착순 3,500명 모집'
-                            : competition.title.includes('남양주')
-                              ? '※ 선착순 3,000명 모집'
-                            : competition.title.includes('대구')
-                              ? '※ 선착순 100명 추가 모집'
                               : '※ 선착순 3,000명 모집'
                         )}
                       </span>
