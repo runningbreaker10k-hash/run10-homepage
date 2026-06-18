@@ -63,6 +63,7 @@ export default function CommunityPostPage() {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [showPostMenu, setShowPostMenu] = useState(false)
   const [openCommentMenuId, setOpenCommentMenuId] = useState<string | null>(null)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const {
     register,
@@ -524,11 +525,46 @@ export default function CommunityPostPage() {
             <div className="px-3 sm:px-6 py-4 sm:py-6">
               {post.image_url && (
                 <div className="mb-4 sm:mb-6">
-                  <img
-                    src={post.image_url}
-                    alt="첨부 이미지"
-                    className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
-                  />
+                  <div
+                    className="relative inline-block cursor-pointer group"
+                    onClick={() => setLightboxOpen(true)}
+                  >
+                    <img
+                      src={post.image_url}
+                      alt="첨부 이미지"
+                      className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-all duration-200 flex items-center justify-center">
+                      <span className="text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black/50 px-3 py-1.5 rounded-full">
+                        크게 보기
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {lightboxOpen && post.image_url && (
+                <div
+                  className="fixed inset-0 bg-black/90 z-50 overflow-auto"
+                  onClick={() => setLightboxOpen(false)}
+                >
+                  <div className="min-h-full flex items-center justify-center p-6">
+                    <img
+                      src={post.image_url}
+                      alt="첨부 이미지"
+                      className="rounded-lg shadow-2xl"
+                      onClick={() => setLightboxOpen(false)}
+                    />
+                  </div>
+                  <button
+                    className="fixed top-4 right-4 text-white bg-white/10 hover:bg-white/25 rounded-full w-10 h-10 flex items-center justify-center text-lg transition-colors border border-white/20"
+                    onClick={() => setLightboxOpen(false)}
+                  >
+                    ✕
+                  </button>
+                  <p className="fixed bottom-5 left-1/2 -translate-x-1/2 text-white/50 text-xs whitespace-nowrap">
+                    배경 클릭 시 닫힙니다
+                  </p>
                 </div>
               )}
 
