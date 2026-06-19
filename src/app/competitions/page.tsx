@@ -537,7 +537,7 @@ export default function CompetitionsPage() {
                               : competition.location
                             )
                             : (
-                              competition.title.includes('천안') ? '천안'
+                              competition.title.includes('세종') ? '금강 러닝성지'
                               : competition.title.includes('아산') ? '아산'
                               : competition.location
                             )
