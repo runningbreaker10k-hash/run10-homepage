@@ -1,4 +1,9 @@
 import { Shield, AlertTriangle, Heart, Droplets, Thermometer, Users, Phone, Activity } from 'lucide-react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
 
 export default function SafetyPage() {
   return (

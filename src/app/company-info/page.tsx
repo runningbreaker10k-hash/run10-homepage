@@ -1,4 +1,9 @@
 import { Building, MapPin, Phone, Mail, Users, Calendar, Award } from 'lucide-react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
 
 export default function CompanyInfoPage() {
   return (

@@ -3,6 +3,7 @@ import { Users, Target, Award, Heart } from 'lucide-react'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: true },
   title: "런텐 소개 | RUN10 전국 러닝 협회 인증 플랫폼",
   description: "전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다. 정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다. 치타족, 홀스족, 울프족, 터틀족까지 나의 RUN10 티어를 확인하세요.",
   keywords: "런텐소개, RUN10소개, 러닝협회, 10km러닝, 티어시스템, 치타족, 홀스족, 울프족, 터틀족",

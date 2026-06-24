@@ -82,7 +82,7 @@ export default function AdminPage() {
   const [registrations, setRegistrations] = useState<RegistrationWithCompetition[]>([])
   const [allFilteredRegistrations, setAllFilteredRegistrations] = useState<RegistrationWithCompetition[]>([])
   const [registrationsLoading, setRegistrationsLoading] = useState(false)
-  const [selectedCompetitionForParticipants, setSelectedCompetitionForParticipants] = useState<string>('')
+  const [selectedCompetitionForParticipants, setSelectedCompetitionForParticipants] = useState<string[]>([])
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all')
   const [distanceFilter, setDistanceFilter] = useState<string>('all')
   const [regionFilter, setRegionFilter] = useState<string>('all')
@@ -1428,6 +1428,15 @@ export default function AdminPage() {
       )
 
       setCompetitions(competitionsWithCount)
+
+      // 모집 시작됐고 대회가 아직 안 끝난 대회를 기본 선택값으로 설정
+      const today = new Date()
+      const activeIds = competitionsWithCount
+        .filter(c => new Date(c.registration_start) <= today && new Date(c.date) >= today)
+        .map(c => c.id)
+      if (activeIds.length > 0) {
+        setSelectedCompetitionForParticipants(activeIds)
+      }
     } catch (error) {
       console.error('대회 로드 오류:', error)
       setCompetitions([])
@@ -1670,8 +1679,8 @@ export default function AdminPage() {
         .from('registrations')
         .select('*', { count: 'exact', head: true })
 
-      if (selectedCompetitionForParticipants) {
-        countQuery = countQuery.eq('competition_id', selectedCompetitionForParticipants)
+      if (selectedCompetitionForParticipants.length > 0) {
+        countQuery = countQuery.in('competition_id', selectedCompetitionForParticipants)
       }
 
       if (paymentStatusFilter !== 'all') {
@@ -1698,8 +1707,8 @@ export default function AdminPage() {
         let filtered = allData
 
         // 대회 필터
-        if (selectedCompetitionForParticipants) {
-          filtered = filtered.filter(reg => reg.competition_id === selectedCompetitionForParticipants)
+        if (selectedCompetitionForParticipants.length > 0) {
+          filtered = filtered.filter(reg => selectedCompetitionForParticipants.includes(reg.competition_id))
         }
 
         // 결제 상태 필터
@@ -1795,7 +1804,7 @@ export default function AdminPage() {
       let hasMore = true
 
       while (hasMore) {
-        const { data, error } = await supabase
+        let dataQuery = supabase
           .from('registrations')
           .select(`
             *,
@@ -1810,6 +1819,12 @@ export default function AdminPage() {
           `)
           .order('created_at', { ascending: false })
           .range(offset, offset + pageSize - 1)
+
+        if (selectedCompetitionForParticipants.length > 0) {
+          dataQuery = dataQuery.in('competition_id', selectedCompetitionForParticipants)
+        }
+
+        const { data, error } = await dataQuery
 
         if (error) {
           console.error('Supabase error:', error)
@@ -3326,8 +3341,8 @@ export default function AdminPage() {
           `)
           .range(offset, offset + pageSize - 1)
 
-        if (selectedCompetitionForParticipants) {
-          query = query.eq('competition_id', selectedCompetitionForParticipants)
+        if (selectedCompetitionForParticipants.length > 0) {
+          query = query.in('competition_id', selectedCompetitionForParticipants)
         }
 
         if (paymentStatusFilter !== 'all') {
@@ -3437,9 +3452,9 @@ export default function AdminPage() {
       const blob = new Blob(['\uFEFF' + csvHeader + csvContent], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      const competitionTitle = selectedCompetitionForParticipants
-        ? competitions.find(c => c.id === selectedCompetitionForParticipants)?.title || '전체대회'
-        : '전체대회'
+      const competitionTitle = selectedCompetitionForParticipants.length === 1
+        ? competitions.find(c => c.id === selectedCompetitionForParticipants[0])?.title || '전체대회'
+        : selectedCompetitionForParticipants.length > 1 ? '복수대회' : '전체대회'
       link.download = `참가자목록_${competitionTitle}_${new Date().toISOString().split('T')[0]}.csv`
       link.click()
 
@@ -3472,8 +3487,8 @@ export default function AdminPage() {
           .select(`*,competitions(title,date),users(user_id,grade)`)
           .range(offset, offset + pageSize - 1)
 
-        if (selectedCompetitionForParticipants) {
-          query = query.eq('competition_id', selectedCompetitionForParticipants)
+        if (selectedCompetitionForParticipants.length > 0) {
+          query = query.in('competition_id', selectedCompetitionForParticipants)
         }
         if (paymentStatusFilter !== 'all' && paymentStatusFilter !== 'expired') {
           query = query.eq('payment_status', paymentStatusFilter)
@@ -4023,7 +4038,11 @@ export default function AdminPage() {
                         setParticipantSearchField('name')
                         setConfirmedParticipantSearchTerm('')
                         setConfirmedParticipantSearchField('name')
-                        setSelectedCompetitionForParticipants('')
+                        const today = new Date()
+                        const activeIds = competitions
+                          .filter(c => new Date(c.registration_start) <= today && new Date(c.date) >= today)
+                          .map(c => c.id)
+                        setSelectedCompetitionForParticipants(activeIds)
                         setPaymentStatusFilter('all')
                         setDistanceFilter('all')
                         setRegionFilter('all')
@@ -4053,9 +4072,9 @@ export default function AdminPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">대회</label>
                         <div className="flex flex-wrap gap-2">
                           <button
-                            onClick={() => setSelectedCompetitionForParticipants('')}
+                            onClick={() => setSelectedCompetitionForParticipants([])}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                              selectedCompetitionForParticipants === ''
+                              selectedCompetitionForParticipants.length === 0
                                 ? 'bg-red-600 text-white'
                                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                             }`}
@@ -4065,9 +4084,15 @@ export default function AdminPage() {
                           {competitions.map((competition) => (
                             <button
                               key={competition.id}
-                              onClick={() => setSelectedCompetitionForParticipants(competition.id)}
+                              onClick={() => {
+                                setSelectedCompetitionForParticipants(prev =>
+                                  prev.includes(competition.id)
+                                    ? prev.filter(id => id !== competition.id)
+                                    : [...prev, competition.id]
+                                )
+                              }}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                                selectedCompetitionForParticipants === competition.id
+                                selectedCompetitionForParticipants.includes(competition.id)
                                   ? 'bg-red-600 text-white'
                                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                               }`}
