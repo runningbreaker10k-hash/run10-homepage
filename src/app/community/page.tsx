@@ -222,7 +222,7 @@ function CommunityContent() {
             <div className="mb-4 sm:mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
               <p className="text-xs sm:text-sm font-medium text-blue-700 mb-2 flex items-center gap-1">
                 <ExternalLink className="w-3.5 h-3.5" />
-                진행 중인 대회 게시판
+                대회 관련 문의는 해당 대회 게시판에 문의해주세요.
               </p>
               <div className="flex flex-wrap gap-2">
                 {activeCompetitions.map(c => (

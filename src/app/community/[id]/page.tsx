@@ -202,6 +202,11 @@ export default function CommunityPostPage() {
       return
     }
 
+    if (post?.is_notice && user.role !== 'admin') {
+      alert('공지게시판에는 댓글을 작성할 수 없습니다')
+      return
+    }
+
     setIsSubmittingComment(true)
 
     try {
@@ -675,7 +680,13 @@ export default function CommunityPostPage() {
             </div>
 
             {/* 댓글 작성 */}
-            {user ? (
+            {post.is_notice && (!user || user.role !== 'admin') ? (
+              <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
+                <p className="text-center text-gray-500 text-xs sm:text-sm">
+                  공지게시판은 관리자만 댓글을 작성할 수 있습니다.
+                </p>
+              </div>
+            ) : user ? (
               <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
                 <form onSubmit={handleSubmit(onCommentSubmit)} className="space-y-3 sm:space-y-4">
                   <div className="flex items-center space-x-2 mb-2">

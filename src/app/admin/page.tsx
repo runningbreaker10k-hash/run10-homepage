@@ -187,7 +187,7 @@ export default function AdminPage() {
   const [totalMembers, setTotalMembers] = useState(0)
   const [membersPerPage, setMembersPerPage] = useState(20)
   const [memberCompetitionFilter, setMemberCompetitionFilter] = useState<string[]>([])
-  const [memberRegionFilter, setMemberRegionFilter] = useState<string>('all')
+  const [memberRegionFilter, setMemberRegionFilter] = useState<string[]>([])
   const [memberAgeFilter, setMemberAgeFilter] = useState<string>('all')
   const [memberGenderFilter, setMemberGenderFilter] = useState<string>('all')
   const [memberGradeFilter, setMemberGradeFilter] = useState<string>('all')
@@ -2812,8 +2812,8 @@ export default function AdminPage() {
         }
 
         // 지역 필터
-        if (memberRegionFilter !== 'all') {
-          filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+        if (memberRegionFilter.length > 0) {
+          filtered = filtered.filter(member => memberRegionFilter.some(r => member.address1?.includes(r)))
         }
 
         // 나이 필터
@@ -2914,7 +2914,7 @@ export default function AdminPage() {
         }
         if (memberGenderFilter !== 'all') filtered = filtered.filter(m => m.gender === memberGenderFilter)
         if (memberGradeFilter !== 'all') filtered = filtered.filter(m => m.grade === memberGradeFilter)
-        if (memberRegionFilter !== 'all') filtered = filtered.filter(m => m.address1?.includes(memberRegionFilter))
+        if (memberRegionFilter.length > 0) filtered = filtered.filter(m => memberRegionFilter.some(r => m.address1?.includes(r)))
 
         setTotalMembers(filtered.length)
         const startIndex = (currentMemberPage - 1) * membersPerPage
@@ -3040,8 +3040,8 @@ export default function AdminPage() {
       }
 
       // 지역 필터
-      if (memberRegionFilter !== 'all') {
-        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+      if (memberRegionFilter.length > 0) {
+        filtered = filtered.filter(member => memberRegionFilter.some(r => member.address1?.includes(r)))
       }
 
       // 나이 필터
@@ -3209,8 +3209,8 @@ export default function AdminPage() {
       }
 
       // 지역 필터
-      if (memberRegionFilter !== 'all') {
-        filtered = filtered.filter(member => member.address1?.includes(memberRegionFilter))
+      if (memberRegionFilter.length > 0) {
+        filtered = filtered.filter(member => memberRegionFilter.some(r => member.address1?.includes(r)))
       }
 
       // 나이 필터
@@ -6433,7 +6433,7 @@ export default function AdminPage() {
                         setConfirmedSearchTerm('')
                         setConfirmedMemberSearchField('name')
                         setMemberCompetitionFilter([])
-                        setMemberRegionFilter('all')
+                        setMemberRegionFilter([])
                         setMemberAgeFilter('all')
                         setMemberGenderFilter('all')
                         setCurrentMemberPage(1)
@@ -6532,13 +6532,25 @@ export default function AdminPage() {
                         <button
                           key={region.value}
                           onClick={() => {
-                            setMemberRegionFilter(region.value)
+                            if (region.value === 'all') {
+                              setMemberRegionFilter([])
+                            } else {
+                              setMemberRegionFilter(prev =>
+                                prev.includes(region.value)
+                                  ? prev.filter(r => r !== region.value)
+                                  : [...prev, region.value]
+                              )
+                            }
                             setCurrentMemberPage(1)
                           }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            memberRegionFilter === region.value
-                              ? 'bg-red-600 text-white'
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                            region.value === 'all'
+                              ? memberRegionFilter.length === 0
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              : memberRegionFilter.includes(region.value)
+                                ? 'bg-red-600 text-white'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                         >
                           {region.label}
