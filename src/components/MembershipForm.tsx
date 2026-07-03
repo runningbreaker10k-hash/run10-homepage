@@ -481,6 +481,9 @@ export default function MembershipForm({ onSuccess, onCancel }: MembershipFormPr
     } catch (error) {
       const appError = ErrorHandler.handle(error)
       ErrorHandler.logError(appError, 'MembershipForm.onSubmit')
+      if (appError.code === 'USER_ID_DUPLICATE') {
+        setIdCheckStatus('taken')
+      }
       ErrorHandler.showUserMessage(appError)
     } finally {
       setIsLoading(false)
