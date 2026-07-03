@@ -4,6 +4,8 @@ import { sendPaymentConfirmAlimtalk } from '@/lib/ppurio'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
+export const maxDuration = 60
+
 /**
  * 뱅크다A 자동 입금 확인 API
  *
@@ -69,15 +71,32 @@ async function handleConfirmPayment(request: NextRequest) {
       )
     }
 
-    // 3. 각 order_id 처리
+    // 3. 알림톡 설정 1회 확인 (루프 밖)
+    const { data: smsSettings } = await supabase
+      .from('sms_settings')
+      .select('enabled')
+      .eq('feature_name', 'payment_confirm')
+      .single()
+
+    // 4. 각 order_id DB 업데이트 (순차 처리)
     const orderResults: OrderResult[] = []
     let hasError = false
+
+    interface AlimtalkTarget {
+      phone: string
+      name: string
+      eventDate: string
+      location: string
+      distance: string
+      fee: string
+    }
+    const alimtalkTargets: AlimtalkTarget[] = []
 
     for (const item of body.requests) {
       const orderId = item.order_id
 
       try {
-        // 3-1. 주문 조회 (대회 정보 포함)
+        // 4-1. 주문 조회 (대회 정보 포함)
         const { data: registration, error: selectError } = await supabase
           .from('registrations')
           .select(`
@@ -101,18 +120,13 @@ async function handleConfirmPayment(request: NextRequest) {
           .single()
 
         if (selectError || !registration) {
-          // 존재하지 않는 주문번호
-          orderResults.push({
-            order_id: orderId,
-            description: '존재하지 않는 주문'
-          })
+          orderResults.push({ order_id: orderId, description: '존재하지 않는 주문' })
           hasError = true
           continue
         }
 
-        // 3-2. payment_status 확인
+        // 4-2. payment_status 확인
         if (registration.payment_status !== 'pending') {
-          // 이미 입금확인되었거나 취소된 경우
           orderResults.push({
             order_id: orderId,
             description: `입금대기 상태가 아님 (현재: ${
@@ -124,7 +138,7 @@ async function handleConfirmPayment(request: NextRequest) {
           continue
         }
 
-        // 3-3. payment_status를 'confirmed'로 업데이트
+        // 4-3. payment_status를 'confirmed'로 업데이트
         const { error: updateError } = await supabase
           .from('registrations')
           .update({ payment_status: 'confirmed' })
@@ -132,65 +146,57 @@ async function handleConfirmPayment(request: NextRequest) {
 
         if (updateError) {
           console.error('입금 확인 업데이트 오류:', updateError)
-          orderResults.push({
-            order_id: orderId,
-            description: '업데이트 실패'
-          })
+          orderResults.push({ order_id: orderId, description: '업데이트 실패' })
           hasError = true
           continue
         }
 
-        // 3-4. 성공
-        orderResults.push({
-          order_id: orderId,
-          description: '성공'
-        })
-
-        // 로그 출력 (Vercel 로그에서 확인 가능)
+        orderResults.push({ order_id: orderId, description: '성공' })
         console.log(`[뱅크다A] 입금 확인 완료: ${registration.name} (${orderId}), 금액: ${registration.entry_fee}원`)
 
-        // 3-5. 입금 확인 완료 알림톡 발송 (설정이 활성화된 경우에만)
-        try {
-          // 알림톡 설정 확인
-          const { data: smsSettings } = await supabase
-            .from('sms_settings')
-            .select('enabled')
-            .eq('feature_name', 'payment_confirm')
-            .single()
+        // 4-4. 알림톡 대상 수집 (활성화된 경우에만)
+        if (smsSettings?.enabled && registration.phone) {
+          const group = Array.isArray(registration.participation_groups)
+            ? registration.participation_groups[0]
+            : registration.participation_groups
+          const competition = group?.competitions
+          const comp = Array.isArray(competition) ? competition[0] : competition
 
-          if (smsSettings?.enabled) {
-            const competition = registration.participation_groups?.competitions
-            if (competition && registration.phone) {
-              // 날짜 형식 변환 (예: 2025년 3월 15일 09:00)
-              const eventDate = format(new Date(competition.date), 'yyyy년 M월 d일 HH:mm', { locale: ko })
-              const distance = registration.participation_groups?.distance || registration.distance || ''
-
-              await sendPaymentConfirmAlimtalk(
-                registration.phone,
-                registration.name,
-                eventDate,
-                competition.location,
-                distance,
-                registration.entry_fee.toLocaleString()
-              )
-              console.log(`[뱅크다A] 입금 확인 알림톡 발송 성공: ${registration.name}`)
-            }
-          } else {
-            console.log(`[뱅크다A] 입금 확인 알림톡 비활성화 상태: ${registration.name}`)
+          if (comp) {
+            const eventDate = format(new Date(comp.date), 'yyyy년 M월 d일 HH:mm', { locale: ko })
+            const distance = group?.distance || registration.distance || ''
+            alimtalkTargets.push({
+              phone: registration.phone,
+              name: registration.name,
+              eventDate,
+              location: comp.location,
+              distance,
+              fee: registration.entry_fee.toLocaleString()
+            })
           }
-        } catch (alimtalkError) {
-          // 알림톡 발송 실패해도 입금 확인은 성공으로 처리
-          console.error(`[뱅크다A] 입금 확인 알림톡 발송 실패:`, alimtalkError)
         }
 
       } catch (error) {
         console.error(`주문 처리 오류 (${orderId}):`, error)
-        orderResults.push({
-          order_id: orderId,
-          description: '처리 중 오류 발생'
-        })
+        orderResults.push({ order_id: orderId, description: '처리 중 오류 발생' })
         hasError = true
       }
+    }
+
+    // 5. 알림톡 병렬 발송 (Promise.allSettled - 1명 실패해도 나머지 진행)
+    if (alimtalkTargets.length > 0) {
+      const results = await Promise.allSettled(
+        alimtalkTargets.map(t =>
+          sendPaymentConfirmAlimtalk(t.phone, t.name, t.eventDate, t.location, t.distance, t.fee)
+        )
+      )
+      results.forEach((result, i) => {
+        if (result.status === 'fulfilled') {
+          console.log(`[뱅크다A] 알림톡 발송 성공: ${alimtalkTargets[i].name}`)
+        } else {
+          console.error(`[뱅크다A] 알림톡 발송 실패: ${alimtalkTargets[i].name}`, result.reason)
+        }
+      })
     }
 
     // 4. 응답 반환
