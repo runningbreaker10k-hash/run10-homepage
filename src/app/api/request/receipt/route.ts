@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         competition_id,
         name,
         phone: phone || '',
-        amount: parseInt(amount),
+        amount: Number(amount),
         distance,
         status: 'pending',
         receipt_type: type,

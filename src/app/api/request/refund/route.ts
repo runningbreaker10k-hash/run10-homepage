@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         competition_id,
         name,
         phone,
-        amount: parseInt(amount),
+        amount: Number(amount),
         distance,
         bank_name,
         account_number,

@@ -184,7 +184,7 @@ function ReceiptRequestPageContent() {
           competition_id: selectedReg.competition_id,
           name,
           phone: receiptType === 'personal' ? phone.replace(/-/g, '') : '',
-          amount: amount.replace(/,/g, ''),
+          amount: selectedReg.entry_fee,
           distance: selectedReg.distance,
           receipt_type: receiptType,
           business_number: receiptType === 'business' ? businessNumber.replace(/-/g, '') : ''

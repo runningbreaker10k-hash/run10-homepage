@@ -177,7 +177,7 @@ function RefundRequestPageContent() {
           competition_id: selectedReg.competition_id,
           name,
           phone: phone.replace(/-/g, ''),
-          amount: amount.replace(/,/g, ''),
+          amount: selectedReg.entry_fee,
           distance: selectedReg.distance,
           bank_name: bankName,
           account_number: accountNumber,
