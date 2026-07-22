@@ -23,7 +23,7 @@ export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<CompetitionWithGroups[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ongoing' | 'closed' | 'upcoming'>('upcoming')
   const [selectedYear, setSelectedYear] = useState(2026)
 
   useEffect(() => {
@@ -333,13 +333,15 @@ export default function CompetitionsPage() {
       <section className="pt-8 pb-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인법</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">대회 일정 확인</h2>
             
+            {/* 
             <div className="text-base text-gray-600 space-y-1">
-
               <p><span className="font-bold text-blue-600">예정</span>: 앞으로 열릴 대회</p>
               <p><span className="font-bold text-gray-800">종료</span>: 이미 종료된 대회</p>               
             </div>
+            */}
+
           </div>
 
         {/* 년도 탭 선택 */}
@@ -365,7 +367,7 @@ export default function CompetitionsPage() {
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
             {/* 검색창 */}
             <div className="w-full lg:flex-1">
@@ -385,7 +387,7 @@ export default function CompetitionsPage() {
             <div className="flex gap-2 lg:gap-3 lg:flex-1">
               <button
                 onClick={() => setStatusFilter('all')}
-                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                className={`flex-1 px-2 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
                   statusFilter === 'all'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
@@ -396,23 +398,23 @@ export default function CompetitionsPage() {
               
               <button
                 onClick={() => setStatusFilter('upcoming')}
-                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                className={`flex-1 px-2 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
                   statusFilter === 'upcoming'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
                 }`}
               >
-                예정
+                예정대회
               </button>
               <button
                 onClick={() => setStatusFilter('closed')}
-                className={`flex-1 px-4 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
+                className={`flex-1 px-2 lg:px-6 py-2 rounded-lg font-bold text-sm lg:text-base transition-all ${
                   statusFilter === 'closed'
                     ? 'bg-red-600 text-white shadow-lg'
                     : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
                 }`}
               >
-                종료
+                지난대회
               </button>
             </div>
           </div>
@@ -539,6 +541,7 @@ export default function CompetitionsPage() {
                             : (
                               competition.title.includes('세종') ? '금강 러닝성지'
                               : competition.title.includes('김해') ? '낙동강 러닝성지'
+                              : competition.title.includes('청주') ? '무심천 러닝성지'
                               : competition.title.includes('아산') ? '아산'
                               : competition.location
                             )
