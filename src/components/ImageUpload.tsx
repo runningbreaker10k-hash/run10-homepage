@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Upload, X, Image as ImageIcon } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 
 interface ImageUploadProps {
   onImageUploaded: (url: string) => void
@@ -44,7 +44,7 @@ export default function ImageUpload({ onImageUploaded, currentImageUrl, classNam
       const filePath = `competitions/${fileName}`
 
       // Supabase Storage에 업로드
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('competition-images')
         .upload(filePath, file)
 
@@ -92,10 +92,6 @@ export default function ImageUpload({ onImageUploaded, currentImageUrl, classNam
 
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        대회 이미지
-      </label>
-      
       {previewUrl ? (
         <div className="relative">
           <img

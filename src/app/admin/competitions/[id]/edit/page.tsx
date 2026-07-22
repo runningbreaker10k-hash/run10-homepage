@@ -675,11 +675,13 @@ export default function EditCompetitionPage() {
                 </div>
               </div>
 
-              <ImageUpload
-                onImageUploaded={handleImageUploaded}
-                currentImageUrl={imageUrl}
-                className="col-span-full"
-              />
+              <div className="col-span-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">대회 이미지</label>
+                <ImageUpload
+                  onImageUploaded={handleImageUploaded}
+                  currentImageUrl={imageUrl}
+                />
+              </div>
             </div>
           </div>
 

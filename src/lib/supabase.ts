@@ -376,6 +376,108 @@ export type Database = {
           updated_at?: string
         }
       }
+      flash_runs: {
+        Row: {
+          id: string
+          creator_id: string
+          sido: string
+          sigungu: string
+          location_detail: string
+          title: string
+          run_date: string
+          run_time: string
+          max_participants: number
+          current_participants: number
+          description: string | null
+          distance: string | null
+          pace: string | null
+          status: 'open' | 'closed' | 'completed' | 'cancelled'
+          image_url: string | null
+          kakao_chat_url: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          creator_id: string
+          sido: string
+          sigungu: string
+          location_detail: string
+          title: string
+          run_date: string
+          run_time: string
+          max_participants: number
+          current_participants?: number
+          description?: string | null
+          distance?: string | null
+          pace?: string | null
+          status?: 'open' | 'closed' | 'completed' | 'cancelled'
+          image_url?: string | null
+          kakao_chat_url: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          creator_id?: string
+          sido?: string
+          sigungu?: string
+          location_detail?: string
+          title?: string
+          run_date?: string
+          run_time?: string
+          max_participants?: number
+          current_participants?: number
+          description?: string | null
+          distance?: string | null
+          pace?: string | null
+          status?: 'open' | 'closed' | 'completed' | 'cancelled'
+          image_url?: string | null
+          kakao_chat_url?: string
+          created_at?: string
+        }
+      }
+      flash_participants: {
+        Row: {
+          id: string
+          flash_run_id: string
+          user_id: string
+          joined_at: string
+        }
+        Insert: {
+          id?: string
+          flash_run_id: string
+          user_id: string
+          joined_at?: string
+        }
+        Update: {
+          id?: string
+          flash_run_id?: string
+          user_id?: string
+          joined_at?: string
+        }
+      }
+      user_favorite_regions: {
+        Row: {
+          id: string
+          user_id: string
+          sido: string
+          sigungu: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          sido: string
+          sigungu: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          sido?: string
+          sigungu?: string
+          created_at?: string
+        }
+      }
       popups: {
         Row: {
           id: string
