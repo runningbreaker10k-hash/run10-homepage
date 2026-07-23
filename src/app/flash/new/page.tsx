@@ -17,14 +17,23 @@ function getTodayStr() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
-function getTimeOptions() {
-  const times: string[] = []
+function getAvailableTimeOptions(selectedDate: string) {
+  const allTimes: string[] = []
   for (let h = 0; h < 24; h++) {
     for (const m of [0, 30]) {
-      times.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
+      allTimes.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`)
     }
   }
-  return times
+  if (selectedDate !== getTodayStr()) return allTimes
+
+  // 오늘이면 현재 시각 +2시간 이후만 허용
+  const minTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
+  const minH = minTime.getHours()
+  const minM = minTime.getMinutes()
+  return allTimes.filter(t => {
+    const [h, m] = t.split(':').map(Number)
+    return h > minH || (h === minH && m >= minM)
+  })
 }
 
 export default function FlashNewPage() {
@@ -36,7 +45,7 @@ export default function FlashNewPage() {
   const [locationDetail, setLocationDetail] = useState('')
   const [title, setTitle] = useState('')
   const [runDate, setRunDate] = useState(getTodayStr())
-  const [runTime, setRunTime] = useState('07:00')
+  const [runTime, setRunTime] = useState(() => getAvailableTimeOptions(getTodayStr())[0] ?? '00:00')
   const [maxParticipants, setMaxParticipants] = useState(6)
   const [kakaoUrl, setKakaoUrl] = useState('')
   const [description, setDescription] = useState('')
@@ -46,7 +55,15 @@ export default function FlashNewPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const timeOptions = getTimeOptions()
+  const timeOptions = getAvailableTimeOptions(runDate)
+
+  const handleDateChange = (newDate: string) => {
+    setRunDate(newDate)
+    const available = getAvailableTimeOptions(newDate)
+    if (!available.includes(runTime)) {
+      setRunTime(available[0] ?? '00:00')
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return
@@ -72,6 +89,11 @@ export default function FlashNewPage() {
     if (!locationDetail.trim()) { setError('상세 장소를 입력해주세요'); return }
     if (!title.trim()) { setError('제목을 입력해주세요'); return }
     if (!runDate) { setError('날짜를 선택해주세요'); return }
+    const selectedDateTime = new Date(`${runDate}T${runTime}:00`)
+    if (selectedDateTime < new Date(Date.now() + 2 * 60 * 60 * 1000)) {
+      setError('모임 시간은 현재 시간으로부터 2시간 이후여야 합니다')
+      return
+    }
     if (!kakaoUrl.trim()) { setError('카카오 오픈채팅 URL을 입력해주세요'); return }
     if (!kakaoUrl.startsWith('http')) { setError('올바른 URL을 입력해주세요'); return }
 
@@ -211,7 +233,7 @@ export default function FlashNewPage() {
                 type="date"
                 value={runDate}
                 min={getTodayStr()}
-                onChange={e => setRunDate(e.target.value)}
+                onChange={e => handleDateChange(e.target.value)}
                 className="px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white [color-scheme:light]"
                 required
               />

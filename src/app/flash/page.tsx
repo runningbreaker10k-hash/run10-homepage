@@ -173,14 +173,16 @@ function FlashPageContent() {
       let query = supabase.from('flash_runs').select(selectFields)
 
       if (statusFilter === 'ongoing') {
+        // open(모집중) + closed(마감) — 날짜가 지나지 않은 모임
         query = query
           .gte('run_date', today)
-          .eq('status', 'open')
+          .in('status', ['open', 'closed'])
           .order('run_date', { ascending: true })
           .order('run_time', { ascending: true })
       } else {
+        // 날짜 지난 모임(오늘 포함) + 취소된 모임
         query = query
-          .or(`run_date.lt.${today},status.eq.cancelled`)
+          .or(`run_date.lte.${today},status.in.(cancelled,closed,completed)`)
           .order('run_date', { ascending: false })
       }
 
@@ -193,6 +195,14 @@ function FlashPageContent() {
       if (error) throw error
 
       let result = (data || []) as FlashRun[]
+
+      // 날짜+시간 기준 정확한 진행/종료 분리 (오늘 날짜 모임 시간 처리)
+      result = result.filter(r => {
+        const ds = getDisplayStatus(r)
+        return statusFilter === 'ongoing'
+          ? (ds === 'open' || ds === 'closed')
+          : (ds === 'completed' || ds === 'cancelled')
+      })
 
       if (flashTab === 'interest') {
         if (favoriteRegions.length === 0) {
@@ -303,7 +313,6 @@ function FlashPageContent() {
   }, {} as Record<string, FlashRun[]>)
 
   const currentMyRuns = myTab === 'created' ? createdRuns : joinedRuns
-  const isLoadingCurrent = groupFilter === 'flash' ? isLoadingFlash : isLoadingMy
 
   return (
     <div className="min-h-screen bg-gray-50">
