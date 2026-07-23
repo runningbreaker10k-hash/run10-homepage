@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Users, Calendar, User, ArrowLeft, MessageCircle, Zap, Loader2, Activity, Pencil } from 'lucide-react'
+import { MapPin, Users, Calendar, User, ArrowLeft, MessageCircle, Zap, Loader2, Activity, Pencil, X, ZoomIn } from 'lucide-react'
 
 interface FlashRun {
   id: string
@@ -32,6 +32,13 @@ interface Participant {
   user_id: string
   joined_at: string
   name: string
+  grade: string | null
+}
+
+
+function maskName(name: string): string {
+  if (!name || name.length <= 1 || name === '알 수 없음') return name
+  return name[0] + '*' + name.slice(2)
 }
 
 function FlashDetailContent() {
@@ -46,6 +53,9 @@ function FlashDetailContent() {
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [kickingUserId, setKickingUserId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -90,14 +100,15 @@ function FlashDetailContent() {
         const userIds = participantData.map(p => p.user_id)
         const { data: userData } = await supabase
           .from('users')
-          .select('id, name')
+          .select('id, name, grade')
           .in('id', userIds)
 
-        const nameMap = new Map(userData?.map(u => [u.id, u.name]) || [])
+        const userMap = new Map(userData?.map(u => [u.id, { name: u.name, grade: u.grade }]) || [])
         setParticipants(participantData.map(p => ({
           user_id: p.user_id,
           joined_at: p.joined_at,
-          name: nameMap.get(p.user_id) || '알 수 없음',
+          name: userMap.get(p.user_id)?.name || '알 수 없음',
+          grade: userMap.get(p.user_id)?.grade || null,
         })))
       } else {
         setParticipants([])
@@ -112,6 +123,7 @@ function FlashDetailContent() {
   const isParticipant = user ? participants.some(p => p.user_id === user.id) : false
   const isCreator = user ? run?.creator_id === user.id : false
   const isAdmin = user?.role === 'admin'
+  const canManageParticipants = isCreator || isAdmin
 
   function getDisplayStatus(r: FlashRun): string {
     if (r.status === 'cancelled') return 'cancelled'
@@ -120,8 +132,6 @@ function FlashDetailContent() {
     if (r.current_participants >= r.max_participants) return 'closed'
     return 'open'
   }
-
-  const canEdit = (isCreator || isAdmin) && run?.status !== 'cancelled'
 
   const handleJoin = async () => {
     if (!user || !run) return
@@ -192,6 +202,45 @@ function FlashDetailContent() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!run || !confirm('모임을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.')) return
+    setIsDeleting(true)
+    try {
+      await supabase.from('flash_participants').delete().eq('flash_run_id', run.id)
+      await supabase.from('flash_runs').delete().eq('id', run.id)
+      router.push('/flash')
+    } catch (err) {
+      console.error('삭제 오류:', err)
+      setError('삭제 처리 중 오류가 발생했습니다')
+      setIsDeleting(false)
+    }
+  }
+
+  const handleKickParticipant = async (targetUserId: string) => {
+    if (!run || !confirm('해당 참여자를 취소 처리하시겠습니까?')) return
+    setKickingUserId(targetUserId)
+    try {
+      await supabase
+        .from('flash_participants')
+        .delete()
+        .eq('flash_run_id', run.id)
+        .eq('user_id', targetUserId)
+
+      const newCount = Math.max(0, run.current_participants - 1)
+      await supabase
+        .from('flash_runs')
+        .update({ current_participants: newCount })
+        .eq('id', run.id)
+
+      await loadData()
+    } catch (err) {
+      console.error('참여자 취소 오류:', err)
+      setError('참여자 취소 처리 중 오류가 발생했습니다')
+    } finally {
+      setKickingUserId(null)
+    }
+  }
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -218,9 +267,32 @@ function FlashDetailContent() {
   }
   const displayStatus = getDisplayStatus(run)
   const statusInfo = STATUS_MAP[displayStatus] || STATUS_MAP.open
+  const canEdit = (isCreator || isAdmin) && (displayStatus === 'open' || displayStatus === 'closed')
+  const canDelete = (isCreator || isAdmin) && (displayStatus === 'cancelled' || displayStatus === 'completed')
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* 이미지 라이트박스 */}
+      {lightboxOpen && run.image_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={run.image_url}
+            alt={run.title}
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* 상단 바 */}
       <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-4 px-4">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-2">
@@ -245,7 +317,17 @@ function FlashDetailContent() {
                 className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium border border-white/20 transition-colors"
               >
                 {isCancelling && <Loader2 className="w-3 h-3 animate-spin" />}
-                취소
+                모임취소
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-red-500/60 rounded-lg text-xs font-medium border border-white/20 transition-colors"
+              >
+                {isDeleting && <Loader2 className="w-3 h-3 animate-spin" />}
+                삭제
               </button>
             )}
             <Link
@@ -261,8 +343,17 @@ function FlashDetailContent() {
 
       <div className="max-w-lg mx-auto px-4 py-5">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* 이미지 (클릭 시 확대) */}
           {run.image_url && (
-            <img src={run.image_url} alt={run.title} className="w-full h-48 object-cover" />
+            <div
+              className="relative cursor-zoom-in group"
+              onClick={() => setLightboxOpen(true)}
+            >
+              <img src={run.image_url} alt={run.title} className="w-full h-48 object-cover" />
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/20 transition-opacity">
+                <ZoomIn className="w-8 h-8 text-white drop-shadow" />
+              </div>
+            </div>
           )}
 
           <div className="p-4 sm:p-5">
@@ -321,15 +412,42 @@ function FlashDetailContent() {
               </h2>
               {participants.length > 0 ? (
                 <div className="grid grid-cols-2 gap-1.5">
-                  {participants.map((p, idx) => (
-                    <div key={p.user_id} className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
-                      <span className="text-xs text-gray-400 w-4 text-center">{idx + 1}</span>
-                      <span className="truncate">{p.name}</span>
-                      {p.user_id === run.creator_id && (
-                        <span className="text-xs text-red-500 font-medium flex-shrink-0">주최</span>
-                      )}
-                    </div>
-                  ))}
+                  {participants.map((p, idx) => {
+                    const isRunCreator = p.user_id === run.creator_id
+                    const isKicking = kickingUserId === p.user_id
+                    return (
+                      <div
+                        key={p.user_id}
+                        className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2"
+                      >
+                        <span className="text-xs text-gray-400 w-4 text-center flex-shrink-0">{idx + 1}</span>
+                        {p.grade && (
+                          <img
+                            src={`/images/grades/${p.grade}.png`}
+                            alt={p.grade}
+                            className="w-4 h-4 flex-shrink-0"
+                          />
+                        )}
+                        <span className="truncate flex-1">{isRunCreator ? p.name : maskName(p.name)}</span>
+                        {isRunCreator && (
+                          <span className="text-xs text-red-500 font-medium flex-shrink-0">주최</span>
+                        )}
+                        {canManageParticipants && !isRunCreator && displayStatus !== 'cancelled' && displayStatus !== 'completed' && (
+                          <button
+                            onClick={() => handleKickParticipant(p.user_id)}
+                            disabled={isKicking}
+                            className="flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors disabled:opacity-50"
+                            title="참여 취소"
+                          >
+                            {isKicking
+                              ? <Loader2 className="w-3 h-3 animate-spin" />
+                              : <X className="w-3 h-3" />
+                            }
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-gray-400">아직 참여자가 없습니다</p>
@@ -355,7 +473,7 @@ function FlashDetailContent() {
                       className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-sm transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
-                      카카오 오픈채팅 참여하기
+                      카카오 오픈채팅 대화하기
                     </a>
                     {!isCreator && (
                       <button

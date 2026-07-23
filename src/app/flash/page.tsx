@@ -320,7 +320,7 @@ function FlashPageContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐플래시</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto">
-            전국 어디서든, 우리 동네 러닝 모임
+            전국 어디서든, 우리 동네 러닝 번개
           </p>
         </div>
       </section>

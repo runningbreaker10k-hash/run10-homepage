@@ -70,6 +70,13 @@ export default function FlashEditPage() {
         return
       }
 
+      // 종료/취소 상태는 수정 불가
+      const isPast = new Date(`${data.run_date}T${data.run_time}`) < new Date()
+      if (data.status === 'cancelled' || isPast) {
+        router.push(`/flash/${id}`)
+        return
+      }
+
       setSido(data.sido)
       setSigungu(data.sigungu)
       setLocationDetail(data.location_detail)
