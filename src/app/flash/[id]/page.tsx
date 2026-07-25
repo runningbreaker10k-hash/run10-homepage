@@ -261,8 +261,8 @@ function FlashDetailContent() {
 
   const STATUS_MAP: Record<string, { label: string; cls: string }> = {
     open:      { label: '모집중', cls: 'bg-green-100 text-green-800' },
-    closed:    { label: '마감',   cls: 'bg-yellow-100 text-yellow-800' },
-    completed: { label: '완료',   cls: 'bg-gray-100 text-gray-600' },
+    closed:    { label: '마감',   cls: 'bg-gray-100 text-gray-600' },
+    completed: { label: '완료',   cls: 'bg-yellow-100 text-yellow-800' },
     cancelled: { label: '취소됨', cls: 'bg-red-100 text-red-700' },
   }
   const displayStatus = getDisplayStatus(run)

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
-import { MapPin, Users, Calendar, Plus, Zap, ChevronRight, X } from 'lucide-react'
+import { MapPin, Users, Calendar, Plus, Zap, ChevronRight, X, Bell, FileText } from 'lucide-react'
 
 interface FlashRun {
   id: string
@@ -39,8 +39,8 @@ const MAX_REGIONS = 3
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   open:      { label: '모집중', cls: 'bg-green-100 text-green-800' },
-  closed:    { label: '마감',   cls: 'bg-yellow-100 text-yellow-800' },
-  completed: { label: '완료',   cls: 'bg-gray-100 text-gray-500' },
+  closed:    { label: '마감',   cls: 'bg-gray-100 text-gray-500' },
+  completed: { label: '완료',   cls: 'bg-yellow-100 text-yellow-800' },
   cancelled: { label: '취소',   cls: 'bg-red-100 text-red-700' },
 }
 
@@ -71,9 +71,14 @@ function RunCard({ run }: { run: FlashRun }) {
       {run.image_url && (
         <img src={run.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
       )}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium text-gray-900 truncate text-sm">{run.title}</span>
+          <span className="font-medium text-gray-900 text-sm sm:hidden">
+            {run.title.length > 15 ? run.title.slice(0, 15) + '…' : run.title}
+          </span>
+          <span className="font-medium text-gray-900 text-sm hidden sm:inline">
+            {run.title.length > 24 ? run.title.slice(0, 24) + '…' : run.title}
+          </span>
           <StatusBadge run={run} />
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-400 mb-1.5">
@@ -334,9 +339,57 @@ function FlashPageContent() {
         </div>
       </section>
 
+      {/* 이용가이드 */}
+      <div className="max-w-2xl mx-auto px-4 pt-4">
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+          <p className="text-xs font-semibold text-red-400 text-center mb-3 tracking-wide uppercase">이용가이드</p>
+          <div className="grid grid-cols-3 gap-2">
+            <Link
+              href="#"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
+            >
+              <Zap className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-700">런텐플래시 안내</span>
+            </Link>
+            <Link
+              href="#"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
+            >
+              <Bell className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-700">신고하기 안내</span>
+            </Link>
+            <Link
+              href="#"
+              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-700">운영정책 위반 조치</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {/* 모임 만들기 버튼 */}
-        <div className="flex justify-end mb-4">
+        {/* 상위 그룹 선택 + 모임 만들기 버튼 */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex gap-2">
+            {([
+              { key: 'flash', label: '런텐플래시' },
+              { key: 'my',    label: '마이플래시' },
+            ] as { key: GroupFilter; label: string }[]).map(g => (
+              <button
+                key={g.key}
+                onClick={() => setGroupFilter(g.key)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                  groupFilter === g.key
+                    ? 'bg-red-600 text-white'
+                    : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300'
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
           <Link
             href="/flash/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm transition-colors"
@@ -346,25 +399,12 @@ function FlashPageContent() {
           </Link>
         </div>
 
-        {/* 상위 그룹 선택 */}
-        <div className="flex gap-2 mb-1">
-          {([
-            { key: 'flash', label: '런텐플래시' },
-            { key: 'my',    label: '마이플래시' },
-          ] as { key: GroupFilter; label: string }[]).map(g => (
-            <button
-              key={g.key}
-              onClick={() => setGroupFilter(g.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                groupFilter === g.key
-                  ? 'bg-red-600 text-white'
-                  : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300'
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
+        {/* 섹션 제목 */}
+        {groupFilter === 'flash' && (
+          <h2 className="text-base font-bold text-gray-900 mt-4 mb-1 flex items-center gap-1">
+            지금 모집중인 FLASH <Zap className="w-4 h-4 text-red-500 fill-red-500" />
+          </h2>
+        )}
 
         {/* 하위 탭 */}
         <div className="flex border-b border-gray-200 mb-4">
