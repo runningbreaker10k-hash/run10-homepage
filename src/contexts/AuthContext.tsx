@@ -62,13 +62,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     switch (grade) {
       case 'cheetah':
-        return { display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
+        return { display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-amber-500' }
       case 'horse':
-        return { display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
+        return { display: '홀스족', icon: '/images/grades/horse.png', color: 'text-rose-700' }
       case 'wolf':
-        return { display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
+        return { display: '울프족', icon: '/images/grades/wolf.png', color: 'text-blue-700' }
       case 'turtle':
-        return { display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+        return { display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-green-600' }
       case 'bolt':
         return { display: '볼타족', icon: '/images/grades/bolt.png', color: 'text-purple-600' }
       default:

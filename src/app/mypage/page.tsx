@@ -423,24 +423,24 @@ function MyPageContent() {
     const totalMinutes = minutes + (seconds / 60)
 
     // 범위 벗어남 처리 (성별 무관)
-    if (totalMinutes < 30) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-    if (totalMinutes >= 70) return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+    if (totalMinutes < 30) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-amber-500' }
+    if (totalMinutes >= 70) return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-green-600' }
 
     if (gender === 'male') {
       // 남성 기준 (30분~69분)
-      if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-      if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-      if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
-      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+      if (totalMinutes < 40) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-amber-500' }
+      if (totalMinutes < 50) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-rose-700' }
+      if (totalMinutes < 60) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-blue-700' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-green-600' }
     } else if (gender === 'female') {
       // 여성 기준 (30분~69분)
-      if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-orange-600' }
-      if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-blue-600' }
-      if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-green-600' }
-      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+      if (totalMinutes < 50) return { grade: 'cheetah', display: '치타족', icon: '/images/grades/cheetah.png', color: 'text-amber-500' }
+      if (totalMinutes < 60) return { grade: 'horse', display: '홀스족', icon: '/images/grades/horse.png', color: 'text-rose-700' }
+      if (totalMinutes < 70) return { grade: 'wolf', display: '울프족', icon: '/images/grades/wolf.png', color: 'text-blue-700' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-green-600' }
     } else {
       // 성별 정보가 없을 때는 기본 터틀족
-      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-gray-600' }
+      return { grade: 'turtle', display: '터틀족', icon: '/images/grades/turtle.png', color: 'text-green-600' }
     }
   }
 

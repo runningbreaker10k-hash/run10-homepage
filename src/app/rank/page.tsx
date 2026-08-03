@@ -66,13 +66,24 @@ export default function RankPage() {
 
   const getTierName = (tier: string) => {
     const tierNames: Record<string, string> = {
-      cheetah: '치타족',
-      horse: '홀스족',
-      wolf: '울프족',
-      turtle: '터틀족',
-      bolt: '볼타족'
+      cheetah: '치타',
+      horse: '홀스',
+      wolf: '울프',
+      turtle: '터틀',
+      bolt: '볼타'
     }
     return tierNames[tier] || tier
+  }
+
+  const getTierColor = (tier: string) => {
+    const tierColors: Record<string, string> = {
+      cheetah: 'text-amber-500',
+      horse: 'text-rose-700',
+      wolf: 'text-blue-700',
+      turtle: 'text-green-600',
+      bolt: 'text-purple-600',
+    }
+    return tierColors[tier] || 'text-gray-600'
   }
 
   return (
@@ -109,13 +120,13 @@ export default function RankPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
             {/* 치타족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
-              <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
+              <div className="mb-3 md:mb-4">
                 <Image
-                  src="/images/grades/cheetah.png"
+                  src="/images/flash/tire/1flash_c.jpg"
                   alt="치타족"
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 md:w-12 md:h-12"
+                  width={80}
+                  height={88}
+                  className="w-16 h-auto md:w-20 mx-auto rounded"
                   quality={75}
                 />
               </div>
@@ -133,13 +144,13 @@ export default function RankPage() {
 
             {/* 홀스족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
-              <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
+              <div className="mb-3 md:mb-4">
                 <Image
-                  src="/images/grades/horse.png"
+                  src="/images/flash/tire/1flash_h.jpg"
                   alt="홀스족"
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 md:w-12 md:h-12"
+                  width={80}
+                  height={88}
+                  className="w-16 h-auto md:w-20 mx-auto rounded"
                   quality={75}
                 />
               </div>
@@ -157,13 +168,13 @@ export default function RankPage() {
 
             {/* 울프족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
-              <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
+              <div className="mb-3 md:mb-4">
                 <Image
-                  src="/images/grades/wolf.png"
+                  src="/images/flash/tire/1flash_w.jpg"
                   alt="울프족"
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 md:w-12 md:h-12"
+                  width={80}
+                  height={88}
+                  className="w-16 h-auto md:w-20 mx-auto rounded"
                   quality={75}
                 />
               </div>
@@ -181,13 +192,13 @@ export default function RankPage() {
 
             {/* 터틀족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
-              <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-full mb-3 md:mb-4">
+              <div className="mb-3 md:mb-4">
                 <Image
-                  src="/images/grades/turtle.png"
+                  src="/images/flash/tire/1flash_t.jpg"
                   alt="터틀족"
-                  width={48}
-                  height={48}
-                  className="w-10 h-10 md:w-12 md:h-12"
+                  width={80}
+                  height={88}
+                  className="w-16 h-auto md:w-20 mx-auto rounded"
                   quality={75}
                 />
               </div>
@@ -265,7 +276,7 @@ export default function RankPage() {
                 {rankData.map((item, index) => (
                   <div
                     key={index}
-                    className={`grid grid-cols-4 gap-2 px-4 py-4 text-center items-center transition-colors hover:bg-blue-50 ${
+                    className={`grid grid-cols-4 gap-2 px-4 py-3 text-center items-center transition-colors hover:bg-blue-50 ${
                       index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                     }`}
                   >
@@ -275,16 +286,18 @@ export default function RankPage() {
                     </div>
 
                     {/* 티어 */}
-                    <div className="flex justify-center">
+                    <div className="flex items-center justify-center gap-1.5 md:gap-2">
                       <Image
                         src={getTierImage(item.tier)}
                         alt={getTierName(item.tier)}
-                        width={32}
-                        height={32}
-                        className="w-6 h-6 md:w-8 md:h-8"
-                        title={getTierName(item.tier)}
+                        width={40}
+                        height={40}
+                        className="w-7 h-7 md:w-9 md:h-9 flex-shrink-0"
                         quality={75}
                       />
+                      <span className={`text-sm md:text-base font-semibold ${getTierColor(item.tier)}`}>
+                        {getTierName(item.tier)}
+                      </span>
                     </div>
 
                     {/* 이름 */}

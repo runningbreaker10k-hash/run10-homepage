@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
-import { MapPin, Users, Calendar, User, ArrowLeft, MessageCircle, Zap, Loader2, Activity, Pencil, X, ZoomIn } from 'lucide-react'
+import { MapPin, Users, Calendar, User, ArrowLeft, MessageCircle, Zap, Loader2, Activity, Pencil, X, ZoomIn, ThumbsUp, Siren } from 'lucide-react'
 
 interface FlashRun {
   id: string
@@ -20,7 +20,7 @@ interface FlashRun {
   current_participants: number
   description: string | null
   distance: string | null
-  pace: string | null
+  tier: string[] | null
   status: 'open' | 'cancelled'
   image_url: string | null
   kakao_chat_url: string
@@ -57,6 +57,11 @@ function FlashDetailContent() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [error, setError] = useState('')
+  const [likesByUser, setLikesByUser] = useState<Record<string, number>>({})
+  const [myLikedUserIds, setMyLikedUserIds] = useState<Set<string>>(new Set())
+  const [myReportedUserIds, setMyReportedUserIds] = useState<Set<string>>(new Set())
+  const [likingUserId, setLikingUserId] = useState<string | null>(null)
+  const [reportTargetUserId, setReportTargetUserId] = useState<string | null>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -113,10 +118,81 @@ function FlashDetailContent() {
       } else {
         setParticipants([])
       }
+
+      // 좋아요 로드
+      const participantIds = participantData?.map(p => p.user_id) || []
+
+      // 현재 모임에서 내가 누른 좋아요 (ThumbsUp 활성화 여부)
+      const { data: myLikesData } = await supabase
+        .from('flash_likes')
+        .select('liked_user_id')
+        .eq('flash_run_id', id)
+        .eq('liker_id', user!.id)
+
+      const myLiked = new Set<string>()
+      if (myLikesData) {
+        for (const like of myLikesData) myLiked.add(like.liked_user_id)
+      }
+      setMyLikedUserIds(myLiked)
+
+      // 전체 모임에서 각 참여자가 받은 좋아요 합산
+      if (participantIds.length > 0) {
+        const { data: totalLikesData } = await supabase
+          .from('flash_likes')
+          .select('liked_user_id')
+          .in('liked_user_id', participantIds)
+
+        const counts: Record<string, number> = {}
+        if (totalLikesData) {
+          for (const like of totalLikesData) {
+            counts[like.liked_user_id] = (counts[like.liked_user_id] || 0) + 1
+          }
+        }
+        setLikesByUser(counts)
+      }
+
+      // 내 신고 로드
+      const { data: reportsData } = await supabase
+        .from('flash_reports')
+        .select('target_user_id')
+        .eq('flash_run_id', id)
+        .eq('reporter_id', user?.id)
+
+      if (reportsData) {
+        setMyReportedUserIds(new Set(reportsData.map(r => r.target_user_id)))
+      }
     } catch (err) {
       console.error('모임 조회 오류:', err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleLike = async (targetUserId: string) => {
+    if (!user || !run) return
+    setLikingUserId(targetUserId)
+    try {
+      const isLiked = myLikedUserIds.has(targetUserId)
+      if (isLiked) {
+        await supabase
+          .from('flash_likes')
+          .delete()
+          .eq('flash_run_id', run.id)
+          .eq('liker_id', user.id)
+          .eq('liked_user_id', targetUserId)
+        setMyLikedUserIds(prev => { const n = new Set(prev); n.delete(targetUserId); return n })
+        setLikesByUser(prev => ({ ...prev, [targetUserId]: Math.max(0, (prev[targetUserId] || 0) - 1) }))
+      } else {
+        await supabase
+          .from('flash_likes')
+          .insert({ flash_run_id: run.id, liker_id: user.id, liked_user_id: targetUserId })
+        setMyLikedUserIds(prev => new Set(prev).add(targetUserId))
+        setLikesByUser(prev => ({ ...prev, [targetUserId]: (prev[targetUserId] || 0) + 1 }))
+      }
+    } catch (err) {
+      console.error('좋아요 오류:', err)
+    } finally {
+      setLikingUserId(null)
     }
   }
 
@@ -263,7 +339,7 @@ function FlashDetailContent() {
     open:      { label: '모집중', cls: 'bg-green-100 text-green-800' },
     closed:    { label: '마감',   cls: 'bg-gray-100 text-gray-600' },
     completed: { label: '완료',   cls: 'bg-yellow-100 text-yellow-800' },
-    cancelled: { label: '취소됨', cls: 'bg-red-100 text-red-700' },
+    cancelled: { label: '취소', cls: 'bg-red-100 text-red-700' },
   }
   const displayStatus = getDisplayStatus(run)
   const statusInfo = STATUS_MAP[displayStatus] || STATUS_MAP.open
@@ -278,6 +354,7 @@ function FlashDetailContent() {
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightboxOpen(false)}
         >
+
           <button
             className="absolute top-4 right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors"
             onClick={() => setLightboxOpen(false)}
@@ -290,6 +367,34 @@ function FlashDetailContent() {
             className="max-w-full max-h-full object-contain rounded-lg"
             onClick={e => e.stopPropagation()}
           />
+        </div>
+      )}
+
+      {/* 신고 확인 모달 */}
+      {reportTargetUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Siren className="w-5 h-5 text-orange-500 flex-shrink-0" />
+              <p className="text-sm font-semibold text-gray-800">참가자 신고</p>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">해당 참가자를 신고하시겠습니까?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setReportTargetUserId(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <Link
+                href={`/flash/${run.id}/report/${reportTargetUserId}`}
+                onClick={() => setReportTargetUserId(null)}
+                className="flex-1 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium text-center hover:bg-orange-600 transition-colors"
+              >
+                확인
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
@@ -385,15 +490,15 @@ function FlashDetailContent() {
                   <span className="ml-1.5 text-xs text-gray-400">선착순 마감</span>
                 </span>
               </div>
-              {(run.distance || run.pace) && (
+              {(run.distance || (run.tier && run.tier.length > 0)) && (
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span>{[run.distance, run.pace].filter(Boolean).join(' · ')}</span>
+                  <span>{[run.distance, run.tier?.join(', ')].filter(Boolean).join(' · ')}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <span>주최: {run.creator_name}</span>
+                <span>주최: {maskName(run.creator_name || '')}</span>
               </div>
             </div>
 
@@ -411,39 +516,67 @@ function FlashDetailContent() {
                 참여자 ({participants.length}/{run.max_participants}명)
               </h2>
               {participants.length > 0 ? (
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="space-y-1.5">
                   {participants.map((p, idx) => {
                     const isRunCreator = p.user_id === run.creator_id
                     const isKicking = kickingUserId === p.user_id
+                    const isSelf = p.user_id === user.id
+                    const isEnded = displayStatus === 'completed' || displayStatus === 'cancelled'
+                    const showReview = isEnded && isParticipant && !isSelf
+                    const isLiked = myLikedUserIds.has(p.user_id)
+                    const isReported = myReportedUserIds.has(p.user_id)
+                    const isLiking = likingUserId === p.user_id
                     return (
                       <div
                         key={p.user_id}
-                        className="flex items-center gap-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2"
+                        className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2.5"
                       >
-                        <span className="text-xs text-gray-400 w-4 text-center flex-shrink-0">{idx + 1}</span>
+                        <span className="text-xs text-gray-400 w-5 text-center flex-shrink-0">{idx + 1}</span>
                         {p.grade && (
                           <img
                             src={`/images/grades/${p.grade}.png`}
                             alt={p.grade}
-                            className="w-4 h-4 flex-shrink-0"
+                            className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0"
                           />
                         )}
-                        <span className="truncate flex-1">{isRunCreator ? p.name : maskName(p.name)}</span>
-                        {isRunCreator && (
-                          <span className="text-xs text-red-500 font-medium flex-shrink-0">주최</span>
-                        )}
-                        {canManageParticipants && !isRunCreator && displayStatus !== 'cancelled' && displayStatus !== 'completed' && (
+                        <span className="truncate flex-1">
+                          {maskName(p.name)}
+                          {isRunCreator && (
+                            <span className="ml-1 text-xs text-red-500 font-medium">주최</span>
+                          )}
+                        </span>
+                        {canManageParticipants && !isRunCreator && !isEnded && (
                           <button
                             onClick={() => handleKickParticipant(p.user_id)}
                             disabled={isKicking}
                             className="flex-shrink-0 text-gray-300 hover:text-red-400 transition-colors disabled:opacity-50"
-                            title="참여 취소"
                           >
-                            {isKicking
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : <X className="w-3 h-3" />
-                            }
+                            {isKicking ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                           </button>
+                        )}
+                        {showReview && (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              onClick={() => handleLike(p.user_id)}
+                              disabled={isLiking}
+                              className={`flex items-center gap-0.5 transition-colors disabled:opacity-50 ${
+                                isLiked ? 'text-gray-900' : 'text-gray-400 hover:text-gray-700'
+                              }`}
+                            >
+                              <ThumbsUp className="w-3.5 h-3.5" fill={isLiked ? 'currentColor' : 'none'} />
+                              <span className="text-xs">{likesByUser[p.user_id] || 0}</span>
+                            </button>
+                            {isReported ? (
+                              <span className="text-xs text-gray-300">신고됨</span>
+                            ) : (
+                              <button
+                                onClick={() => setReportTargetUserId(p.user_id)}
+                                className="text-gray-400 hover:text-orange-500 transition-colors"
+                              >
+                                <Siren className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     )

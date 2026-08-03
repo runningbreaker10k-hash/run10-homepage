@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
-import { MapPin, Users, Calendar, Plus, Zap, ChevronRight, X, Bell, FileText } from 'lucide-react'
+import { MapPin, Calendar, Plus, Zap, X, Bell, FileText } from 'lucide-react'
 
 interface FlashRun {
   id: string
@@ -22,6 +22,7 @@ interface FlashRun {
   distance: string | null
   status: 'open' | 'cancelled'
   image_url: string | null
+  tier: string[] | null
 }
 
 interface FavoriteRegion {
@@ -38,9 +39,9 @@ type StatusFilter = 'ongoing' | 'ended'
 const MAX_REGIONS = 3
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  open:      { label: '모집중', cls: 'bg-green-100 text-green-800' },
-  closed:    { label: '마감',   cls: 'bg-gray-100 text-gray-500' },
-  completed: { label: '완료',   cls: 'bg-yellow-100 text-yellow-800' },
+  open:      { label: '모집중', cls: 'bg-[#CEECD3] text-[#063E18]' },
+  closed:    { label: '마감',   cls: 'bg-yellow-100 text-yellow-800' },
+  completed: { label: '완료',   cls: 'bg-gray-100 text-gray-500' },
   cancelled: { label: '취소',   cls: 'bg-red-100 text-red-700' },
 }
 
@@ -52,52 +53,100 @@ function getDisplayStatus(run: Pick<FlashRun, 'status' | 'run_date' | 'run_time'
   return 'open'
 }
 
+function Pagination({ current, total, onChange }: { current: number; total: number; onChange: (p: number) => void }) {
+  if (total <= 1) return null
+
+  const getPageNumbers = () => {
+    let start = Math.max(1, current - 2)
+    const end   = Math.min(total, start + 4)
+    start = Math.max(1, end - 4)
+    const pages: number[] = []
+    for (let i = start; i <= end; i++) pages.push(i)
+    return pages
+  }
+
+  const btnBase = 'flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium transition-colors'
+  const active  = 'bg-[#E60012] text-white'
+  const inactive = 'text-[#1F2937] border border-[#E5E7EB] bg-white hover:border-[#E60012] hover:text-[#E60012]'
+  const disabled = 'text-[#E5E7EB] border border-[#E5E7EB] bg-white cursor-not-allowed'
+
+  return (
+    <div className="mt-6 flex flex-col items-center gap-3">
+      {/* 데스크탑 */}
+      <div className="hidden sm:flex items-center gap-1">
+        <button onClick={() => onChange(1)} disabled={current === 1} className={`${btnBase} ${current === 1 ? disabled : inactive}`}>«</button>
+        <button onClick={() => onChange(current - 1)} disabled={current === 1} className={`${btnBase} ${current === 1 ? disabled : inactive}`}>‹</button>
+        {getPageNumbers().map(p => (
+          <button key={p} onClick={() => onChange(p)} className={`${btnBase} ${p === current ? active : inactive}`}>{p}</button>
+        ))}
+        <button onClick={() => onChange(current + 1)} disabled={current === total} className={`${btnBase} ${current === total ? disabled : inactive}`}>›</button>
+        <button onClick={() => onChange(total)} disabled={current === total} className={`${btnBase} ${current === total ? disabled : inactive}`}>»</button>
+      </div>
+      {/* 모바일 */}
+      <div className="flex sm:hidden items-center gap-5">
+        <button onClick={() => onChange(current - 1)} disabled={current === 1} className={`${btnBase} ${current === 1 ? disabled : inactive}`}>‹</button>
+        <span className="text-sm font-medium text-[#1F2937] min-w-[4rem] text-center">{current} / {total}</span>
+        <button onClick={() => onChange(current + 1)} disabled={current === total} className={`${btnBase} ${current === total ? disabled : inactive}`}>›</button>
+      </div>
+    </div>
+  )
+}
+
 function StatusBadge({ run }: { run: FlashRun }) {
   const key = getDisplayStatus(run)
   const s = STATUS_BADGE[key] || STATUS_BADGE.open
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${s.cls}`}>
+    <span className={`inline-flex items-center justify-center px-2.5 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-base font-semibold flex-shrink-0 whitespace-nowrap ${s.cls}`}>
       {s.label}
     </span>
   )
 }
 
+const TIER_LETTER: Record<string, string> = {
+  '치타족': 'c',
+  '홀스족': 'h',
+  '울프족': 'w',
+  '터틀족': 't',
+}
+const TIER_ORDER = ['치타족', '홀스족', '울프족', '터틀족']
+
+function getTierImage(tier: string[] | null): string {
+  const tiers = (tier && tier.length > 0) ? tier : TIER_ORDER
+  const sorted = TIER_ORDER.filter(t => tiers.includes(t))
+  const letters = sorted.map(t => TIER_LETTER[t]).join('')
+  return `/images/flash/tire/${sorted.length}flash_${letters}.jpg`
+}
+
 function RunCard({ run }: { run: FlashRun }) {
+  const tierLabel = (run.tier && run.tier.length > 0) ? run.tier.join(', ') : '모든러너'
+  const sidoShortLocal = (s: string) =>
+    s.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','').replace('특별자치','')
+
   return (
     <Link
       href={`/flash/${run.id}`}
-      className="flex items-center gap-3 bg-white rounded-lg border border-gray-100 p-4 hover:border-red-200 transition-colors active:bg-gray-50"
+      className="flex items-center gap-3 sm:gap-6 bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4 min-h-[110px] sm:min-h-[144px] hover:border-red-200 transition-colors active:bg-gray-50"
     >
-      {run.image_url && (
-        <img src={run.image_url} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
-      )}
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-medium text-gray-900 text-sm sm:hidden">
-            {run.title.length > 15 ? run.title.slice(0, 15) + '…' : run.title}
-          </span>
-          <span className="font-medium text-gray-900 text-sm hidden sm:inline">
-            {run.title.length > 24 ? run.title.slice(0, 24) + '…' : run.title}
-          </span>
-          <StatusBadge run={run} />
+      <img src={getTierImage(run.tier)} alt="" className="w-[60px] h-[66px] sm:w-[86px] sm:h-[95px] object-contain flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 sm:gap-1">
+        <p className="text-xs sm:text-sm font-semibold text-[#444444]">{tierLabel}</p>
+        <p className="font-semibold text-sm sm:text-xl text-black leading-snug truncate">
+          {run.title.length > 20 ? run.title.slice(0, 20) + '…' : run.title}
+        </p>
+        <div className="flex items-center gap-1 text-xs sm:text-sm text-[#555555]">
+          <MapPin className="w-3 h-3 sm:w-[18px] sm:h-[18px] flex-shrink-0 text-[#888888]" />
+          <span className="truncate">{sidoShortLocal(run.sido)} {run.sigungu} · {run.location_detail}</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-400 mb-1.5">
-          <MapPin className="w-3 h-3 flex-shrink-0" />
-          <span className="truncate">{run.sido.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','')} {run.sigungu} · {run.location_detail}</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+        <div className="flex items-center gap-x-2 sm:gap-x-3 text-xs sm:text-sm text-[#555555]">
+          <span className="flex items-center gap-0.5 sm:gap-1">
+            <Calendar className="w-3 h-3 sm:w-[18px] sm:h-[18px] text-[#888888]" />
             {run.run_date.slice(5).replace('-', '/')} {run.run_time.slice(0, 5)}
           </span>
-          <span className="flex items-center gap-1">
-            <Users className="w-3 h-3" />
-            {run.current_participants}/{run.max_participants}명
-          </span>
+          <span>{run.current_participants}/{run.max_participants}명</span>
           {run.distance && <span>{run.distance}</span>}
         </div>
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+      <StatusBadge run={run} />
     </Link>
   )
 }
@@ -106,9 +155,13 @@ function FlashPageContent() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
+  // 이용가이드 모달
+  const [guideOpen, setGuideOpen]   = useState(false)
+  const [guideIndex, setGuideIndex] = useState(0)
+
   // 그룹 & 탭
   const [groupFilter, setGroupFilter] = useState<GroupFilter>('flash')
-  const [flashTab, setFlashTab]       = useState<FlashTab>('interest')
+  const [flashTab, setFlashTab]       = useState<FlashTab>('all')
   const [myTab, setMyTab]             = useState<MyTab>('created')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ongoing')
 
@@ -131,6 +184,10 @@ function FlashPageContent() {
   const [filterSido, setFilterSido]   = useState('')
   const [filterSigungu, setFilterSigungu] = useState('')
 
+  // 페이지네이션
+  const [currentPage, setCurrentPage] = useState(1)
+  const PAGE_SIZE = 10
+
   useEffect(() => {
     if (authLoading) return
     if (!user) router.push('/')
@@ -140,6 +197,11 @@ function FlashPageContent() {
     if (authLoading || !user) return
     loadFavoriteRegions()
   }, [user, authLoading])
+
+  // 필터/탭 변경 시 1페이지 리셋
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [flashTab, statusFilter, filterSido, filterSigungu, groupFilter])
 
   // 런텐플래시 탭 데이터 로드
   useEffect(() => {
@@ -173,7 +235,7 @@ function FlashPageContent() {
     setIsLoadingFlash(true)
     try {
       const today = getTodayStr()
-      const selectFields = 'id, creator_id, sido, sigungu, location_detail, title, run_date, run_time, max_participants, current_participants, distance, status, image_url'
+      const selectFields = 'id, creator_id, sido, sigungu, location_detail, title, run_date, run_time, max_participants, current_participants, distance, status, image_url, tier'
 
       let query = supabase.from('flash_runs').select(selectFields)
 
@@ -231,7 +293,7 @@ function FlashPageContent() {
     if (!user) return
     setIsLoadingMy(true)
     try {
-      const selectFields = 'id, creator_id, sido, sigungu, location_detail, title, run_date, run_time, max_participants, current_participants, distance, status, image_url'
+      const selectFields = 'id, creator_id, sido, sigungu, location_detail, title, run_date, run_time, max_participants, current_participants, distance, status, image_url, tier'
 
       // 내가 만든 모임
       const { data: created } = await supabase
@@ -309,8 +371,12 @@ function FlashPageContent() {
   const addSigunguList    = addSido    ? KOREA_REGIONS[addSido]    || [] : []
   const filterSigunguList = filterSido ? KOREA_REGIONS[filterSido] || [] : []
 
+  // 페이지네이션
+  const totalPages = Math.max(1, Math.ceil(flashRuns.length / PAGE_SIZE))
+  const pagedRuns  = flashRuns.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
   // 런텐플래시 목록을 지역별 그룹핑
-  const grouped = flashRuns.reduce((acc, run) => {
+  const grouped = pagedRuns.reduce((acc, run) => {
     const key = `${run.sido} ${run.sigungu}`
     if (!acc[key]) acc[key] = []
     acc[key].push(run)
@@ -344,35 +410,84 @@ function FlashPageContent() {
         <div className="bg-red-50 border border-red-100 rounded-xl p-4">
           <p className="text-xs font-semibold text-red-400 text-center mb-3 tracking-wide uppercase">이용가이드</p>
           <div className="grid grid-cols-3 gap-2">
-            <Link
-              href="#"
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
-            >
-              <Zap className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-              <span className="text-xs font-medium text-gray-700">런텐플래시 안내</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
-            >
-              <Bell className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-              <span className="text-xs font-medium text-gray-700">신고하기 안내</span>
-            </Link>
-            <Link
-              href="#"
-              className="flex items-center justify-center gap-1.5 py-2.5 px-2 bg-white rounded-lg border border-red-100 hover:border-red-300 transition-colors"
-            >
-              <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-              <span className="text-xs font-medium text-gray-700">운영정책 위반 조치</span>
-            </Link>
+            {[
+              { label: '런텐플래시 안내',    icon: <Zap      className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
+              { label: '신고하기 안내',      icon: <Bell     className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
+              { label: '운영정책 위반 조치', icon: <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
+            ].map((g, i) => (
+              <button
+                key={g.label}
+                onClick={() => { setGuideIndex(i); setGuideOpen(true) }}
+                className="flex items-center justify-center gap-1 py-2.5 px-1 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
+              >
+                {g.icon}
+                <span className="text-[10px] sm:text-xs font-medium text-gray-700 whitespace-nowrap">{g.label}</span>
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* 이용가이드 모달 */}
+        {guideOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 sm:p-4"
+            onClick={() => setGuideOpen(false)}
+          >
+            <div
+              className="bg-white w-full sm:max-w-lg flex flex-col rounded-t-2xl sm:rounded-2xl shadow-2xl"
+              style={{ maxHeight: '92vh' }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* 드래그 핸들 — 모바일 바텀시트 */}
+              <div className="flex justify-center pt-3 pb-0 flex-shrink-0 sm:hidden">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              </div>
+
+              {/* 모달 헤더 — 고정 */}
+              <div className="flex items-center justify-between px-4 pt-3 sm:pt-4 pb-0 flex-shrink-0">
+                <span className="text-sm font-bold text-gray-800">이용가이드</span>
+                <button
+                  onClick={() => setGuideOpen(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
+
+              {/* 탭 — 고정, 균등 분할 */}
+              <div className="flex border-b border-gray-200 mt-3 flex-shrink-0">
+                {['런텐플래시 안내', '신고하기 안내', '운영정책 위반 조치'].map((label, i) => (
+                  <button
+                    key={label}
+                    onClick={() => setGuideIndex(i)}
+                    className={`flex-1 py-2.5 text-[11px] sm:text-xs font-medium border-b-2 transition-colors text-center leading-tight px-1 ${
+                      guideIndex === i
+                        ? 'border-red-600 text-red-600'
+                        : 'border-transparent text-gray-400 hover:text-gray-700'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 이미지 — 스크롤 */}
+              <div className="overflow-y-auto flex-1 p-3 sm:p-6">
+                <img
+                  src={`/images/flash/anno/0${guideIndex + 1}.jpg`}
+                  alt="이용가이드"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* 상위 그룹 선택 + 모임 만들기 버튼 */}
         <div className="flex items-center justify-between mb-1">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             {([
               { key: 'flash', label: '런텐플래시' },
               { key: 'my',    label: '마이플래시' },
@@ -380,7 +495,7 @@ function FlashPageContent() {
               <button
                 key={g.key}
                 onClick={() => setGroupFilter(g.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
                   groupFilter === g.key
                     ? 'bg-red-600 text-white'
                     : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300'
@@ -392,17 +507,17 @@ function FlashPageContent() {
           </div>
           <Link
             href="/flash/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm transition-colors"
+            className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            모임 만들기
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            플래시 만들기
           </Link>
         </div>
 
         {/* 섹션 제목 */}
         {groupFilter === 'flash' && (
           <h2 className="text-base font-bold text-gray-900 mt-4 mb-1 flex items-center gap-1">
-            지금 모집중인 FLASH <Zap className="w-4 h-4 text-red-500 fill-red-500" />
+            지금 진행중인 FLASH <Zap className="w-4 h-4 text-red-500 fill-red-500" />
           </h2>
         )}
 
@@ -411,13 +526,13 @@ function FlashPageContent() {
           {groupFilter === 'flash' && (
             <>
               {([
-                { key: 'interest', label: '관심지역' },
                 { key: 'all',      label: '전체지역' },
+                { key: 'interest', label: '관심지역' },
               ] as { key: FlashTab; label: string }[]).map(t => (
                 <button
                   key={t.key}
                   onClick={() => setFlashTab(t.key)}
-                  className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  className={`px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                     flashTab === t.key
                       ? 'border-red-600 text-red-600'
                       : 'border-transparent text-gray-400 hover:text-gray-700'
@@ -437,7 +552,7 @@ function FlashPageContent() {
                 <button
                   key={t.key}
                   onClick={() => setMyTab(t.key)}
-                  className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  className={`px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                     myTab === t.key
                       ? 'border-red-600 text-red-600'
                       : 'border-transparent text-gray-400 hover:text-gray-700'
@@ -540,7 +655,7 @@ function FlashPageContent() {
                 <button
                   key={f.key}
                   onClick={() => setStatusFilter(f.key)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
                     statusFilter === f.key
                       ? 'bg-red-600 text-white'
                       : 'bg-white text-gray-600 border border-gray-200 hover:border-red-300'
@@ -571,16 +686,19 @@ function FlashPageContent() {
                 )}
               </div>
             ) : (
-              <div className="space-y-6">
-                {Object.entries(grouped).map(([region, regionRuns]) => (
-                  <div key={region}>
-                    <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-2 px-1">{region}</h2>
-                    <div className="space-y-2">
-                      {regionRuns.map(run => <RunCard key={run.id} run={run} />)}
+              <>
+                <div className="space-y-6">
+                  {Object.entries(grouped).map(([region, regionRuns]) => (
+                    <div key={region}>
+                      <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-2 px-1">{region}</h2>
+                      <div className="space-y-2">
+                        {regionRuns.map(run => <RunCard key={run.id} run={run} />)}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
+              </>
             )}
           </>
         )}

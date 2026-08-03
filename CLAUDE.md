@@ -202,8 +202,8 @@ src/components/
 | 등급 | 한글명 | 시간 범위 | 아이콘 경로 | 색상 |
 |------|--------|----------|------------|------|
 | cheetah | 치타족 | 30분 - 39분 59초 | `/images/grades/cheetah.png` | orange |
-| horse | 홀스족 | 40분 - 49분 59초 | `/images/grades/horse.png` | blue |
-| wolf | 울프족 | 50분 - 59분 59초 | `/images/grades/wolf.png` | gray |
+| horse | 홀스족 | 40분 - 49분 59초 | `/images/grades/horse.png` | purple |
+| wolf | 울프족 | 50분 - 59분 59초 | `/images/grades/wolf.png` | blue |
 | turtle | 터틀족 | 60분 이상 또는 미기록 | `/images/grades/turtle.png` | green |
 | bolt | 볼타족 | 관리자 직접 지정 | `/images/grades/bolt.png` | purple |
 
