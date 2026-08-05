@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
 import { MapPin, Calendar, Plus, Zap, X, FileText } from 'lucide-react'
+import AuthModal from '@/components/AuthModal'
 
 interface FlashRun {
   id: string
@@ -154,6 +155,9 @@ function FlashPageContent() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
+  // 로그인 모달
+  const [showAuthModal, setShowAuthModal] = useState(false)
+
   // 이용가이드 모달
   const [guideOpen, setGuideOpen]   = useState(false)
   const [guideIndex, setGuideIndex] = useState(0)
@@ -189,9 +193,8 @@ function FlashPageContent() {
   const PAGE_SIZE = 10
 
   useEffect(() => {
-    if (authLoading) return
-    if (!user) router.push('/')
-  }, [user, authLoading, router])
+    if (!authLoading && user) setShowAuthModal(false)
+  }, [user, authLoading])
 
   useEffect(() => {
     if (authLoading || !user) return
@@ -361,11 +364,49 @@ function FlashPageContent() {
     }
   }
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-600 border-t-transparent" />
       </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">런텐 플래시</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+              로그인 후 이용 가능한 서비스입니다.<br />
+              로그인하고 런텐플래시에 참여해보세요!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/')}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
+              >
+                돌아가기
+              </button>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors"
+              >
+                로그인하기
+              </button>
+            </div>
+          </div>
+        </div>
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          defaultTab="login"
+        />
+      </>
     )
   }
 
