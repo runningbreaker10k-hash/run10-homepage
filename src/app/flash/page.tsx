@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
-import { MapPin, Calendar, Plus, Zap, X, Bell, FileText } from 'lucide-react'
+import { MapPin, Calendar, Plus, Zap, X, FileText } from 'lucide-react'
 
 interface FlashRun {
   id: string
@@ -34,7 +34,6 @@ interface FavoriteRegion {
 type GroupFilter = 'flash' | 'my'
 type FlashTab = 'interest' | 'all'
 type MyTab = 'created' | 'joined'
-type StatusFilter = 'ongoing' | 'ended'
 
 const MAX_REGIONS = 3
 
@@ -163,7 +162,7 @@ function FlashPageContent() {
   const [groupFilter, setGroupFilter] = useState<GroupFilter>('flash')
   const [flashTab, setFlashTab]       = useState<FlashTab>('all')
   const [myTab, setMyTab]             = useState<MyTab>('created')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ongoing')
+  const [showEnded, setShowEnded]     = useState(true)
 
   // 런텐플래시 데이터
   const [flashRuns, setFlashRuns]     = useState<FlashRun[]>([])
@@ -186,6 +185,7 @@ function FlashPageContent() {
 
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1)
+  const [myCurrentPage, setMyCurrentPage] = useState(1)
   const PAGE_SIZE = 10
 
   useEffect(() => {
@@ -201,13 +201,17 @@ function FlashPageContent() {
   // 필터/탭 변경 시 1페이지 리셋
   useEffect(() => {
     setCurrentPage(1)
-  }, [flashTab, statusFilter, filterSido, filterSigungu, groupFilter])
+  }, [flashTab, showEnded, filterSido, filterSigungu, groupFilter])
+
+  useEffect(() => {
+    setMyCurrentPage(1)
+  }, [myTab])
 
   // 런텐플래시 탭 데이터 로드
   useEffect(() => {
     if (authLoading || !user || groupFilter !== 'flash') return
     loadFlashRuns()
-  }, [user, authLoading, groupFilter, flashTab, statusFilter, favoriteRegions, filterSido, filterSigungu])
+  }, [user, authLoading, groupFilter, flashTab, showEnded, favoriteRegions, filterSido, filterSigungu])
 
   // 마이플래시 탭 데이터 로드
   useEffect(() => {
@@ -239,18 +243,18 @@ function FlashPageContent() {
 
       let query = supabase.from('flash_runs').select(selectFields)
 
-      if (statusFilter === 'ongoing') {
-        // open(모집중) + closed(마감) — 날짜가 지나지 않은 모임
+      if (!showEnded) {
+        // 진행 중인 모임만 (기본값)
         query = query
           .gte('run_date', today)
           .in('status', ['open', 'closed'])
           .order('run_date', { ascending: true })
           .order('run_time', { ascending: true })
       } else {
-        // 날짜 지난 모임(오늘 포함) + 취소된 모임
+        // 진행 + 종료 모두
         query = query
-          .or(`run_date.lte.${today},status.in.(cancelled,closed,completed)`)
-          .order('run_date', { ascending: false })
+          .order('run_date', { ascending: true })
+          .order('run_time', { ascending: true })
       }
 
       if (flashTab === 'all') {
@@ -266,9 +270,9 @@ function FlashPageContent() {
       // 날짜+시간 기준 정확한 진행/종료 분리 (오늘 날짜 모임 시간 처리)
       result = result.filter(r => {
         const ds = getDisplayStatus(r)
-        return statusFilter === 'ongoing'
-          ? (ds === 'open' || ds === 'closed')
-          : (ds === 'completed' || ds === 'cancelled')
+        return showEnded
+          ? true
+          : (ds === 'open' || ds === 'closed')
       })
 
       if (flashTab === 'interest') {
@@ -368,6 +372,11 @@ function FlashPageContent() {
   const sidoShort = (s: string) =>
     s.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','').replace('특별자치','')
 
+  const iParticle = (name: string) => {
+    const code = name.charCodeAt(name.length - 1)
+    return code >= 0xAC00 && code <= 0xD7A3 && (code - 0xAC00) % 28 !== 0 ? '이' : '가'
+  }
+
   const addSigunguList    = addSido    ? KOREA_REGIONS[addSido]    || [] : []
   const filterSigunguList = filterSido ? KOREA_REGIONS[filterSido] || [] : []
 
@@ -384,6 +393,8 @@ function FlashPageContent() {
   }, {} as Record<string, FlashRun[]>)
 
   const currentMyRuns = myTab === 'created' ? createdRuns : joinedRuns
+  const myTotalPages = Math.max(1, Math.ceil(currentMyRuns.length / PAGE_SIZE))
+  const pagedMyRuns = currentMyRuns.slice((myCurrentPage - 1) * PAGE_SIZE, myCurrentPage * PAGE_SIZE)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -400,7 +411,7 @@ function FlashPageContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐플래시</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto">
-            전국 어디서든, 우리 동네 러닝 번개
+            갑자기 뛰고 싶을 때, 원하는 시간 장소에서 같이 러닝해요
           </p>
         </div>
       </section>
@@ -408,23 +419,13 @@ function FlashPageContent() {
       {/* 이용가이드 */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <div className="bg-red-50 border border-red-100 rounded-xl p-4">
-          <p className="text-xs font-semibold text-red-400 text-center mb-3 tracking-wide uppercase">이용가이드</p>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: '런텐플래시 안내',    icon: <Zap      className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
-              { label: '신고하기 안내',      icon: <Bell     className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
-              { label: '운영정책 위반 조치', icon: <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> },
-            ].map((g, i) => (
-              <button
-                key={g.label}
-                onClick={() => { setGuideIndex(i); setGuideOpen(true) }}
-                className="flex items-center justify-center gap-1 py-2.5 px-1 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
-              >
-                {g.icon}
-                <span className="text-[10px] sm:text-xs font-medium text-gray-700 whitespace-nowrap">{g.label}</span>
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => { setGuideIndex(0); setGuideOpen(true) }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
+          >
+            <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-gray-700">이용가이드</span>
+          </button>
         </div>
 
         {/* 이용가이드 모달 */}
@@ -456,7 +457,7 @@ function FlashPageContent() {
 
               {/* 탭 — 고정, 균등 분할 */}
               <div className="flex border-b border-gray-200 mt-3 flex-shrink-0">
-                {['런텐플래시 안내', '신고하기 안내', '운영정책 위반 조치'].map((label, i) => (
+                {['런텐플래시 안내', '신고하기 안내', '운영정책 안내'].map((label, i) => (
                   <button
                     key={label}
                     onClick={() => setGuideIndex(i)}
@@ -472,7 +473,7 @@ function FlashPageContent() {
               </div>
 
               {/* 이미지 — 스크롤 */}
-              <div className="overflow-y-auto flex-1 p-3 sm:p-6">
+              <div className="overflow-y-auto flex-1 p-3 sm:p-4">
                 <img
                   src={`/images/flash/anno/0${guideIndex + 1}.jpg`}
                   alt="이용가이드"
@@ -486,8 +487,8 @@ function FlashPageContent() {
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* 상위 그룹 선택 + 모임 만들기 버튼 */}
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex gap-1.5 sm:gap-2">
+        <div className="flex items-end justify-between border-b border-gray-200">
+          <div className="flex">
             {([
               { key: 'flash', label: '런텐플래시' },
               { key: 'my',    label: '마이플래시' },
@@ -495,10 +496,10 @@ function FlashPageContent() {
               <button
                 key={g.key}
                 onClick={() => setGroupFilter(g.key)}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
+                className={`px-4 py-2.5 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
                   groupFilter === g.key
-                    ? 'bg-red-600 text-white'
-                    : 'bg-white text-gray-500 border border-gray-200 hover:border-red-300'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-gray-400 hover:text-gray-700'
                 }`}
               >
                 {g.label}
@@ -507,22 +508,15 @@ function FlashPageContent() {
           </div>
           <Link
             href="/flash/new"
-            className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
+            className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 mb-1 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             플래시 만들기
           </Link>
         </div>
 
-        {/* 섹션 제목 */}
-        {groupFilter === 'flash' && (
-          <h2 className="text-base font-bold text-gray-900 mt-4 mb-1 flex items-center gap-1">
-            지금 진행중인 FLASH <Zap className="w-4 h-4 text-red-500 fill-red-500" />
-          </h2>
-        )}
-
-        {/* 하위 탭 */}
-        <div className="flex border-b border-gray-200 mb-4">
+        {/* 하위 필터 */}
+        <div className="flex items-center gap-2 pt-3 pb-1 flex-wrap">
           {groupFilter === 'flash' && (
             <>
               {([
@@ -532,30 +526,39 @@ function FlashPageContent() {
                 <button
                   key={t.key}
                   onClick={() => setFlashTab(t.key)}
-                  className={`px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border ${
                     flashTab === t.key
-                      ? 'border-red-600 text-red-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-700'
+                      ? 'bg-red-600 text-white border-red-600'
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-red-300'
                   }`}
                 >
                   {t.label}
                 </button>
               ))}
+              <label className="ml-auto flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showEnded}
+                  onChange={e => setShowEnded(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-red-600"
+                />
+                <span className="text-xs text-gray-500 whitespace-nowrap">종료 포함</span>
+              </label>
             </>
           )}
           {groupFilter === 'my' && (
             <>
               {([
-                { key: 'created', label: '내가만든모임' },
-                { key: 'joined',  label: '참여한 모임' },
+                { key: 'created', label: '내가만든플래시' },
+                { key: 'joined',  label: '내가참여한플래시' },
               ] as { key: MyTab; label: string }[]).map(t => (
                 <button
                   key={t.key}
                   onClick={() => setMyTab(t.key)}
-                  className={`px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border ${
                     myTab === t.key
-                      ? 'border-red-600 text-red-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-700'
+                      ? 'bg-red-600 text-white border-red-600'
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-red-300'
                   }`}
                 >
                   {t.label}
@@ -563,6 +566,17 @@ function FlashPageContent() {
               ))}
             </>
           )}
+        </div>
+
+        {/* 섹션 타이틀 */}
+        <div className="mt-3 mb-4">
+          <p className="text-sm font-semibold text-gray-700">
+            {groupFilter === 'flash'
+              ? (flashTab === 'all' ? '전체지역의 플래시' : '관심지역에서의 플래시')
+              : (myTab === 'created'
+                  ? `${user.name}${iParticle(user.name)} 만든 플래시`
+                  : `${user.name}${iParticle(user.name)} 참여한 타인의 플래시`)}
+          </p>
         </div>
 
         {/* ── 런텐플래시 영역 ── */}
@@ -589,7 +603,7 @@ function FlashPageContent() {
                     </span>
                   ))}
                   {favoriteRegions.length === 0 && (
-                    <span className="text-xs text-gray-400">관심 지역을 추가하면 해당 지역 모임이 표시됩니다</span>
+                    <span className="text-xs text-gray-400">관심 지역을 추가하면 해당 지역 플래시가 표시됩니다</span>
                   )}
                 </div>
                 {favoriteRegions.length < MAX_REGIONS && (
@@ -646,26 +660,6 @@ function FlashPageContent() {
               </div>
             )}
 
-            {/* 진행/종료 필터 */}
-            <div className="flex gap-2 mb-5">
-              {([
-                { key: 'ongoing', label: '진행' },
-                { key: 'ended',   label: '종료' },
-              ] as { key: StatusFilter; label: string }[]).map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setStatusFilter(f.key)}
-                  className={`px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
-                    statusFilter === f.key
-                      ? 'bg-red-600 text-white'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:border-red-300'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
             {/* 런텐플래시 목록 */}
             {isLoadingFlash ? (
               <div className="text-center py-12 text-gray-400 text-sm">불러오는 중...</div>
@@ -674,14 +668,14 @@ function FlashPageContent() {
                 <Zap className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                 <p className="text-gray-400 text-sm mb-3">
                   {flashTab === 'interest' && favoriteRegions.length === 0
-                    ? '위에서 관심 지역을 추가하면 해당 지역 모임이 표시됩니다'
+                    ? '위에서 관심 지역을 추가하면 해당 지역 플래시가 표시됩니다'
                     : flashTab === 'interest'
-                    ? '관심 지역에 진행 중인 모임이 없어요'
-                    : statusFilter === 'ongoing' ? '진행 중인 모임이 없어요' : '종료된 모임이 없어요'}
+                    ? '관심 지역에 진행 중인 플래시가 없어요'
+                    : '진행 중인 플래시가 없어요'}
                 </p>
-                {statusFilter === 'ongoing' && favoriteRegions.length > 0 && (
+                {favoriteRegions.length > 0 && (
                   <Link href="/flash/new" className="inline-flex items-center gap-1 text-red-600 text-sm font-medium hover:underline">
-                    <Plus className="w-4 h-4" />첫 모임 만들기
+                    <Plus className="w-4 h-4" />첫 플래시 만들기
                   </Link>
                 )}
               </div>
@@ -706,32 +700,27 @@ function FlashPageContent() {
         {/* ── 마이플래시 영역 ── */}
         {groupFilter === 'my' && (
           <>
-            {/* 사용자 헤더 */}
-            <div className="mb-4">
-              <p className="text-base font-semibold text-gray-800">{user.name}님의 플래시</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {myTab === 'created' ? '내가 만든 모임 목록' : '타인의 모임에 참여한 목록'}
-              </p>
-            </div>
-
             {isLoadingMy ? (
               <div className="text-center py-12 text-gray-400 text-sm">불러오는 중...</div>
             ) : currentMyRuns.length === 0 ? (
               <div className="text-center py-12">
                 <Zap className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                 <p className="text-gray-400 text-sm mb-3">
-                  {myTab === 'created' ? '만든 모임이 없어요' : '참여한 모임이 없어요'}
+                  {myTab === 'created' ? '만든 플래시가 없어요' : '참여한 플래시가 없어요'}
                 </p>
                 {myTab === 'created' && (
                   <Link href="/flash/new" className="inline-flex items-center gap-1 text-red-600 text-sm font-medium hover:underline">
-                    <Plus className="w-4 h-4" />모임 만들기
+                    <Plus className="w-4 h-4" />플래시 만들기
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="space-y-2">
-                {currentMyRuns.map(run => <RunCard key={run.id} run={run} />)}
-              </div>
+              <>
+                <div className="space-y-2">
+                  {pagedMyRuns.map(run => <RunCard key={run.id} run={run} />)}
+                </div>
+                <Pagination current={myCurrentPage} total={myTotalPages} onChange={setMyCurrentPage} />
+              </>
             )}
           </>
         )}

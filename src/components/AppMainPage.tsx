@@ -9,16 +9,8 @@ import { useUTMTracking } from '@/hooks/useUTMTracking'
 export default function AppMainPage() {
   // UTM 파라미터 추적
   useUTMTracking()
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isPaused, setIsPaused] = useState(false)
   const [currentMaleRanker, setCurrentMaleRanker] = useState(0)
   const [currentFemaleRanker, setCurrentFemaleRanker] = useState(0)
-
-  const slideImages = [
-    '/images/main_s01.png',
-    '/images/main_s02.png',
-    '/images/main_s03.png'
-  ]
 
   const maleRankers = [
     '/images/rank/r01.png',
@@ -33,16 +25,6 @@ export default function AppMainPage() {
     '/images/rank/r07.png',
     '/images/rank/r08.png'
   ]
-
-  useEffect(() => {
-    if (isPaused) return
-
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slideImages.length)
-    }, 2500) // 2.5초마다 전환
-
-    return () => clearInterval(interval)
-  }, [isPaused, slideImages.length])
 
   // 남성 랭커 슬라이드 자동 전환
   useEffect(() => {
@@ -95,109 +77,47 @@ export default function AppMainPage() {
         </div>
       </section>
 
-      {/* 런텐프로젝트 슬로건 */}
-      <section className="py-8 bg-[#051735]">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <Image
-            src="/images/grades/subtitle_m.png"
-            alt="런텐프로젝트 슬로건"
-            width={500}
-            height={200}
-            className="mx-auto max-w-full h-auto"
-            quality={75}
-            sizes="100vw"
-          />
-        </div>
-      </section>
-
-      {/* 현재 모집중인 대회 Section - 대회 홍보 */}
-      <section className="py-8 px-4 bg-black text-white">
-        <div className="max-w-md mx-auto">
-          {/* 대회 이미지 슬라이드쇼 */}
+      {/* 런텐 대회 Section */}
+      <section className="py-8 px-4 bg-[#051735] text-white">
+        <div className="max-w-md mx-auto text-center">
+          <h2 className="text-2xl font-black text-red-600 mb-2">
+            런텐 대회
+          </h2>
           <div className="mb-6">
-            <div
-              className="w-full h-64 sm:h-80 rounded-lg shadow-2xl relative border-2 border-white overflow-hidden"
-              onTouchStart={() => setIsPaused(true)}
-              onTouchEnd={() => setIsPaused(false)}
-            >
-              {/* 슬라이드 이미지들 */}
-              {slideImages.map((image, index) => (
-                currentSlide === index && (
-                  <Image
-                    key={index}
-                    src={image}
-                    alt={`슬라이드 ${index + 1}`}
-                    fill
-                    className="object-cover transition-opacity duration-1000 rounded-lg"
-                    quality={75}
-                    priority={index === 0}
-                    sizes="100vw"
-                  />
-                )
-              ))}
-
-              {/* 배경 오버레이 */}
-              <div className="absolute inset-0 rounded-lg z-10" style={{backgroundColor: '#00000085'}}></div>
-
-              {/* 대회 특장점 텍스트 */}
-              <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-4 z-20">
-                <div className="text-center space-y-5">
-                  <div className="space-y-1 text-sm sm:text-base font-medium" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>전국 러닝 성지에서 펼쳐지는 수천명의</p>
-                    <p>가장 안전하고 깔끔한 10km 레이스</p>
-                  </div>
-                  <div className="space-y-1 text-sm sm:text-base font-medium" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>주말, 소중한 사람들과 전국을 누비며</p>
-                    <p>도시관광도 즐기고 PB에 도전하세요!</p>
-                  </div>
-                  <div className="space-y-1 text-sm sm:text-base font-bold" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.8)'}}>
-                    <p>2026 하반기</p>
-                    <p>세종, 김해, 구미, 청주, 김포, 전주, 대전에서<br/>열립니다</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 슬라이드 인디케이터 */}
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-30">
-                {slideImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      currentSlide === index ? 'bg-red-600 w-6' : 'bg-white/50'
-                    }`}
-                    aria-label={`슬라이드 ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+            <p className="text-sm sm:text-base text-gray-300 mb-0.5">전국 러닝 성지에서 펼쳐지는 수천명의</p>
+            <p className="text-sm sm:text-base text-gray-300">가장 안전하고 깔끔한 10km 레이스</p>
           </div>
-
-          {/* 대회 확인하기 버튼 */}
-          <div className="text-center">
-            <Link
-              href="/competitions"
-              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
-            >
-              대회 확인하기
-            </Link>
+          <div className="mb-6">
+            <Image
+              src="/images/grades/subtitle_m.png"
+              alt="런텐프로젝트 슬로건"
+              width={500}
+              height={200}
+              className="mx-auto max-w-full h-auto"
+              quality={75}
+              sizes="100vw"
+            />
           </div>
+          <Link
+            href="/competitions"
+            className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
+          >
+            대회 확인하기
+          </Link>
         </div>
       </section>
 
       {/* RUN10 티어 */}
-      <section className="py-8 px-4 bg-white">
+      <section className="py-8 px-4 bg-[#0F0F0F] text-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 티어
             </h2>
-            <p className="text-xl text-gray-700 font-medium">
-              나의 RUN10 티어를 확인해 보세요
-            </p>
-            <p className="text-center text-sm text-gray-600 mt-2 font-medium">
-              마이페이지에서 언제든지 수정 가능합니다
-            </p>
+            <div className="mt-2">
+              <p className="text-sm sm:text-base text-gray-300 mb-0.5">나의 RUN10 티어를 확인해 보세요.</p>
+              <p className="text-sm sm:text-base text-gray-300">마이페이지에서 언제든지 수정 가능합니다.</p>
+            </div>
           </div>
 
           {/* 티어 단일 이미지 */}
@@ -215,6 +135,42 @@ export default function AppMainPage() {
         </div>
       </section>
 
+      {/* 런텐 플래시 Section */}
+      <section className="py-8 px-4 bg-white">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-black text-red-600 mb-2">
+              런텐 플래시
+            </h2>
+            <div className="mt-2">
+              <p className="text-sm sm:text-base text-gray-600 mb-0.5">갑자기 누군가와 함께 뛰고 싶을때</p>
+              <p className="text-sm sm:text-base text-gray-600">신개념 러닝번개</p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <Image
+              src="/images/grades/flash_m.png"
+              alt="런텐 플래시"
+              width={500}
+              height={600}
+              className="w-full h-auto mx-auto"
+              quality={75}
+              sizes="100vw"
+            />
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/flash"
+              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
+            >
+              ⚡ 런텐플래시 GO
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* RUN10 랭커 Section */}
       <section className="py-8 px-4 bg-black text-white">
         <div className="max-w-md mx-auto">
@@ -222,12 +178,10 @@ export default function AppMainPage() {
             <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 랭커
             </h2>
-            <p className="text-xl text-white font-medium ">
-              RUN10 랭커에 도전하세요.
-            </p>
-            <p className="text-center text-sm text-white mt-2 font-medium">
-              모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.
-            </p>
+            <div className="mt-2">
+              <p className="text-sm sm:text-base text-white mb-0.5">RUN10 랭커에 도전하세요.</p>
+              <p className="text-sm sm:text-base text-white">모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.</p>
+            </div>
           </div>
 
           {/* 남성 랭커 슬라이드 */}

@@ -53,6 +53,7 @@ export default function FlashReportPage() {
 
   // 폼
   const [reason, setReason] = useState('')
+  const [customReason, setCustomReason] = useState('')
   const [content, setContent] = useState('')
   const [phone, setPhone] = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
@@ -184,10 +185,13 @@ export default function FlashReportPage() {
     e.preventDefault()
     setFormError('')
     if (!reason) { setFormError('신고 사유를 선택해주세요'); return }
+    if (reason === '기타' && !customReason.trim()) { setFormError('기타 사유를 입력해주세요'); return }
     if (!content.trim()) { setFormError('신고 내용을 입력해주세요'); return }
     const phoneDigits = phone.replace(/\D/g, '')
     if (!phoneDigits || phoneDigits.length < 10) { setFormError('올바른 전화번호를 입력해주세요'); return }
     if (!agreed) { setFormError('확인 사항에 동의해주세요'); return }
+
+    const finalReason = reason === '기타' ? `기타: ${customReason.trim()}` : reason
 
     setIsSubmitting(true)
     try {
@@ -195,7 +199,7 @@ export default function FlashReportPage() {
         flash_run_id: flashRunId,
         reporter_id: user!.id,
         target_user_id: targetUserId,
-        reason,
+        reason: finalReason,
         content: content.trim(),
         phone: phone.trim(),
         evidence_url: evidenceUrl || null,
@@ -309,7 +313,7 @@ export default function FlashReportPage() {
                 </label>
                 <select
                   value={reason}
-                  onChange={e => setReason(e.target.value)}
+                  onChange={e => { setReason(e.target.value); setCustomReason('') }}
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
                 >
                   <option value="">신고 사유를 선택해 주세요</option>
@@ -317,6 +321,16 @@ export default function FlashReportPage() {
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
+                {reason === '기타' && (
+                  <input
+                    type="text"
+                    value={customReason}
+                    onChange={e => setCustomReason(e.target.value)}
+                    maxLength={100}
+                    placeholder="기타 사유를 직접 입력해주세요"
+                    className="mt-2 w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                )}
               </div>
 
               {/* 신고 내용 */}

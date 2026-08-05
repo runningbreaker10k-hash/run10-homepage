@@ -129,6 +129,9 @@ export default function FlashEditPage() {
     if (!locationDetail.trim()) { setError('상세 장소를 입력해주세요'); return }
     if (!title.trim()) { setError('제목을 입력해주세요'); return }
     if (!runDate) { setError('날짜를 선택해주세요'); return }
+    const selectedDateTime = new Date(`${runDate}T${runTime}`)
+    const minDateTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
+    if (selectedDateTime < minDateTime) { setError('모임 시간은 현재 시간보다 2시간 이후여야 합니다'); return }
     if (!kakaoUrl.trim()) { setError('카카오 오픈채팅 URL을 입력해주세요'); return }
     if (!kakaoUrl.startsWith('http')) { setError('올바른 URL을 입력해주세요'); return }
     if (maxParticipants < currentParticipants) {

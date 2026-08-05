@@ -214,19 +214,26 @@ function FlashDetailContent() {
     setIsJoining(true)
     setError('')
     try {
-      if (run.current_participants >= run.max_participants) {
+      // 최신 카운트를 DB에서 재확인 (race condition 방지)
+      const { data: latest } = await supabase
+        .from('flash_runs')
+        .select('current_participants, max_participants')
+        .eq('id', run.id)
+        .single()
+      if (!latest || latest.current_participants >= latest.max_participants) {
         setError('이미 마감된 모임입니다')
         return
       }
       const { error: joinError } = await supabase
         .from('flash_participants')
         .insert({ flash_run_id: run.id, user_id: user.id })
-      if (joinError) throw joinError
-
-      const newCount = run.current_participants + 1
+      if (joinError) {
+        if (joinError.code === '23505') { setError('이미 참여한 모임입니다'); return }
+        throw joinError
+      }
       await supabase
         .from('flash_runs')
-        .update({ current_participants: newCount })
+        .update({ current_participants: latest.current_participants + 1 })
         .eq('id', run.id)
       await loadData()
     } catch (err) {
@@ -282,6 +289,10 @@ function FlashDetailContent() {
     if (!run || !confirm('모임을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.')) return
     setIsDeleting(true)
     try {
+      if (run.image_url) {
+        const match = run.image_url.match(/competition-images\/(.+)$/)
+        if (match) await supabase.storage.from('competition-images').remove([match[1]])
+      }
       await supabase.from('flash_participants').delete().eq('flash_run_id', run.id)
       await supabase.from('flash_runs').delete().eq('id', run.id)
       router.push('/flash')
@@ -365,7 +376,7 @@ function FlashDetailContent() {
             src={run.image_url}
             alt={run.title}
             className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={e => e.stopPropagation()}
+            onClick={() => setLightboxOpen(false)}
           />
         </div>
       )}
