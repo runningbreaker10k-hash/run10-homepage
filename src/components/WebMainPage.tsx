@@ -110,81 +110,72 @@ export default function WebMainPage() {
     <div className="min-h-screen bg-black text-white">
       {/* 메인 페이지 팝업 */}
       <PagePopup pageId="home" />
-      {/* Hero Section - 러너 이미지 배경 + 런텐프로젝트 */}
-      <section className="relative h-[50vh] min-h-[400px] sm:h-[60vh] flex items-center justify-center sm:justify-end">
-        {/* 배경 이미지 - 러너들의 다리와 신발 */}
-        <div className="absolute inset-0 overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative">
+        {/* 모바일: 세로 전체 이미지, 텍스트 하단 */}
+        <div className="md:hidden relative w-full">
           <Image
-            src="/images/runners-bg.jpg"
+            src="/images/main_bg_m.jpg"
+            alt="러너 배경"
+            width={800}
+            height={1200}
+            className="w-full h-auto"
+            quality={75}
+            priority
+          />
+          <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 text-center text-white">
+            <div className="mb-4">
+              <div className="space-y-1 text-base font-medium leading-relaxed">
+                <p className="opacity-90">전국 러닝 협회가 인증하는</p>
+                <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
+              </div>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+              <span className="text-red-600">런텐 RUN10</span>
+            </h1>
+            <div className="space-y-1 text-sm font-normal leading-relaxed w-max mx-auto">
+              <p className="opacity-90 w-full [text-align-last:justify]">런텐 대회 개최</p>
+              <p className="opacity-90 w-full [text-align-last:justify]">런텐 플래시 활동</p>
+              <p className="opacity-90 w-full [text-align-last:justify]">런텐 티어 시스템</p>
+              <p className="opacity-90 w-full [text-align-last:justify]">런텐 랭커 등록</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 웹: 1800:500 비율 고정, 좌우 미세 크롭 */}
+        <div className="hidden md:block relative w-full" style={{ aspectRatio: '1800/500' }}>
+          <Image
+            src="/images/main_bg.jpg"
             alt="러너 배경"
             fill
             className="object-cover"
             quality={75}
             priority
           />
-          <div className="absolute inset-0 bg-black opacity-50"></div>
-        </div>
-
-        {/* 텍스트 오버레이 */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full h-full">
-          {/* 모바일 레이아웃 - 가운데 정렬 */}
-          <div className="md:hidden flex flex-col items-center justify-center h-full text-center text-white">
-            {/* 1. 전국 러닝 협회가 인증하는... */}
-            <div className="mb-10">
-              <div className="space-y-2 text-lg font-medium leading-relaxed">
-                <p className="opacity-90">전국 러닝 협회가 인증하는</p>
-                <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
-              </div>
-            </div>
-
-            {/* 2. we are RUN10 */}
-            <div className="mb-10">
-              <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
-
-                <span className="block text-red-600">런텐 RUN10</span>
-              </h1>
-            </div>
-
-            {/* 3. 전국 10km 러닝 대회... */}
-            <div>
-              <div className="space-y-1 text-base font-normal leading-relaxed">
-                <p className="opacity-90">런텐 대회 개최</p>
-                <p className="opacity-90">런텐 플래시 활동</p>
-                <p className="opacity-90">런텐 티어 시스템</p>
-                <p className="opacity-90">런텐 랭커 등록</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 웹/태블릿 레이아웃 - 기존 디자인 */}
-          <div className="hidden md:block">
-            {/* 텍스트2 - 왼쪽 상단 텍스트 */}
-            <div className="absolute top-16 left-4 lg:left-8">
-              <div className="text-left text-white">
-                <div className="space-y-2 text-lg md:text-2xl font-medium leading-relaxed">
-                  <p className="opacity-90">전국 러닝 협회가 인증하는</p>
-                  <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
+          <div className="absolute inset-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex">
+              {/* 좌측: A(상단) + B(하단) */}
+              <div className="flex flex-col justify-between py-6 md:py-8 lg:py-10 text-white">
+                {/* A - 슬로건 */}
+                <div className="text-left">
+                  <div className="space-y-1 text-base md:text-lg lg:text-xl font-medium leading-relaxed">
+                    <p className="opacity-90">전국 러닝 협회가 인증하는</p>
+                    <p className="opacity-90">10km 러너들의 공식 플랫폼</p>
+                  </div>
                 </div>
-                <div className="mt-6 space-y-1 text-base md:text-lg font-normal leading-relaxed">
-                  <p className="opacity-90">런텐 대회 개최</p>
-                  <p className="opacity-90">런텐 플래시 활동</p>
-                  <p className="opacity-90">런텐 티어 시스템</p>
-                  <p className="opacity-90">런텐 랭커 등록</p>
+                {/* B - 서비스 목록 */}
+                <div className="text-left">
+                  <div className="space-y-0.5 text-sm md:text-base lg:text-lg font-normal leading-relaxed w-max">
+                    <p className="opacity-90 w-full [text-align-last:justify]">런텐 대회 개최</p>
+                    <p className="opacity-90 w-full [text-align-last:justify]">런텐 플래시 활동</p>
+                    <p className="opacity-90 w-full [text-align-last:justify]">런텐 티어 시스템</p>
+                    <p className="opacity-90 w-full [text-align-last:justify]">런텐 랭커 등록</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* 텍스트1 - 오른쪽 하단 텍스트 */}
-            <div className="flex justify-end absolute bottom-16 lg:bottom-20 right-4 lg:right-8">
-              <div className="text-right text-white">
-                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-4 sm:mb-6 tracking-tight">
-                  <span className="block">we are</span>
-                  <span className="block text-red-600">RUN10</span>
-                </h1>
-                <div className="space-y-1 text-base sm:text-lg md:text-xl font-light tracking-wider">
-                  <p className="opacity-90">10km는 누구나 도전할 수 있는</p>
-                  <p className="opacity-90">러너의 기준입니다.</p>
-                </div>
+              {/* 우측: C - B와 동일 선상 우하단 */}
+              <div className="flex-1 flex items-end justify-end pb-6 md:pb-8 lg:pb-10 text-white">
+                <h1 className="text-5xl md:text-6xl lg:text-8xl font-black text-red-600">RUN10</h1>
               </div>
             </div>
           </div>
