@@ -288,6 +288,19 @@ function FlashPageContent() {
         }
       }
 
+      // 오늘 기준 정렬: 진행·예정(오름차순) → 종료(내림차순)
+      if (showEnded) {
+        const upcoming = result
+          .filter(r => r.run_date >= today)
+          .sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
+        const past = result
+          .filter(r => r.run_date < today)
+          .sort((a, b) => b.run_date.localeCompare(a.run_date) || b.run_time.localeCompare(a.run_time))
+        result = [...upcoming, ...past]
+      } else {
+        result = result.sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
+      }
+
       setFlashRuns(result)
     } catch (err) {
       console.error('모임 목록 조회 오류:', err)
