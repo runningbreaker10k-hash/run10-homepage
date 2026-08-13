@@ -96,7 +96,7 @@ export default function FlashNewPage() {
     if (!runDate) { setError('날짜를 선택해주세요'); return }
     const selectedDateTime = new Date(`${runDate}T${runTime}:00`)
     if (selectedDateTime < new Date(Date.now() + 2 * 60 * 60 * 1000)) {
-      setError('모임 시간은 현재 시간으로부터 2시간 이후여야 합니다')
+      setError('플래시 시간은 현재 시간으로부터 2시간 이후여야 합니다')
       return
     }
     if (!kakaoUrl.trim()) { setError('카카오 오픈채팅 URL을 입력해주세요'); return }
@@ -136,7 +136,7 @@ export default function FlashNewPage() {
       router.push(`/flash/${newRun.id}`)
     } catch (err) {
       console.error('모임 생성 오류:', err)
-      setError('모임 생성에 실패했습니다. 다시 시도해주세요.')
+      setError('플래시 생성에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsSubmitting(false)
     }
@@ -152,7 +152,7 @@ export default function FlashNewPage() {
               <Zap className="w-3.5 h-3.5 text-red-200" />
               <span className="text-xs text-red-200">런텐플래시</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">모임 만들기</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">플래시 만들기</h1>
           </div>
           <button
             type="button"
@@ -343,7 +343,7 @@ export default function FlashNewPage() {
                 onChange={e => setDescription(e.target.value)}
                 maxLength={200}
                 rows={3}
-                placeholder="모임에 대해 간단히 소개해주세요"
+                placeholder="플래시에 대해 간단히 소개해주세요"
                 className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
               />
               <p className="text-xs text-gray-400 text-right">{description.length}/200</p>
@@ -386,7 +386,7 @@ export default function FlashNewPage() {
           >
             {isSubmitting ? (
               <><Loader2 className="w-4 h-4 animate-spin" />등록 중...</>
-            ) : '모임 만들기'}
+            ) : '플래시 만들기'}
           </button>
         </form>
       </div>

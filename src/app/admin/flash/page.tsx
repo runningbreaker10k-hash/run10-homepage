@@ -151,7 +151,7 @@ export default function FlashAdminPage() {
   }
 
   const handleCancel = async (runId: string) => {
-    if (!confirm('이 모임을 강제 취소하시겠습니까?')) return
+    if (!confirm('이 플래시를 강제 취소하시겠습니까?')) return
     setProcessingId(runId)
     try {
       await supabase.from('flash_runs').update({ status: 'cancelled' }).eq('id', runId)
@@ -163,7 +163,7 @@ export default function FlashAdminPage() {
   }
 
   const handleDelete = async (runId: string) => {
-    if (!confirm('이 모임을 삭제하시겠습니까? 복구할 수 없습니다.')) return
+    if (!confirm('이 플래시를 삭제하시겠습니까? 복구할 수 없습니다.')) return
     setProcessingId(runId)
     try {
       await Promise.all([
@@ -424,7 +424,7 @@ export default function FlashAdminPage() {
           ) : runs.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
               <Zap className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">플래시 모임이 없습니다</p>
+              <p className="text-sm text-gray-400">플래시가 없습니다</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -684,7 +684,7 @@ export default function FlashAdminPage() {
                     {expandedId === report.id && (
                       <div className="border-t border-gray-100 px-4 py-3 space-y-3">
                         <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                          <div><span className="font-medium">모임:</span> {report.run_title || '-'}</div>
+                          <div><span className="font-medium">플래시:</span> {report.run_title || '-'}</div>
                           <div><span className="font-medium">날짜:</span> {report.run_date || '-'}</div>
                           <div><span className="font-medium">신고자:</span> {report.reporter_name}</div>
                           <div><span className="font-medium">신고 대상:</span> {report.target_name}</div>
@@ -740,7 +740,7 @@ export default function FlashAdminPage() {
                             href={`/flash/${report.flash_run_id}`}
                             className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
                           >
-                            모임 페이지 보기 →
+                            플래시 보기 →
                           </Link>
                         </div>
                       </div>

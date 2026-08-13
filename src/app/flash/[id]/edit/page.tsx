@@ -131,7 +131,7 @@ export default function FlashEditPage() {
     if (!runDate) { setError('날짜를 선택해주세요'); return }
     const selectedDateTime = new Date(`${runDate}T${runTime}`)
     const minDateTime = new Date(Date.now() + 2 * 60 * 60 * 1000)
-    if (selectedDateTime < minDateTime) { setError('모임 시간은 현재 시간보다 2시간 이후여야 합니다'); return }
+    if (selectedDateTime < minDateTime) { setError('플래시 시간은 현재 시간보다 2시간 이후여야 합니다'); return }
     if (!kakaoUrl.trim()) { setError('카카오 오픈채팅 URL을 입력해주세요'); return }
     if (!kakaoUrl.startsWith('http')) { setError('올바른 URL을 입력해주세요'); return }
     if (maxParticipants < currentParticipants) {
@@ -179,7 +179,7 @@ export default function FlashEditPage() {
               <Zap className="w-3.5 h-3.5 text-red-200" />
               <span className="text-xs text-red-200">런텐플래시</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold">모임 수정</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">플래시 수정</h1>
           </div>
           <button
             type="button"

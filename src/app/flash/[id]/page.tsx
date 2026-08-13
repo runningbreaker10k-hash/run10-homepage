@@ -224,7 +224,7 @@ function FlashDetailContent() {
     if (run.tier && run.tier.length > 0) {
       const userTier = GRADE_TO_TIER[user.grade || '']
       if (!userTier || !run.tier.includes(userTier)) {
-        setError(`이 모임은 ${run.tier.join(', ')}만 참가 가능합니다`)
+        setError(`이 플래시는 ${run.tier.join(', ')}만 참가 가능합니다`)
         return
       }
     }
@@ -239,14 +239,14 @@ function FlashDetailContent() {
         .eq('id', run.id)
         .single()
       if (!latest || latest.current_participants >= latest.max_participants) {
-        setError('이미 마감된 모임입니다')
+        setError('이미 마감된 플래시입니다')
         return
       }
       const { error: joinError } = await supabase
         .from('flash_participants')
         .insert({ flash_run_id: run.id, user_id: user.id })
       if (joinError) {
-        if (joinError.code === '23505') { setError('이미 참여한 모임입니다'); return }
+        if (joinError.code === '23505') { setError('이미 참여한 플래시입니다'); return }
         throw joinError
       }
       await supabase
@@ -290,7 +290,7 @@ function FlashDetailContent() {
 
   const handleCancel = async () => {
     if (!run) return
-    if (!confirm('모임을 취소하시겠습니까?')) return
+    if (!confirm('플래시를 취소하시겠습니까?')) return
     setIsCancelling(true)
     try {
       await supabase.from('flash_runs').update({ status: 'cancelled' }).eq('id', run.id)
@@ -304,7 +304,7 @@ function FlashDetailContent() {
   }
 
   const handleDelete = async () => {
-    if (!run || !confirm('모임을 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.')) return
+    if (!run || !confirm('플래시를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.')) return
     setIsDeleting(true)
     try {
       if (run.image_url) {
@@ -451,7 +451,7 @@ function FlashDetailContent() {
                 className="flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-medium border border-white/20 transition-colors"
               >
                 {isCancelling && <Loader2 className="w-3 h-3 animate-spin" />}
-                모임취소
+                플래시 취소
               </button>
             )}
             {canDelete && (
@@ -659,7 +659,7 @@ function FlashDetailContent() {
                   </button>
                 ) : (
                   <div className="text-center py-3 text-sm text-gray-400 bg-gray-50 rounded-lg">
-                    마감된 모임입니다
+                    마감된 플래시입니다
                   </div>
                 )}
               </div>
@@ -667,7 +667,7 @@ function FlashDetailContent() {
 
             {(displayStatus === 'cancelled' || displayStatus === 'completed') && (
               <div className="text-center py-3 text-sm text-gray-400 bg-gray-50 rounded-lg">
-                {displayStatus === 'cancelled' ? '취소된 모임입니다' : '완료된 모임입니다'}
+                {displayStatus === 'cancelled' ? '취소된 플래시입니다' : '완료된 플래시입니다'}
               </div>
             )}
           </div>

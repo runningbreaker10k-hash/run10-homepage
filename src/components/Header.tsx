@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Menu, X, Users, Calendar, Trophy, User, LogOut, MessageCircle, Settings, Zap } from 'lucide-react'
+import { Menu, X, Users, Medal, Trophy, User, LogOut, MessageCircle, Settings, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthModal from './AuthModal'
 
@@ -66,7 +66,7 @@ export default function Header() {
                 className="text-white hover:text-red-200 px-3 py-2 text-sm font-medium transition-colors"
               >
                 <div className="flex items-center space-x-1">
-                  <Calendar className="h-4 w-4" />
+                  <Medal className="h-4 w-4" />
                   <span>런텐 대회</span>
                 </div>
               </Link>
@@ -203,7 +203,7 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
+                    <Medal className="h-4 w-4" />
                     <span>런텐 대회</span>
                   </div>
                 </Link>

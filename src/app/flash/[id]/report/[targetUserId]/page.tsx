@@ -78,14 +78,14 @@ export default function FlashReportPage() {
         .eq('id', flashRunId)
         .single()
 
-      if (!run) { setAccessError('모임을 찾을 수 없습니다'); setIsLoading(false); return }
+      if (!run) { setAccessError('플래시를 찾을 수 없습니다'); setIsLoading(false); return }
 
       const runDateTime = new Date(`${run.run_date}T${run.run_time}`)
       const isCompleted = runDateTime < new Date() && run.status !== 'cancelled'
       const isCancelled = run.status === 'cancelled'
 
       if (!isCompleted && !isCancelled) {
-        setAccessError('종료된 모임에서만 신고할 수 있습니다')
+        setAccessError('종료된 플래시에서만 신고할 수 있습니다')
         setIsLoading(false)
         return
       }
@@ -98,7 +98,7 @@ export default function FlashReportPage() {
         .maybeSingle()
 
       if (!myParticipation) {
-        setAccessError('모임 참여자만 신고할 수 있습니다')
+        setAccessError('플래시 참여자만 신고할 수 있습니다')
         setIsLoading(false)
         return
       }
@@ -253,7 +253,7 @@ export default function FlashReportPage() {
               className="inline-flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              모임으로 돌아가기
+              플래시로 돌아가기
             </Link>
           </div>
         ) : submitted ? (
@@ -268,7 +268,7 @@ export default function FlashReportPage() {
               className="inline-flex items-center gap-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              모임으로 돌아가기
+              플래시로 돌아가기
             </Link>
           </div>
         ) : (
@@ -292,7 +292,7 @@ export default function FlashReportPage() {
                 <p className="text-sm font-semibold text-gray-700 mb-2">신고 대상 참여자</p>
                 <div className="bg-gray-50 rounded-lg p-3 space-y-1.5 text-sm">
                   <div className="flex gap-3">
-                    <span className="text-gray-400 w-12 flex-shrink-0">모임</span>
+                    <span className="text-gray-400 w-12 flex-shrink-0">플래시</span>
                     <span className="text-gray-700 font-medium">{runTitle}</span>
                   </div>
                   <div className="flex gap-3">
@@ -300,7 +300,7 @@ export default function FlashReportPage() {
                     <span className="text-gray-700">{targetName}</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-gray-400 w-12 flex-shrink-0">모임일</span>
+                    <span className="text-gray-400 w-12 flex-shrink-0">날짜</span>
                     <span className="text-gray-700">{runDate}</span>
                   </div>
                 </div>

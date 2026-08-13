@@ -512,7 +512,7 @@ function FlashPageContent() {
 
               {/* 탭 — 고정, 균등 분할 */}
               <div className="flex border-b border-gray-200 mt-3 flex-shrink-0">
-                {['런텐플래시란?', '신고하기 안내'].map((label, i) => (
+                {['런텐플래시란?', '신고하기란?'].map((label, i) => (
                   <button
                     key={label}
                     onClick={() => setGuideIndex(i)}
