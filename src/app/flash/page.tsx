@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
 import { MapPin, Calendar, Plus, Zap, X, FileText } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
+import FlashPopup from '@/components/FlashPopup'
 
 interface FlashRun {
   id: string
@@ -452,6 +453,7 @@ function FlashPageContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <FlashPopup />
       {/* 히어로 */}
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
@@ -465,7 +467,7 @@ function FlashPageContent() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐플래시</h1>
           <p className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto">
-            갑자기 뛰고 싶을 때, 원하는 시간 장소에서 같이 러닝해요
+            가볍게 만나 제대로 달려요.
           </p>
         </div>
       </section>
@@ -478,7 +480,7 @@ function FlashPageContent() {
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
           >
             <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-gray-700">이용가이드</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">런텐 플래시란?</span>
           </button>
         </div>
 
@@ -499,8 +501,7 @@ function FlashPageContent() {
               </div>
 
               {/* 모달 헤더 — 고정 */}
-              <div className="flex items-center justify-between px-4 pt-3 sm:pt-4 pb-0 flex-shrink-0">
-                <span className="text-sm font-bold text-gray-800">이용가이드</span>
+              <div className="flex items-center justify-end px-4 pt-3 sm:pt-4 pb-0 flex-shrink-0">
                 <button
                   onClick={() => setGuideOpen(false)}
                   className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
@@ -511,7 +512,7 @@ function FlashPageContent() {
 
               {/* 탭 — 고정, 균등 분할 */}
               <div className="flex border-b border-gray-200 mt-3 flex-shrink-0">
-                {['런텐플래시 안내', '신고하기 안내', '운영정책 안내'].map((label, i) => (
+                {['런텐플래시란?', '신고하기 안내'].map((label, i) => (
                   <button
                     key={label}
                     onClick={() => setGuideIndex(i)}
@@ -526,12 +527,12 @@ function FlashPageContent() {
                 ))}
               </div>
 
-              {/* 이미지 — 스크롤 */}
-              <div className="overflow-y-auto flex-1 p-3 sm:p-4">
+              {/* 이미지 — 스크롤, 상단 기준 정렬 */}
+              <div className="overflow-y-auto flex-1 p-3 sm:p-4 flex flex-col justify-start">
                 <img
                   src={`/images/flash/anno/0${guideIndex + 1}.jpg`}
-                  alt="이용가이드"
-                  className="w-full"
+                  alt="런텐 플래시 안내"
+                  className="w-full block"
                 />
               </div>
             </div>

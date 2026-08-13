@@ -8,9 +8,10 @@ interface ImageUploadProps {
   onImageUploaded: (url: string) => void
   currentImageUrl?: string
   className?: string
+  folder?: string
 }
 
-export default function ImageUpload({ onImageUploaded, currentImageUrl, className = '' }: ImageUploadProps) {
+export default function ImageUpload({ onImageUploaded, currentImageUrl, className = '', folder = 'competitions' }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -41,7 +42,7 @@ export default function ImageUpload({ onImageUploaded, currentImageUrl, classNam
       // 고유한 파일명 생성
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `competitions/${fileName}`
+      const filePath = `${folder}/${fileName}`
 
       // Supabase Storage에 업로드
       const { error } = await supabase.storage

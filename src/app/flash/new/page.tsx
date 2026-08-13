@@ -368,6 +368,7 @@ export default function FlashNewPage() {
               <ImageUpload
                 onImageUploaded={url => setImageUrl(url)}
                 currentImageUrl={imageUrl}
+                folder="flash"
               />
             </div>
           </div>
