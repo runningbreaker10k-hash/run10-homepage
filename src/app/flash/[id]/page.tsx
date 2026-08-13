@@ -209,8 +209,26 @@ function FlashDetailContent() {
     return 'open'
   }
 
+  const GRADE_TO_TIER: Record<string, string> = {
+    cheetah: '치타족',
+    horse: '홀스족',
+    wolf: '울프족',
+    turtle: '터틀족',
+    bolt: '볼타족',
+  }
+
   const handleJoin = async () => {
     if (!user || !run) return
+
+    // 티어 제한 체크
+    if (run.tier && run.tier.length > 0) {
+      const userTier = GRADE_TO_TIER[user.grade || '']
+      if (!userTier || !run.tier.includes(userTier)) {
+        setError(`이 모임은 ${run.tier.join(', ')}만 참가 가능합니다`)
+        return
+      }
+    }
+
     setIsJoining(true)
     setError('')
     try {

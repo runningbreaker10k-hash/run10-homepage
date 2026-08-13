@@ -125,7 +125,7 @@ function RunCard({ run }: { run: FlashRun }) {
   return (
     <Link
       href={`/flash/${run.id}`}
-      className="flex items-center gap-3 sm:gap-6 bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4 min-h-[110px] sm:min-h-[144px] hover:border-red-200 transition-colors active:bg-gray-50"
+      className="flex items-center gap-3 sm:gap-6 bg-white rounded-lg p-3 sm:p-4 min-h-[110px] sm:min-h-[144px] shadow-md hover:shadow-lg transition-shadow active:bg-gray-50"
     >
       <img src={getTierImage(run.tier)} alt="" className="w-[60px] h-[66px] sm:w-[86px] sm:h-[95px] object-contain flex-shrink-0" />
       <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 sm:gap-1">

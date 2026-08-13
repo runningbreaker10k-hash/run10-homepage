@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PagePopup from '@/components/PagePopup'
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Zap } from 'lucide-react'
 
 export default function WebMainPage() {
   const [currentMaleRanker, setCurrentMaleRanker] = useState(0)
@@ -316,7 +316,7 @@ export default function WebMainPage() {
               런텐 플래시
             </h2>
             <div className="mb-6 sm:mb-8 lg:mb-12">
-              <p className="text-base sm:text-lg text-gray-600 mb-1">갑자기 누군가와 함께 뛰고 싶을때</p>
+              <p className="text-base sm:text-lg text-gray-600 mb-1">갑자기 동네에서 10명 이하로 함께 뛰고 싶을때</p>
               <p className="text-base sm:text-lg text-gray-600">신개념 러닝번개</p>
             </div>
           </div>
@@ -350,9 +350,10 @@ export default function WebMainPage() {
           <div className="text-center">
             <Link
               href="/flash"
-              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
             >
-              ⚡ 런텐플래시 GO
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" fill="currentColor" />
+              런텐플래시 GO
             </Link>
           </div>
         </div>
