@@ -480,7 +480,7 @@ function FlashPageContent() {
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
           >
             <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-gray-700">런텐 플래시란?</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">꼭 읽고 참여하세요!</span>
           </button>
         </div>
 

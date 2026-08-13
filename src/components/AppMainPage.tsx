@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Zap } from 'lucide-react'
+import { Zap, Medal, ChartNoAxesColumnIncreasing, Trophy } from 'lucide-react'
 import PagePopup from '@/components/PagePopup'
 import { useUTMTracking } from '@/hooks/useUTMTracking'
 
@@ -50,38 +50,24 @@ export default function AppMainPage() {
       {/* 메인 페이지 팝업 */}
       <PagePopup pageId="home" />
 
-      {/* Hero Section - 앱 스타일로 간소화 */}
-      <section className="relative h-[30vh] min-h-[250px] flex items-center justify-center bg-gradient-to-br from-red-600 via-red-700 to-red-800">
-        {/* 배경 이미지 */}
-        <div className="absolute inset-0 overflow-hidden opacity-30">
-          <Image
-            src="/images/runners-bg.jpg"
-            alt="러너 배경"
-            fill
-            className="object-cover"
-            quality={75}
-            priority
-          />
-        </div>
-
-        {/* 중앙 텍스트 */}
-        <div className="relative z-10 text-center text-white px-6">
-          <h1 className="text-4xl sm:text-5xl font-black mb-3 tracking-tight">
-            <span className="block">RUN10</span>
-          </h1>
-          <p className="text-base sm:text-lg font-medium opacity-90 mb-2">
-            전국 러닝 협회 인증
-          </p>
-          <p className="text-sm sm:text-base font-light opacity-80">
-            10km 러너들의 공식 플랫폼
-          </p>
-        </div>
+      {/* Hero Section */}
+      <section className="relative w-full">
+        <Image
+          src="/images/main_bg_m.jpg"
+          alt="러너 배경"
+          width={800}
+          height={1200}
+          className="w-full h-auto"
+          quality={75}
+          priority
+        />
       </section>
 
       {/* 런텐 대회 Section */}
       <section className="py-8 px-4 bg-[#051735] text-white">
         <div className="max-w-md mx-auto text-center">
-          <h2 className="text-2xl font-black text-red-600 mb-2">
+          <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
+            <Medal className="w-6 h-6 flex-shrink-0" />
             런텐 대회
           </h2>
           <div className="mb-6">
@@ -112,7 +98,8 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-[#0F0F0F] text-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-black text-red-600 mb-2">
+            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
+              <ChartNoAxesColumnIncreasing className="w-6 h-6 flex-shrink-0" />
               런텐 티어
             </h2>
             <div className="mt-2">
@@ -140,7 +127,8 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-black text-red-600 mb-2">
+            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
+              <Zap className="w-6 h-6 flex-shrink-0" fill="currentColor" />
               런텐 플래시
             </h2>
             <div className="mt-2">
@@ -177,7 +165,8 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-black text-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-black text-red-600 mb-2">
+            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
+              <Trophy className="w-6 h-6 flex-shrink-0" />
               런텐 랭커
             </h2>
             <div className="mt-2">
