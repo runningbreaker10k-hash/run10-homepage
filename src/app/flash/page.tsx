@@ -466,9 +466,11 @@ function FlashPageContent() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐플래시</h1>
-          <p className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto">
-            가볍게 만나 제대로 달려요.
-          </p>
+          <div className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto space-y-1">
+            <p>누구나 언제나 어디서나</p>
+            <p>쿨하고 안전하고 설레게</p>
+            <p>원하는 페이스의 사람들과 함께 달립니다</p>
+          </div>
         </div>
       </section>
 
