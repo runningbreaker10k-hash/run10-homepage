@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Zap, Medal, ChartNoAxesColumnIncreasing, Trophy } from 'lucide-react'
+import { Zap } from 'lucide-react'
 import PagePopup from '@/components/PagePopup'
 import { useUTMTracking } from '@/hooks/useUTMTracking'
 
@@ -66,8 +66,7 @@ export default function AppMainPage() {
       {/* 런텐 대회 Section */}
       <section className="py-8 px-4 bg-[#051735] text-white">
         <div className="max-w-md mx-auto text-center">
-          <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
-            <Medal className="w-6 h-6 flex-shrink-0" />
+          <h2 className="text-2xl font-black text-red-600 mb-2">
             런텐 대회
           </h2>
           <div className="mb-6">
@@ -98,8 +97,7 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-[#0F0F0F] text-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
-              <ChartNoAxesColumnIncreasing className="w-6 h-6 flex-shrink-0" />
+            <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 티어
             </h2>
             <div className="mt-2">
@@ -127,8 +125,7 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
-              <Zap className="w-6 h-6 flex-shrink-0" fill="currentColor" />
+            <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 플래시
             </h2>
             <div className="mt-2">
@@ -165,8 +162,7 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-black text-white">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6">
-            <h2 className="flex items-center justify-center gap-2 text-2xl font-black text-red-600 mb-2">
-              <Trophy className="w-6 h-6 flex-shrink-0" />
+            <h2 className="text-2xl font-black text-red-600 mb-2">
               런텐 랭커
             </h2>
             <div className="mt-2">

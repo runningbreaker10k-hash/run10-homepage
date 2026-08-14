@@ -289,15 +289,15 @@ function FlashPageContent() {
         }
       }
 
-      // 오늘 기준 정렬: 진행·예정(오름차순) → 종료(내림차순)
+      // 상태 기준 진행/종료 분리 → 각 그룹 내 날짜+시간 정렬
       if (showEnded) {
-        const upcoming = result
-          .filter(r => r.run_date >= today)
+        const active = result
+          .filter(r => { const ds = getDisplayStatus(r); return ds === 'open' || ds === 'closed' })
           .sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
-        const past = result
-          .filter(r => r.run_date < today)
+        const ended = result
+          .filter(r => { const ds = getDisplayStatus(r); return ds === 'completed' || ds === 'cancelled' })
           .sort((a, b) => b.run_date.localeCompare(a.run_date) || b.run_time.localeCompare(a.run_time))
-        result = [...upcoming, ...past]
+        result = [...active, ...ended]
       } else {
         result = result.sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
       }
@@ -439,14 +439,6 @@ function FlashPageContent() {
   const totalPages = Math.max(1, Math.ceil(flashRuns.length / PAGE_SIZE))
   const pagedRuns  = flashRuns.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  // 런텐플래시 목록을 지역별 그룹핑
-  const grouped = pagedRuns.reduce((acc, run) => {
-    const key = `${run.sido} ${run.sigungu}`
-    if (!acc[key]) acc[key] = []
-    acc[key].push(run)
-    return acc
-  }, {} as Record<string, FlashRun[]>)
-
   const currentMyRuns = myTab === 'created' ? createdRuns : joinedRuns
   const myTotalPages = Math.max(1, Math.ceil(currentMyRuns.length / PAGE_SIZE))
   const pagedMyRuns = currentMyRuns.slice((myCurrentPage - 1) * PAGE_SIZE, myCurrentPage * PAGE_SIZE)
@@ -469,7 +461,7 @@ function FlashPageContent() {
           <div className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto space-y-1">
             <p>누구나 언제나 어디서나</p>
             <p>쿨하고 안전하고 설레게</p>
-            <p>원하는 페이스의 사람들과 함께 달립니다</p>
+            <p>새로운 사람들과 함께 달린다</p>
           </div>
         </div>
       </section>
@@ -481,8 +473,8 @@ function FlashPageContent() {
             onClick={() => { setGuideIndex(0); setGuideOpen(true) }}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
           >
-            <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-            <span className="text-xs sm:text-sm font-medium text-gray-700">꼭 읽고 참여하세요!</span>
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
+            <span className="text-sm sm:text-base md:text-lg font-medium text-gray-700">꼭 읽고 참여하세요!</span>
           </button>
         </div>
 
@@ -518,7 +510,7 @@ function FlashPageContent() {
                   <button
                     key={label}
                     onClick={() => setGuideIndex(i)}
-                    className={`flex-1 py-2.5 text-[11px] sm:text-xs font-medium border-b-2 transition-colors text-center leading-tight px-1 ${
+                    className={`flex-1 py-3 text-sm sm:text-base font-medium border-b-2 transition-colors text-center leading-tight px-1 ${
                       guideIndex === i
                         ? 'border-red-600 text-red-600'
                         : 'border-transparent text-gray-400 hover:text-gray-700'
@@ -738,15 +730,8 @@ function FlashPageContent() {
               </div>
             ) : (
               <>
-                <div className="space-y-6">
-                  {Object.entries(grouped).map(([region, regionRuns]) => (
-                    <div key={region}>
-                      <h2 className="text-xs font-semibold text-gray-400 tracking-wide mb-2 px-1">{region}</h2>
-                      <div className="space-y-2">
-                        {regionRuns.map(run => <RunCard key={run.id} run={run} />)}
-                      </div>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  {pagedRuns.map(run => <RunCard key={run.id} run={run} />)}
                 </div>
                 <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
               </>

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import PagePopup from '@/components/PagePopup'
 import { useState, useEffect } from 'react'
-import { X, Zap, Medal, ChartNoAxesColumnIncreasing, Trophy } from 'lucide-react'
+import { X, Zap } from 'lucide-react'
 
 export default function WebMainPage() {
   const [currentMaleRanker, setCurrentMaleRanker] = useState(0)
@@ -185,8 +185,7 @@ export default function WebMainPage() {
       {/* 런텐 대회 Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-[#051735] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="flex items-center justify-center gap-2 text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-            <Medal className="w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex-shrink-0" />
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
             런텐 대회
           </h2>
           <div className="mb-8 sm:mb-10 lg:mb-12">
@@ -230,8 +229,7 @@ export default function WebMainPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-[#0F0F0F] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <h2 className="flex items-center justify-center gap-2 text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-              <ChartNoAxesColumnIncreasing className="w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex-shrink-0" />
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
               런텐 티어
             </h2>
             <div className="mb-6 sm:mb-8 lg:mb-12">
@@ -314,8 +312,7 @@ export default function WebMainPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <h2 className="flex items-center justify-center gap-2 text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-              <Zap className="w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex-shrink-0" fill="currentColor" />
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
               런텐 플래시
             </h2>
             <div className="mb-6 sm:mb-8 lg:mb-12">
@@ -366,8 +363,7 @@ export default function WebMainPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <h2 className="flex items-center justify-center gap-2 text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-              <Trophy className="w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 flex-shrink-0" />
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
               런텐 랭커
             </h2>
             <div className="mb-6 sm:mb-8 lg:mb-12">

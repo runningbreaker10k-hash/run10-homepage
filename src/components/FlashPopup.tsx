@@ -27,12 +27,12 @@ export default function FlashPopup() {
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-start justify-center bg-black/60 px-4"
+      className="fixed inset-0 z-[10000] flex items-start justify-center bg-black/60 px-3 sm:px-6"
       style={{ paddingTop: 'calc(64px + 12px)', paddingBottom: '12px' }}
       onClick={close}
     >
       <div
-        className="relative flex flex-col bg-white rounded-2xl shadow-2xl w-full max-w-xs sm:max-w-sm overflow-hidden"
+        className="relative flex flex-col bg-white rounded-2xl shadow-2xl w-full sm:max-w-md md:max-w-lg overflow-hidden"
         style={{ maxHeight: 'calc(100vh - 64px - 24px)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -45,7 +45,7 @@ export default function FlashPopup() {
         </button>
 
         {/* 이미지 — 스크롤 가능 */}
-        <div className="overflow-y-auto flex-1">
+        <div className="overflow-y-auto [&::-webkit-scrollbar]:w-0" style={{ scrollbarWidth: 'none' }}>
           <img
             src="/images/flash/anno/01.jpg"
             alt="런텐 플래시 안내"
