@@ -5,10 +5,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
 import {
   Zap, ArrowLeft, Flag, Loader2,
   ChevronDown, ChevronUp, CheckCircle, XCircle, Clock,
-  MapPin, Calendar, Users, Shuffle,
+  MapPin, Calendar, Users, Plus, Trash2,
 } from 'lucide-react'
 
 type FlashSubTab = 'runs' | 'reports' | 'seed'
@@ -46,6 +47,27 @@ interface FlashReport {
   run_title?: string
   run_date?: string
 }
+
+interface SeedRow {
+  _key: string
+  userId: string
+  title: string
+  sido: string
+  sigungu: string
+  locationDetail: string
+  runDate: string
+  runTime: string
+  maxParticipants: number
+  kakaoUrl: string
+  distance: string
+}
+
+const emptyRow = (): SeedRow => ({
+  _key: Math.random().toString(36).slice(2),
+  userId: '', title: '', sido: '', sigungu: '',
+  locationDetail: '', runDate: '', runTime: '',
+  maxParticipants: 5, kakaoUrl: '', distance: '',
+})
 
 function getDisplayStatus(run: Pick<FlashRun, 'status' | 'run_date' | 'run_time' | 'current_participants' | 'max_participants'>): string {
   if (run.status === 'cancelled') return 'cancelled'
@@ -92,18 +114,9 @@ export default function FlashAdminPage() {
   const [processingId, setProcessingId] = useState<string | null>(null)
 
   // 샘플 생성
-  const [seedCreatorIds, setSeedCreatorIds]       = useState('')
-  const [seedTitles, setSeedTitles]               = useState('')
-  const [seedRegions, setSeedRegions]             = useState('')
-  const [seedTimes, setSeedTimes]                 = useState('')
-  const [seedMaxParticipants, setSeedMaxParticipants] = useState(10)
-  const [seedKakaoUrls, setSeedKakaoUrls]         = useState('')
-  const [seedDistances, setSeedDistances]         = useState('')
-  const [seedDayStart, setSeedDayStart]       = useState(0)
-  const [seedDayEnd, setSeedDayEnd]           = useState(7)
-  const [seedCount, setSeedCount]             = useState(10)
-  const [isGenerating, setIsGenerating]       = useState(false)
-  const [seedResult, setSeedResult]           = useState<{ success: number; failed: number } | null>(null)
+  const [seedRows, setSeedRows]   = useState<SeedRow[]>([emptyRow()])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [seedResult, setSeedResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
 
   // 신고 관리
   const [reports, setReports] = useState<FlashReport[]>([])
@@ -181,112 +194,84 @@ export default function FlashAdminPage() {
     setProcessingId(null)
   }
 
+  const updateSeedRow = (key: string, field: keyof SeedRow, value: string | number) => {
+    setSeedRows(prev => prev.map(r => r._key === key ? { ...r, [field]: value, ...(field === 'sido' ? { sigungu: '' } : {}) } : r))
+  }
+
   const handleGenerate = async () => {
     setSeedResult(null)
-    const parse = (s: string) => s.split('\n').map(l => l.trim()).filter(Boolean)
-
-    const creatorIdList  = parse(seedCreatorIds)
-    const titleList      = parse(seedTitles)
-    const regionList     = parse(seedRegions).map(r => {
-      const parts = r.split('/')
-      if (parts.length < 3) return null
-      return { sido: parts[0].trim(), sigungu: parts[1].trim(), location_detail: parts[2].trim() }
-    }).filter(Boolean) as { sido: string; sigungu: string; location_detail: string }[]
-    const timeList       = parse(seedTimes)
-    const kakaoList      = parse(seedKakaoUrls)
-    const distanceList   = parse(seedDistances)
-
-    if (!creatorIdList.length || !titleList.length || !regionList.length ||
-        !timeList.length || !kakaoList.length) {
-      alert('예상 거리를 제외한 모든 항목을 입력해주세요')
+    const validRows = seedRows.filter(r =>
+      r.userId && r.title && r.sido && r.sigungu && r.locationDetail && r.runDate && r.runTime && r.kakaoUrl
+    )
+    if (validRows.length === 0) {
+      alert('최소 1개 행의 필수 항목(거리 제외)을 모두 입력해주세요')
       return
     }
 
-    setIsGenerating(true)
-    try {
-      // 회원 ID 검증 및 grade 조회
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, grade, user_id')
-        .in('user_id', creatorIdList)
-
-      if (userError || !userData || userData.length === 0) {
-        alert('유효한 회원 ID가 없습니다. 로그인 ID를 확인해주세요.')
-        setIsGenerating(false)
-        return
-      }
-
-      const notFound = creatorIdList.filter(cid => !userData.some(u => u.user_id === cid))
-      if (notFound.length > 0) alert(`다음 ID는 존재하지 않아 제외됩니다: ${notFound.join(', ')}`)
-
-      const GRADE_TO_TIER: Record<string, string> = {
-        cheetah: '치타족', horse: '홀스족', wolf: '울프족', turtle: '터틀족',
-      }
-      const rand = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
-
-      const today = new Date()
-      const getRandomDate = () => {
-        const d = new Date(today)
-        const range = Math.max(0, seedDayEnd - seedDayStart)
-        d.setDate(d.getDate() + seedDayStart + Math.floor(Math.random() * (range + 1)))
-        const p = (n: number) => String(n).padStart(2, '0')
-        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-      }
-
-      let success = 0, failed = 0
-      for (let i = 0; i < seedCount; i++) {
-        try {
-          const creator  = rand(userData)
-          const tierName = creator.grade ? GRADE_TO_TIER[creator.grade] : null
-          const region   = rand(regionList)
-          const distance = distanceList.length > 0 ? rand(distanceList) : null
-          const timeVal  = rand(timeList)
-          const runTime  = timeVal.includes(':') ? timeVal + ':00' : timeVal + ':00:00'
-          const maxVal   = Math.floor(Math.random() * (seedMaxParticipants - 2 + 1)) + 2
-
-          const { data: newRun, error: insertError } = await supabase
-            .from('flash_runs')
-            .insert({
-              creator_id:           creator.id,
-              sido:                 region.sido,
-              sigungu:              region.sigungu,
-              location_detail:      region.location_detail,
-              title:                rand(titleList),
-              run_date:             getRandomDate(),
-              run_time:             runTime,
-              max_participants:     maxVal,
-              current_participants: 1,
-              kakao_chat_url:       rand(kakaoList),
-              description:          null,
-              distance:             distance,
-              tier:                 tierName ? [tierName] : null,
-              image_url:            null,
-              status:               'open',
-            })
-            .select('id')
-            .single()
-
-          if (insertError) throw insertError
-
-          await supabase.from('flash_participants').insert({
-            flash_run_id: newRun.id,
-            user_id:      creator.id,
-          })
-          success++
-        } catch (err) {
-          console.error(`생성 오류 (${i + 1}번째):`, err)
-          failed++
-        }
-      }
-
-      setSeedResult({ success, failed })
-      if (success > 0) loadRuns()
-    } catch (err) {
-      console.error('샘플 생성 오류:', err)
-      alert('생성 중 오류가 발생했습니다')
-    } finally {
-      setIsGenerating(false)
+    const GRADE_TO_TIER: Record<string, string> = {
+      cheetah: '치타족', horse: '홀스족', wolf: '울프족', turtle: '터틀족',
     }
+
+    setIsGenerating(true)
+    let success = 0, failed = 0
+    const errors: string[] = []
+
+    for (const row of validRows) {
+      try {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, grade')
+          .eq('user_id', row.userId)
+          .single()
+
+        if (!userData) {
+          errors.push(`[${row.userId}] 회원을 찾을 수 없습니다`)
+          failed++
+          continue
+        }
+
+        const tierName = userData.grade ? GRADE_TO_TIER[userData.grade] : null
+        const runTime  = row.runTime.length === 5 ? row.runTime + ':00' : row.runTime
+
+        const { data: newRun, error: insertError } = await supabase
+          .from('flash_runs')
+          .insert({
+            creator_id:           userData.id,
+            sido:                 row.sido,
+            sigungu:              row.sigungu,
+            location_detail:      row.locationDetail,
+            title:                row.title,
+            run_date:             row.runDate,
+            run_time:             runTime,
+            max_participants:     row.maxParticipants,
+            current_participants: 1,
+            kakao_chat_url:       row.kakaoUrl,
+            description:          null,
+            distance:             row.distance || null,
+            tier:                 tierName ? [tierName] : null,
+            image_url:            null,
+            status:               'open',
+          })
+          .select('id')
+          .single()
+
+        if (insertError) throw insertError
+
+        await supabase.from('flash_participants').insert({
+          flash_run_id: newRun.id,
+          user_id:      userData.id,
+        })
+        success++
+      } catch (err) {
+        console.error(`생성 오류 (${row.userId}):`, err)
+        errors.push(`[${row.userId}] 생성 실패`)
+        failed++
+      }
+    }
+
+    setSeedResult({ success, failed, errors })
+    if (success > 0) loadRuns()
+    setIsGenerating(false)
   }
 
   const loadReports = async () => {
@@ -494,131 +479,176 @@ export default function FlashAdminPage() {
 
         {/* ── 샘플 생성 ── */}
         {subTab === 'seed' && (
-          <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-5">
-            <div className="flex items-center gap-2 mb-1">
-              <Shuffle className="w-4 h-4 text-red-500" />
-              <p className="text-sm font-semibold text-gray-800">플래시 샘플 데이터 생성</p>
-            </div>
-            <p className="text-xs text-gray-400">각 항목에 후보값을 줄바꿈으로 구분해 입력하세요. 생성 시 랜덤 조합됩니다.</p>
-
-            {/* 회원 ID */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">회원 로그인 ID <span className="text-red-500">*</span> <span className="text-gray-400">(줄바꿈 구분)</span></label>
-              <textarea rows={3} value={seedCreatorIds} onChange={e => setSeedCreatorIds(e.target.value)}
-                placeholder={"user01\nuser02\nuser03"}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none font-mono"
-              />
-              <p className="text-xs text-gray-400 mt-0.5">티어는 해당 회원의 등급으로 자동 설정됩니다</p>
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <p className="text-sm font-semibold text-gray-800 mb-0.5">플래시 일괄 생성</p>
+              <p className="text-xs text-gray-400">행마다 플래시 1개가 생성됩니다. 거리를 제외한 모든 항목은 필수입니다. 티어는 회원 등급으로 자동 설정됩니다.</p>
             </div>
 
-            {/* 제목 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">제목 후보 <span className="text-red-500">*</span></label>
-              <textarea rows={4} value={seedTitles} onChange={e => setSeedTitles(e.target.value)}
-                placeholder={"한강 야경 러닝\n마포 새벽 번개런\n홍대 저녁 러닝\n잠실 주말 러닝"}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-              />
-            </div>
-
-            {/* 지역 / 상세장소 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">지역 / 상세장소 <span className="text-red-500">*</span> <span className="text-gray-400">(시도/시군구/상세장소 슬래시 구분)</span></label>
-              <textarea rows={5} value={seedRegions} onChange={e => setSeedRegions(e.target.value)}
-                placeholder={"서울특별시/마포구/한강공원 광장 앞\n서울특별시/송파구/잠실 올림픽공원 입구\n부산광역시/해운대구/해운대해수욕장 중앙\n충청북도/청주시 상당구/충북대학교 정문 앞"}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-              />
-              <p className="text-xs text-gray-400 mt-0.5">예: 충청북도/청주시 상당구/충북대학교 정문 앞</p>
-            </div>
-
-            {/* 날짜 범위 + 시간 후보 */}
-            <div className="border border-gray-100 rounded-lg p-3 space-y-3 bg-gray-50">
-              <p className="text-xs font-semibold text-gray-500">날짜 / 시간 설정</p>
-
-              {/* 날짜 범위 */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">날짜 범위 <span className="text-red-500">*</span> <span className="text-gray-400">(오늘 기준)</span></label>
-                <div className="flex items-center gap-2">
-                  <select value={seedDayStart} onChange={e => setSeedDayStart(Number(e.target.value))}
-                    className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
-                  >
-                    {[0,1,2,3,4,5,6,7].map(d => (
-                      <option key={d} value={d}>+{d}일{d === 0 ? ' (오늘)' : ''}</option>
-                    ))}
-                  </select>
-                  <span className="text-gray-400 text-sm flex-shrink-0">~</span>
-                  <select value={seedDayEnd} onChange={e => setSeedDayEnd(Number(e.target.value))}
-                    className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
-                  >
-                    {[0,1,2,3,4,5,6,7].filter(d => d >= seedDayStart).map(d => (
-                      <option key={d} value={d}>+{d}일{d === 0 ? ' (오늘)' : ''}</option>
-                    ))}
-                  </select>
-                </div>
+            {/* 테이블 */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[90px]">회원ID <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[140px]">제목 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[110px]">시도 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[120px]">시군구 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[140px]">상세장소 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[120px]">날짜 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[90px]">시간 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[70px]">최대인원 <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[200px]">카카오URL <span className="text-red-500">*</span></th>
+                      <th className="px-2 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[70px]">거리</th>
+                      <th className="px-2 py-2.5 min-w-[36px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {seedRows.map((row, idx) => {
+                      const sigunguList = row.sido ? KOREA_REGIONS[row.sido] || [] : []
+                      return (
+                        <tr key={row._key} className="hover:bg-gray-50/50">
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={row.userId}
+                              onChange={e => updateSeedRow(row._key, 'userId', e.target.value)}
+                              placeholder="user01"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 font-mono"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={row.title}
+                              onChange={e => updateSeedRow(row._key, 'title', e.target.value)}
+                              placeholder="한강 야경 러닝"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <select
+                              value={row.sido}
+                              onChange={e => updateSeedRow(row._key, 'sido', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 bg-white"
+                            >
+                              <option value="">선택</option>
+                              {SIDO_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <select
+                              value={row.sigungu}
+                              onChange={e => updateSeedRow(row._key, 'sigungu', e.target.value)}
+                              disabled={!row.sido}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 bg-white disabled:opacity-40"
+                            >
+                              <option value="">선택</option>
+                              {sigunguList.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={row.locationDetail}
+                              onChange={e => updateSeedRow(row._key, 'locationDetail', e.target.value)}
+                              placeholder="한강공원 광장 앞"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="date"
+                              value={row.runDate}
+                              onChange={e => updateSeedRow(row._key, 'runDate', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="time"
+                              value={row.runTime}
+                              onChange={e => updateSeedRow(row._key, 'runTime', e.target.value)}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <select
+                              value={row.maxParticipants}
+                              onChange={e => updateSeedRow(row._key, 'maxParticipants', Number(e.target.value))}
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 bg-white"
+                            >
+                              {[2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}명</option>)}
+                            </select>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={row.kakaoUrl}
+                              onChange={e => updateSeedRow(row._key, 'kakaoUrl', e.target.value)}
+                              placeholder="https://open.kakao.com/o/..."
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 font-mono"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input
+                              type="text"
+                              value={row.distance}
+                              onChange={e => updateSeedRow(row._key, 'distance', e.target.value)}
+                              placeholder="5km"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 text-center">
+                            <button
+                              onClick={() => setSeedRows(prev => prev.filter(r => r._key !== row._key))}
+                              disabled={seedRows.length === 1}
+                              className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              {/* 시간 후보 */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">시간 후보 <span className="text-red-500">*</span> <span className="text-gray-400">(HH:MM 형식, 줄바꿈 구분)</span></label>
-                <textarea rows={3} value={seedTimes} onChange={e => setSeedTimes(e.target.value)}
-                  placeholder={"06:00\n07:00\n18:30\n19:00"}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none font-mono bg-white"
-                />
+              {/* 행 추가 */}
+              <div className="border-t border-gray-100 px-3 py-2">
+                <button
+                  onClick={() => setSeedRows(prev => [...prev, emptyRow()])}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  행 추가
+                </button>
               </div>
-            </div>
-
-            {/* 최대 인원 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">최대 인원 <span className="text-red-500">*</span> <span className="text-gray-400">(2 ~ 선택값 사이 랜덤)</span></label>
-              <select value={seedMaxParticipants} onChange={e => setSeedMaxParticipants(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
-              >
-                {[2,3,4,5,6,7,8,9,10].map(n => (
-                  <option key={n} value={n}>{n}명 (2~{n}명 랜덤)</option>
-                ))}
-              </select>
-            </div>
-
-            {/* 카카오 URL */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">카카오 오픈채팅 URL <span className="text-red-500">*</span></label>
-              <textarea rows={2} value={seedKakaoUrls} onChange={e => setSeedKakaoUrls(e.target.value)}
-                placeholder={"https://open.kakao.com/o/sample1\nhttps://open.kakao.com/o/sample2"}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none font-mono"
-              />
-            </div>
-
-            {/* 예상 거리 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">예상 거리 <span className="text-gray-400">(선택)</span></label>
-              <textarea rows={2} value={seedDistances} onChange={e => setSeedDistances(e.target.value)}
-                placeholder={"5km\n10km"}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none font-mono"
-              />
-            </div>
-
-            {/* 생성 개수 */}
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">생성 개수</label>
-              <input type="number" min={1} max={100} value={seedCount} onChange={e => setSeedCount(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
             </div>
 
             {/* 결과 */}
             {seedResult && (
-              <div className={`p-3 rounded-lg text-sm font-medium ${seedResult.failed === 0 ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
-                ✓ {seedResult.success}개 생성 완료{seedResult.failed > 0 ? ` / ${seedResult.failed}개 실패` : ''}
+              <div className={`p-3 rounded-lg text-sm ${seedResult.failed === 0 ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                <p className="font-medium">✓ {seedResult.success}개 생성 완료{seedResult.failed > 0 ? ` / ${seedResult.failed}개 실패` : ''}</p>
+                {seedResult.errors.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5">
+                    {seedResult.errors.map((e, i) => <li key={i} className="text-xs opacity-80">• {e}</li>)}
+                  </ul>
+                )}
               </div>
             )}
 
+            {/* 생성 버튼 */}
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
+              className="w-full py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
             >
               {isGenerating
                 ? <><Loader2 className="w-4 h-4 animate-spin" />생성 중...</>
-                : <><Shuffle className="w-4 h-4" />{seedCount}개 플래시 생성</>
+                : `${seedRows.filter(r => r.userId && r.title && r.sido && r.sigungu && r.locationDetail && r.runDate && r.runTime && r.kakaoUrl).length}개 플래시 생성`
               }
             </button>
           </div>

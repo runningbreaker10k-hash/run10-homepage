@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
@@ -193,6 +193,33 @@ function FlashPageContent() {
   const [myCurrentPage, setMyCurrentPage] = useState(1)
   const PAGE_SIZE = 10
 
+  // 목록 복귀 시 이전 페이지 복원
+  useEffect(() => {
+    const saved = Number(sessionStorage.getItem('flash_page') || '1')
+    if (saved > 1) setCurrentPage(saved)
+  }, [])
+
+  const handlePageChange = (p: number) => {
+    setCurrentPage(p)
+    sessionStorage.setItem('flash_page', String(p))
+  }
+
+  // 필터/탭 변경 시 1페이지 리셋 — 실제로 값이 바뀔 때만 동작
+  const prevFilters = useRef({ flashTab, showEnded, filterSido, filterSigungu, groupFilter })
+  useEffect(() => {
+    const prev = prevFilters.current
+    const changed =
+      prev.flashTab !== flashTab ||
+      prev.showEnded !== showEnded ||
+      prev.filterSido !== filterSido ||
+      prev.filterSigungu !== filterSigungu ||
+      prev.groupFilter !== groupFilter
+    prevFilters.current = { flashTab, showEnded, filterSido, filterSigungu, groupFilter }
+    if (!changed) return
+    setCurrentPage(1)
+    sessionStorage.setItem('flash_page', '1')
+  }, [flashTab, showEnded, filterSido, filterSigungu, groupFilter])
+
   useEffect(() => {
     if (!authLoading && user) setShowAuthModal(false)
   }, [user, authLoading])
@@ -201,11 +228,6 @@ function FlashPageContent() {
     if (authLoading || !user) return
     loadFavoriteRegions()
   }, [user, authLoading])
-
-  // 필터/탭 변경 시 1페이지 리셋
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [flashTab, showEnded, filterSido, filterSigungu, groupFilter])
 
   useEffect(() => {
     setMyCurrentPage(1)
@@ -740,7 +762,7 @@ function FlashPageContent() {
                 <div className="space-y-2">
                   {pagedRuns.map(run => <RunCard key={run.id} run={run} />)}
                 </div>
-                <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} />
+                <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} />
               </>
             )}
           </>
