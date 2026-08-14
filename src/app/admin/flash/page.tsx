@@ -36,7 +36,9 @@ interface FlashReport {
   reporter_id: string
   target_user_id: string
   reason: string
-  detail: string | null
+  content: string | null
+  phone: string | null
+  evidence_url: string | null
   status: ReportStatus
   admin_note: string | null
   reporter_name?: string
@@ -625,6 +627,7 @@ export default function FlashAdminPage() {
         {/* ── 신고 관리 ── */}
         {subTab === 'reports' && (
           <>
+            {/* 상태 필터 */}
             <div className="flex gap-1.5 mb-4 flex-wrap">
               {(['all', 'pending', 'reviewing', 'resolved', 'dismissed'] as const).map(s => (
                 <button
@@ -651,27 +654,37 @@ export default function FlashAdminPage() {
                 <p className="text-sm text-gray-400">신고 내역이 없습니다</p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {filteredReports.map(report => (
-                  <div key={report.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                  <div key={report.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+
+                    {/* 카드 헤더 — 항상 표시 */}
                     <button
                       onClick={() => setExpandedId(expandedId === report.id ? null : report.id)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                      className="w-full text-left px-4 py-3.5 hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${REPORT_STATUS_COLORS[report.status]}`}>
+                          {/* 상태 + 날짜 */}
+                          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                            <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${REPORT_STATUS_COLORS[report.status]}`}>
                               {REPORT_STATUS_LABELS[report.status]}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {new Date(report.created_at).toLocaleDateString('ko-KR')}
+                              {new Date(report.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                             </span>
+                            {report.evidence_url && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 font-medium">증빙 있음</span>
+                            )}
                           </div>
-                          <p className="text-sm font-medium text-gray-800 truncate">{report.reason}</p>
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">
-                            신고자: {report.reporter_name} → 대상: {report.target_name}
-                            {report.run_title && ` | ${report.run_title}`}
+                          {/* 신고 사유 */}
+                          <p className="text-sm font-semibold text-gray-800">{report.reason}</p>
+                          {/* 신고자 → 대상 */}
+                          <p className="text-xs text-gray-400 mt-1">
+                            <span className="text-gray-600 font-medium">{report.reporter_name}</span>
+                            <span className="mx-1">→</span>
+                            <span className="text-gray-600 font-medium">{report.target_name}</span>
+                            {report.run_title && <span className="text-gray-400"> · {report.run_title}</span>}
                           </p>
                         </div>
                         {expandedId === report.id
@@ -681,66 +694,115 @@ export default function FlashAdminPage() {
                       </div>
                     </button>
 
+                    {/* 상세 펼침 */}
                     {expandedId === report.id && (
-                      <div className="border-t border-gray-100 px-4 py-3 space-y-3">
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                          <div><span className="font-medium">플래시:</span> {report.run_title || '-'}</div>
-                          <div><span className="font-medium">날짜:</span> {report.run_date || '-'}</div>
-                          <div><span className="font-medium">신고자:</span> {report.reporter_name}</div>
-                          <div><span className="font-medium">신고 대상:</span> {report.target_name}</div>
+                      <div className="border-t border-gray-100 px-4 py-4 space-y-4">
+
+                        {/* 기본 정보 그리드 */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm bg-gray-50 rounded-lg p-3">
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">플래시</span>
+                            <span className="text-gray-800 text-xs">{report.run_title || '-'}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">날짜</span>
+                            <span className="text-gray-800 text-xs">{report.run_date || '-'}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">신고자</span>
+                            <span className="text-gray-800 text-xs">{report.reporter_name}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">신고 대상</span>
+                            <span className="text-gray-800 text-xs">{report.target_name}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">전화번호</span>
+                            <span className="text-gray-800 text-xs">{report.phone || '-'}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="text-xs font-semibold text-gray-400 w-16 flex-shrink-0 pt-0.5">접수일시</span>
+                            <span className="text-gray-800 text-xs">{new Date(report.created_at).toLocaleString('ko-KR')}</span>
+                          </div>
                         </div>
 
-                        {report.detail && (
+                        {/* 신고 사유 */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-1.5">신고 사유</p>
+                          <p className="text-sm text-gray-800 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">{report.reason}</p>
+                        </div>
+
+                        {/* 신고 내용 */}
+                        <div>
+                          <p className="text-xs font-semibold text-gray-500 mb-1.5">신고 내용</p>
+                          {report.content
+                            ? <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 leading-relaxed whitespace-pre-wrap">{report.content}</p>
+                            : <p className="text-xs text-gray-400 italic">내용 없음</p>
+                          }
+                        </div>
+
+                        {/* 증빙자료 */}
+                        {report.evidence_url && (
                           <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">상세 내용</p>
-                            <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{report.detail}</p>
+                            <p className="text-xs font-semibold text-gray-500 mb-1.5">증빙자료</p>
+                            <a href={report.evidence_url} target="_blank" rel="noopener noreferrer">
+                              <img
+                                src={report.evidence_url}
+                                alt="증빙자료"
+                                className="w-full sm:max-w-sm rounded-lg border border-gray-200 object-cover hover:opacity-90 transition-opacity cursor-pointer"
+                              />
+                            </a>
+                            <p className="text-xs text-gray-400 mt-1">클릭하면 원본 이미지를 볼 수 있습니다</p>
                           </div>
                         )}
 
+                        {/* 관리자 메모 */}
                         <div>
-                          <label className="text-xs font-medium text-gray-500 mb-1 block">관리자 메모</label>
+                          <label className="text-xs font-semibold text-gray-500 mb-1.5 block">관리자 메모</label>
                           <textarea
                             value={adminNote[report.id] || ''}
                             onChange={e => setAdminNote(prev => ({ ...prev, [report.id]: e.target.value }))}
-                            rows={2}
+                            rows={3}
                             placeholder="처리 내용을 메모하세요 (선택)"
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                           />
                         </div>
 
-                        <div className="flex gap-2">
+                        {/* 상태 변경 버튼 */}
+                        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                           <button
                             onClick={() => handleUpdateReportStatus(report.id, 'reviewing')}
                             disabled={updatingId === report.id || report.status === 'reviewing'}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
                           >
-                            {updatingId === report.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Clock className="w-3 h-3" />}
+                            {updatingId === report.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Clock className="w-3.5 h-3.5" />}
                             확인중
                           </button>
                           <button
                             onClick={() => handleUpdateReportStatus(report.id, 'resolved')}
                             disabled={updatingId === report.id || report.status === 'resolved'}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
                           >
-                            {updatingId === report.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                            {updatingId === report.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                             처리완료
                           </button>
                           <button
                             onClick={() => handleUpdateReportStatus(report.id, 'dismissed')}
                             disabled={updatingId === report.id || report.status === 'dismissed'}
-                            className="flex-1 flex items-center justify-center gap-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs font-medium transition-colors disabled:opacity-40"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
                           >
-                            {updatingId === report.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            {updatingId === report.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                             기각
                           </button>
                         </div>
 
+                        {/* 플래시 보기 링크 */}
                         <div className="flex justify-end">
                           <Link
                             href={`/flash/${report.flash_run_id}`}
-                            className="text-xs text-blue-500 hover:text-blue-700 transition-colors"
+                            className="text-xs text-blue-500 hover:text-blue-700 transition-colors underline underline-offset-2"
                           >
-                            플래시 보기 →
+                            플래시 페이지 보기 →
                           </Link>
                         </div>
                       </div>

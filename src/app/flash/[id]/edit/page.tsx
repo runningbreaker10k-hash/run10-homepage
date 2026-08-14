@@ -234,7 +234,7 @@ export default function FlashEditPage() {
                   onChange={() => setSelectedTiers([])}
                   className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-gray-300 rounded flex-shrink-0"
                 />
-                <span className={`text-xs sm:text-sm font-medium whitespace-nowrap ${selectedTiers.length === 0 ? 'text-gray-700' : 'text-gray-500'}`}>모든러너</span>
+                <span className={`text-xs sm:text-sm font-medium whitespace-nowrap ${selectedTiers.length === 0 ? 'text-gray-700' : 'text-gray-500'}`}>모든티어</span>
               </label>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">비슷한 페이스의 러너 또는 전체 러너와 함께 달릴 수 있습니다</p>

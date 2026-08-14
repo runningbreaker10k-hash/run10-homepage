@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
-import { MapPin, Calendar, Plus, Zap, X, FileText } from 'lucide-react'
+import { MapPin, Calendar, Plus, Zap, X, FileText, RefreshCw } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import FlashPopup from '@/components/FlashPopup'
 
@@ -119,7 +119,7 @@ function getTierImage(tier: string[] | null): string {
 }
 
 function RunCard({ run }: { run: FlashRun }) {
-  const tierLabel = (run.tier && run.tier.length > 0) ? run.tier.join(', ') : '모든러너'
+  const tierLabel = (run.tier && run.tier.length > 0) ? run.tier.join(', ') : '모든티어'
   const sidoShortLocal = (s: string) =>
     s.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','').replace('특별자치','')
 
@@ -289,17 +289,16 @@ function FlashPageContent() {
         }
       }
 
-      // 상태 기준 진행/종료 분리 → 각 그룹 내 날짜+시간 정렬
+      // 상태 기준 그룹 분리 → 각 그룹 내 날짜+시간 정렬
+      const asc  = (a: FlashRun, b: FlashRun) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time)
+      const desc = (a: FlashRun, b: FlashRun) => b.run_date.localeCompare(a.run_date) || b.run_time.localeCompare(a.run_time)
+      const open   = result.filter(r => getDisplayStatus(r) === 'open').sort(asc)
+      const closed = result.filter(r => getDisplayStatus(r) === 'closed').sort(asc)
       if (showEnded) {
-        const active = result
-          .filter(r => { const ds = getDisplayStatus(r); return ds === 'open' || ds === 'closed' })
-          .sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
-        const ended = result
-          .filter(r => { const ds = getDisplayStatus(r); return ds === 'completed' || ds === 'cancelled' })
-          .sort((a, b) => b.run_date.localeCompare(a.run_date) || b.run_time.localeCompare(a.run_time))
-        result = [...active, ...ended]
+        const ended = result.filter(r => { const ds = getDisplayStatus(r); return ds === 'completed' || ds === 'cancelled' }).sort(desc)
+        result = [...open, ...closed, ...ended]
       } else {
-        result = result.sort((a, b) => a.run_date.localeCompare(b.run_date) || a.run_time.localeCompare(b.run_time))
+        result = [...open, ...closed]
       }
 
       setFlashRuns(result)
@@ -593,6 +592,14 @@ function FlashPageContent() {
                 />
                 <span className="text-xs text-gray-500 whitespace-nowrap">종료 포함</span>
               </label>
+              <button
+                onClick={loadFlashRuns}
+                disabled={isLoadingFlash}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white text-xs text-gray-500 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingFlash ? 'animate-spin' : ''}`} />
+                새로고침
+              </button>
             </>
           )}
           {groupFilter === 'my' && (
