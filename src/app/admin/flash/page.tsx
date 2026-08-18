@@ -12,7 +12,7 @@ import {
   MapPin, Calendar, Users, Plus, Trash2,
 } from 'lucide-react'
 
-type FlashSubTab = 'runs' | 'reports' | 'seed'
+type FlashSubTab = 'runs' | 'reports' | 'seed' | 'members'
 type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed'
 
 interface FlashRun {
@@ -60,6 +60,13 @@ interface SeedRow {
   maxParticipants: number
   kakaoUrl: string
   distance: string
+}
+
+interface MemberRow {
+  _key: string
+  userId: string
+  password: string
+  name: string
 }
 
 const emptyRow = (): SeedRow => ({
@@ -117,6 +124,47 @@ export default function FlashAdminPage() {
   const [seedRows, setSeedRows]   = useState<SeedRow[]>([emptyRow()])
   const [isGenerating, setIsGenerating] = useState(false)
   const [seedResult, setSeedResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+
+  // 회원 일괄 생성
+  const emptyMemberRow = (): MemberRow => ({ _key: Math.random().toString(36).slice(2), userId: '', password: '', name: '' })
+  const [memberRows, setMemberRows] = useState<MemberRow[]>([emptyMemberRow()])
+  const [isMemberGenerating, setIsMemberGenerating] = useState(false)
+  const [memberResult, setMemberResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+
+  const updateMemberRow = (key: string, field: keyof MemberRow, value: string) =>
+    setMemberRows(prev => prev.map(r => r._key === key ? { ...r, [field]: value } : r))
+
+  const handleMemberBulkCreate = async () => {
+    const validRows = memberRows.filter(r => r.userId.trim() && r.password.trim() && r.name.trim())
+    if (validRows.length === 0) { alert('입력된 행이 없습니다.'); return }
+    setIsMemberGenerating(true)
+    setMemberResult(null)
+    let success = 0
+    const errors: string[] = []
+    for (const row of validRows) {
+      const { error } = await supabase.from('users').insert([{
+        user_id:                row.userId.toLowerCase().trim(),
+        password:               row.password.trim(),
+        name:                   row.name.trim(),
+        postal_code:            '',
+        address1:               '',
+        address2:               '',
+        phone:                  '',
+        phone_verified:         false,
+        phone_marketing_agree:  false,
+        email:                  '',
+        email_marketing_agree:  false,
+        birth_date:             '001122',
+        gender:                 (Math.random() < 0.5 ? 'male' : 'female') as 'male' | 'female',
+        record_time:            0,
+        grade:                  'turtle',
+      }])
+      if (error) errors.push(`${row.userId}: ${error.message}`)
+      else success++
+    }
+    setMemberResult({ success, failed: errors.length, errors })
+    setIsMemberGenerating(false)
+  }
 
   // 신고 관리
   const [reports, setReports] = useState<FlashReport[]>([])
@@ -384,6 +432,7 @@ export default function FlashAdminPage() {
             { key: 'runs',    label: '플래시 목록' },
             { key: 'reports', label: `신고 관리${reportCounts.pending > 0 ? ` (${reportCounts.pending})` : ''}` },
             { key: 'seed',    label: '샘플 생성' },
+            { key: 'members', label: '회원 생성' },
           ] as { key: FlashSubTab; label: string }[]).map(t => (
             <button
               key={t.key}
@@ -649,6 +698,104 @@ export default function FlashAdminPage() {
               {isGenerating
                 ? <><Loader2 className="w-4 h-4 animate-spin" />생성 중...</>
                 : `${seedRows.filter(r => r.userId && r.title && r.sido && r.sigungu && r.locationDetail && r.runDate && r.runTime && r.kakaoUrl).length}개 플래시 생성`
+              }
+            </button>
+          </div>
+        )}
+
+        {/* ── 회원 일괄 생성 ── */}
+        {subTab === 'members' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-100 p-4">
+              <p className="text-sm font-semibold text-gray-800 mb-0.5">회원 일괄 생성</p>
+              <p className="text-xs text-gray-400">행마다 회원 1명이 생성됩니다. 주소·전화번호 등은 빈값으로 처리되며 등급은 터틀족으로 고정됩니다.</p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[120px]">회원ID <span className="text-red-500">*</span></th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[140px]">패스워드 <span className="text-red-500">*</span></th>
+                      <th className="px-3 py-2.5 text-left font-semibold text-gray-500 whitespace-nowrap min-w-[120px]">이름 <span className="text-red-500">*</span></th>
+                      <th className="px-3 py-2.5 min-w-[36px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {memberRows.map(row => (
+                      <tr key={row._key} className="hover:bg-gray-50/50">
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={row.userId}
+                            onChange={e => updateMemberRow(row._key, 'userId', e.target.value)}
+                            placeholder="user01"
+                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 font-mono"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={row.password}
+                            onChange={e => updateMemberRow(row._key, 'password', e.target.value)}
+                            placeholder="pass1234"
+                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400 font-mono"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <input
+                            type="text"
+                            value={row.name}
+                            onChange={e => updateMemberRow(row._key, 'name', e.target.value)}
+                            placeholder="홍길동"
+                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-red-400"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5 text-center">
+                          <button
+                            onClick={() => setMemberRows(prev => prev.filter(r => r._key !== row._key))}
+                            disabled={memberRows.length === 1}
+                            className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="border-t border-gray-100 px-3 py-2">
+                <button
+                  onClick={() => setMemberRows(prev => [...prev, emptyMemberRow()])}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  행 추가
+                </button>
+              </div>
+            </div>
+
+            {memberResult && (
+              <div className={`p-3 rounded-lg text-sm ${memberResult.failed === 0 ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                <p className="font-medium">✓ {memberResult.success}명 생성 완료{memberResult.failed > 0 ? ` / ${memberResult.failed}명 실패` : ''}</p>
+                {memberResult.errors.length > 0 && (
+                  <ul className="mt-1.5 space-y-0.5">
+                    {memberResult.errors.map((e, i) => <li key={i} className="text-xs opacity-80">• {e}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={handleMemberBulkCreate}
+              disabled={isMemberGenerating}
+              className="w-full py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+            >
+              {isMemberGenerating
+                ? <><Loader2 className="w-4 h-4 animate-spin" />생성 중...</>
+                : `${memberRows.filter(r => r.userId.trim() && r.password.trim() && r.name.trim()).length}명 회원 생성`
               }
             </button>
           </div>
