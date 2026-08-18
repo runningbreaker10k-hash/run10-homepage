@@ -482,7 +482,7 @@ function FlashPageContent() {
           <div className="text-lg md:text-xl text-red-100 max-w-2xl mx-auto space-y-1">
             <p>누구나 언제나 어디서나</p>
             <p>쿨하고 안전하고 설레게</p>
-            <p>새로운 사람들과 함께 달린다</p>
+            <p className="font-bold">새로운 사람들과 달린다</p>
           </div>
         </div>
       </section>
