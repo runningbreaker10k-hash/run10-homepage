@@ -79,33 +79,62 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // 컴포넌트 마운트 시 저장된 사용자 정보 복원
   // 우선순위: localStorage (자동 로그인) → sessionStorage
   useEffect(() => {
-    // 1. 자동 로그인 확인 (localStorage)
-    const autoLoginUser = localStorage.getItem('user')
-    if (autoLoginUser) {
-      try {
-        const userData = JSON.parse(autoLoginUser)
-        setUser(userData)
-        setIsLoading(false)
-        return
-      } catch (error) {
-        console.error('자동 로그인 복원 오류:', error)
-        localStorage.removeItem('user')
-        localStorage.removeItem('autoLogin')
+    const restoreSession = async () => {
+      // 1. 자동 로그인 확인 (localStorage)
+      const autoLoginUser = localStorage.getItem('user')
+      if (autoLoginUser) {
+        try {
+          const userData = JSON.parse(autoLoginUser)
+
+          // admin 계정은 DB 비밀번호와 비교하여 세션 유효성 검증
+          if (userData.role === 'admin') {
+            const passwordCheck = localStorage.getItem('admin_password_check')
+            if (!passwordCheck) {
+              localStorage.removeItem('user')
+              localStorage.removeItem('autoLogin')
+              setIsLoading(false)
+              return
+            }
+            const { data: dbUser, error } = await supabase
+              .from('users')
+              .select('password')
+              .eq('id', userData.id)
+              .single()
+            if (error || !dbUser || dbUser.password !== passwordCheck) {
+              localStorage.removeItem('user')
+              localStorage.removeItem('autoLogin')
+              localStorage.removeItem('admin_password_check')
+              setIsLoading(false)
+              return
+            }
+          }
+
+          setUser(userData)
+          setIsLoading(false)
+          return
+        } catch (error) {
+          console.error('자동 로그인 복원 오류:', error)
+          localStorage.removeItem('user')
+          localStorage.removeItem('autoLogin')
+          localStorage.removeItem('admin_password_check')
+        }
       }
+
+      // 2. 일반 세션 확인 (sessionStorage)
+      const savedUser = sessionStorage.getItem('user')
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser)
+          setUser(userData)
+        } catch (error) {
+          console.error('사용자 정보 복원 오류:', error)
+          sessionStorage.removeItem('user')
+        }
+      }
+      setIsLoading(false)
     }
 
-    // 2. 일반 세션 확인 (sessionStorage)
-    const savedUser = sessionStorage.getItem('user')
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser)
-        setUser(userData)
-      } catch (error) {
-        console.error('사용자 정보 복원 오류:', error)
-        sessionStorage.removeItem('user')
-      }
-    }
-    setIsLoading(false)
+    restoreSession()
   }, [])
 
   // 사용자가 로그인되면 localStorage의 UTM 데이터를 DB에 저장
@@ -173,6 +202,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     sessionStorage.removeItem('user')
     localStorage.removeItem('user')
     localStorage.removeItem('autoLogin')
+    localStorage.removeItem('admin_password_check')
   }
 
   // 사용자 정보 업데이트 함수

@@ -120,6 +120,9 @@ export default function LoginForm({ onSuccess, onShowSignup }: LoginFormProps) {
       if (autoLogin) {
         localStorage.setItem('user', JSON.stringify(user))
         localStorage.setItem('autoLogin', 'true')
+        if (user.role === 'admin') {
+          localStorage.setItem('admin_password_check', data.password)
+        }
       } else {
         sessionStorage.setItem('user', JSON.stringify(user))
       }
