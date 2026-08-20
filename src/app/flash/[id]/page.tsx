@@ -7,6 +7,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { MapPin, Users, Calendar, User, ArrowLeft, MessageCircle, Zap, Loader2, Activity, Pencil, X, ZoomIn, ThumbsUp, Siren } from 'lucide-react'
 
+function isIosApp(): boolean {
+  if (typeof window === 'undefined') return false
+  return navigator.userAgent.toLowerCase().includes('iosapp')
+}
+
+function openKakaoUrl(e: React.MouseEvent<HTMLAnchorElement>, url: string) {
+  if (isIosApp()) {
+    e.preventDefault()
+    window.location.href = url
+  }
+}
+
 interface FlashRun {
   id: string
   creator_id: string
@@ -632,6 +644,7 @@ function FlashDetailContent() {
                       href={run.kakao_chat_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => openKakaoUrl(e, run.kakao_chat_url)}
                       className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-sm transition-colors"
                     >
                       <MessageCircle className="w-4 h-4" />
