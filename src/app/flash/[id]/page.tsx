@@ -12,13 +12,6 @@ function isIosApp(): boolean {
   return navigator.userAgent.toLowerCase().includes('iosapp')
 }
 
-function openKakaoUrl(e: React.MouseEvent<HTMLAnchorElement>, url: string) {
-  if (isIosApp()) {
-    e.preventDefault()
-    window.location.href = url
-  }
-}
-
 interface FlashRun {
   id: string
   creator_id: string
@@ -74,6 +67,7 @@ function FlashDetailContent() {
   const [myReportedUserIds, setMyReportedUserIds] = useState<Set<string>>(new Set())
   const [likingUserId, setLikingUserId] = useState<string | null>(null)
   const [reportTargetUserId, setReportTargetUserId] = useState<string | null>(null)
+  const [showKakaoModal, setShowKakaoModal] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -411,6 +405,34 @@ function FlashDetailContent() {
         </div>
       )}
 
+      {/* 카카오 오픈채팅 연결 모달 (iOS 앱 전용) */}
+      {showKakaoModal && run && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <MessageCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+              <p className="text-sm font-semibold text-gray-800">카카오 오픈채팅</p>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">카카오톡 오픈채팅으로 연결하시겠습니까?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowKakaoModal(false)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <a
+                href={run.kakao_chat_url}
+                className="flex-1 py-2.5 rounded-lg bg-yellow-400 text-yellow-900 text-sm font-medium text-center hover:bg-yellow-500"
+                onClick={() => setShowKakaoModal(false)}
+              >
+                확인
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 신고 확인 모달 */}
       {reportTargetUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -640,16 +662,25 @@ function FlashDetailContent() {
               <div className="space-y-2">
                 {isParticipant ? (
                   <>
-                    <a
-                      href={run.kakao_chat_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => openKakaoUrl(e, run.kakao_chat_url)}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-sm transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      카카오 오픈채팅 대화하기
-                    </a>
+                    {isIosApp() ? (
+                      <button
+                        onClick={() => setShowKakaoModal(true)}
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-sm transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        카카오 오픈채팅 대화하기
+                      </button>
+                    ) : (
+                      <a
+                        href={run.kakao_chat_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-sm transition-colors"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        카카오 오픈채팅 대화하기
+                      </a>
+                    )}
                     {!isCreator && (
                       <button
                         onClick={handleLeave}
