@@ -421,13 +421,15 @@ function FlashDetailContent() {
               >
                 취소
               </button>
-              <a
-                href={run.kakao_chat_url}
+              <button
                 className="flex-1 py-2.5 rounded-lg bg-yellow-400 text-yellow-900 text-sm font-medium text-center hover:bg-yellow-500"
-                onClick={() => setShowKakaoModal(false)}
+                onClick={() => {
+                  window.open(run.kakao_chat_url, '_system')
+                  setShowKakaoModal(false)
+                }}
               >
                 확인
-              </a>
+              </button>
             </div>
           </div>
         </div>
