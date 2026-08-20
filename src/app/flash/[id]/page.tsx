@@ -423,23 +423,16 @@ function FlashDetailContent() {
               </button>
               <button
                 className="flex-1 py-2.5 rounded-lg bg-yellow-400 text-yellow-900 text-sm font-medium text-center hover:bg-yellow-500"
-                onClick={() => {
+                onClick={async () => {
                   const url = run.kakao_chat_url
-                  const actions = ['openBrowser', 'openURL', 'openExternal', 'open']
-                  let sent = false
-                  if (window.webkit?.messageHandlers?.cordova_iab) {
-                    for (const action of actions) {
-                      try {
-                        window.webkit.messageHandlers.cordova_iab.postMessage(
-                          JSON.stringify({ action, url })
-                        )
-                        sent = true
-                        break
-                      } catch {}
-                    }
-                  }
-                  if (!sent) window.location.href = url
                   setShowKakaoModal(false)
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({ url })
+                    } catch {}
+                  } else {
+                    window.location.href = url
+                  }
                 }}
               >
                 확인
