@@ -31,9 +31,10 @@ export default function AboutPage() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 RUN10</h1>
-          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
-            전국의 러너들이 함께 달리며 건강한 러닝 문화를 만들어 가겠습니다
-          </p>
+          <div className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto space-y-1">
+            <p>전국의 러너들이 함께 달리며</p>
+            <p>건강한 러닝 문화를 만들어 가겠습니다</p>
+          </div>
         </div>
       </section>
 

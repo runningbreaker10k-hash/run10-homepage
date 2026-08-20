@@ -248,9 +248,10 @@ export default function CompetitionsPage() {
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 대회</h1>
-          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
-            PB(Personal Best) 달성이 쉬운 가장 확실한 공식 대회
-          </p>
+          <div className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto space-y-1">
+            <p>PB(Personal Best) 달성이 쉬운</p>
+            <p>가장 확실한 공식 대회</p>
+          </div>
         </div>
       </section>
 
