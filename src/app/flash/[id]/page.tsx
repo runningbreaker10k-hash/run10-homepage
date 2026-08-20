@@ -423,13 +423,12 @@ function FlashDetailContent() {
               </button>
               <button
                 className="flex-1 py-2.5 rounded-lg bg-yellow-400 text-yellow-900 text-sm font-medium text-center hover:bg-yellow-500"
-                onClick={async () => {
+                onClick={() => {
                   const url = run.kakao_chat_url
                   setShowKakaoModal(false)
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({ url })
-                    } catch {}
+                  const chatId = url.split('/o/')[1]
+                  if (chatId) {
+                    window.location.href = `kakaoopen://join?l=${chatId}`
                   } else {
                     window.location.href = url
                   }
