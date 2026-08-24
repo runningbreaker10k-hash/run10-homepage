@@ -118,15 +118,15 @@ function getTierImage(tier: string[] | null): string {
   return `/images/flash/tire/${sorted.length}flash_${letters}.jpg`
 }
 
-function RunCard({ run }: { run: FlashRun }) {
+function RunCard({ run, onClick }: { run: FlashRun; onClick: () => void }) {
   const tierLabel = (run.tier && run.tier.length > 0) ? run.tier.join(', ') : '모든티어'
   const sidoShortLocal = (s: string) =>
     s.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','').replace('특별자치','')
 
   return (
-    <Link
-      href={`/flash/${run.id}`}
-      className="flex items-center gap-3 sm:gap-6 bg-white rounded-lg p-3 sm:p-4 min-h-[110px] sm:min-h-[144px] shadow-md hover:shadow-lg transition-shadow active:bg-gray-50"
+    <div
+      onClick={onClick}
+      className="flex items-center gap-3 sm:gap-6 bg-white rounded-lg p-3 sm:p-4 min-h-[110px] sm:min-h-[144px] shadow-md hover:shadow-lg transition-shadow active:bg-gray-50 cursor-pointer"
     >
       <img src={getTierImage(run.tier)} alt="" className="w-[60px] h-[66px] sm:w-[86px] sm:h-[95px] object-contain flex-shrink-0" />
       <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5 sm:gap-1">
@@ -148,7 +148,7 @@ function RunCard({ run }: { run: FlashRun }) {
         </div>
       </div>
       <StatusBadge run={run} />
-    </Link>
+    </div>
   )
 }
 
@@ -158,10 +158,10 @@ function FlashPageContent() {
 
   // 로그인 모달
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   // 이용가이드 모달
-  const [guideOpen, setGuideOpen]   = useState(false)
-  const [guideIndex, setGuideIndex] = useState(0)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   // 그룹 & 탭
   const [groupFilter, setGroupFilter] = useState<GroupFilter>('flash')
@@ -233,11 +233,19 @@ function FlashPageContent() {
     setMyCurrentPage(1)
   }, [myTab])
 
-  // 런텐플래시 탭 데이터 로드
+  // 비로그인 시 탭 초기화
   useEffect(() => {
-    if (authLoading || !user || groupFilter !== 'flash') return
+    if (!user && !authLoading) {
+      setGroupFilter('flash')
+      setFlashTab('all')
+    }
+  }, [user, authLoading])
+
+  // 런텐플래시 탭 데이터 로드 (비로그인도 허용)
+  useEffect(() => {
+    if (authLoading || groupFilter !== 'flash') return
     loadFlashRuns()
-  }, [user, authLoading, groupFilter, flashTab, showEnded, favoriteRegions, filterSido, filterSigungu])
+  }, [authLoading, groupFilter, flashTab, showEnded, favoriteRegions, filterSido, filterSigungu])
 
   // 마이플래시 탭 데이터 로드
   useEffect(() => {
@@ -407,44 +415,6 @@ function FlashPageContent() {
     )
   }
 
-  if (!user) {
-    return (
-      <>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 className="text-xl font-black text-gray-900 mb-2">런텐 플래시</h2>
-            <p className="text-gray-500 text-sm leading-relaxed mb-6">
-              로그인 후 이용 가능한 서비스입니다.<br />
-              로그인하고 런텐플래시에 참여해보세요!
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => router.push('/')}
-                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
-              >
-                돌아가기
-              </button>
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors"
-              >
-                로그인하기
-              </button>
-            </div>
-          </div>
-        </div>
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          defaultTab="login"
-        />
-      </>
-    )
-  }
-
   const sidoShort = (s: string) =>
     s.replace('특별시','').replace('광역시','').replace('특별자치시','').replace('특별자치도','').replace('특별자치','')
 
@@ -467,6 +437,41 @@ function FlashPageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <FlashPopup />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        defaultTab="login"
+      />
+
+      {/* 로그인 유도 모달 */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-2">런텐 플래시</h2>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+              로그인 후 이용 가능한 서비스입니다.<br />
+              로그인하고 런텐플래시에 참여해보세요!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
+              >
+                돌아가기
+              </button>
+              <button
+                onClick={() => { setShowLoginPrompt(false); setShowAuthModal(true) }}
+                className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors"
+              >
+                로그인하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 히어로 */}
       <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
@@ -491,11 +496,11 @@ function FlashPageContent() {
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <div className="bg-red-50 border border-red-100 rounded-xl p-4">
           <button
-            onClick={() => { setGuideIndex(0); setGuideOpen(true) }}
+            onClick={() => setGuideOpen(true)}
             className="w-full flex items-center justify-center gap-2 py-2.5 bg-white rounded-lg border border-red-100 hover:border-red-300 active:bg-red-50 transition-colors"
           >
             <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
-            <span className="text-sm sm:text-base md:text-lg font-medium text-gray-700">꼭 읽고 참여하세요!</span>
+            <span className="text-sm sm:text-base md:text-lg font-medium text-gray-700">런텐플래시 참가자 필독</span>
           </button>
         </div>
 
@@ -525,27 +530,10 @@ function FlashPageContent() {
                 </button>
               </div>
 
-              {/* 탭 — 고정, 균등 분할 */}
-              <div className="flex border-b border-gray-200 mt-3 flex-shrink-0">
-                {['런텐플래시란?', '신고하기란?'].map((label, i) => (
-                  <button
-                    key={label}
-                    onClick={() => setGuideIndex(i)}
-                    className={`flex-1 py-3 text-sm sm:text-base font-medium border-b-2 transition-colors text-center leading-tight px-1 ${
-                      guideIndex === i
-                        ? 'border-red-600 text-red-600'
-                        : 'border-transparent text-gray-400 hover:text-gray-700'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
               {/* 이미지 — 스크롤, 상단 기준 정렬 */}
               <div className="overflow-y-auto flex-1 p-3 sm:p-4 flex flex-col justify-start">
                 <img
-                  src={`/images/flash/anno/0${guideIndex + 1}.jpg`}
+                  src="/images/flash/anno/03.jpg"
                   alt="런텐 플래시 안내"
                   className="w-full block"
                 />
@@ -561,7 +549,7 @@ function FlashPageContent() {
           <div className="flex">
             {([
               { key: 'flash', label: '런텐플래시' },
-              { key: 'my',    label: '마이플래시' },
+              ...(user ? [{ key: 'my', label: '마이플래시' }] : []),
             ] as { key: GroupFilter; label: string }[]).map(g => (
               <button
                 key={g.key}
@@ -576,13 +564,13 @@ function FlashPageContent() {
               </button>
             ))}
           </div>
-          <Link
-            href="/flash/new"
+          <button
+            onClick={() => { if (!user) { setShowLoginPrompt(true); return } router.push('/flash/new') }}
             className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 mb-1 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
           >
             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
             플래시 만들기
-          </Link>
+          </button>
         </div>
 
         {/* 하위 필터 */}
@@ -591,7 +579,7 @@ function FlashPageContent() {
             <>
               {([
                 { key: 'all',      label: '전체지역' },
-                { key: 'interest', label: '관심지역' },
+                ...(user ? [{ key: 'interest', label: '관심지역' }] : []),
               ] as { key: FlashTab; label: string }[]).map(t => (
                 <button
                   key={t.key}
@@ -651,9 +639,11 @@ function FlashPageContent() {
           <p className="text-sm font-semibold text-gray-700">
             {groupFilter === 'flash'
               ? (flashTab === 'all' ? '전체지역의 플래시' : '관심지역에서의 플래시')
-              : (myTab === 'created'
-                  ? `${user.name}${iParticle(user.name)} 만든 플래시`
-                  : `${user.name}${iParticle(user.name)} 참여한 타인의 플래시`)}
+              : user
+                ? (myTab === 'created'
+                    ? `${user!.name}${iParticle(user!.name)} 만든 플래시`
+                    : `${user!.name}${iParticle(user!.name)} 참여한 타인의 플래시`)
+                : ''}
           </p>
         </div>
 
@@ -760,7 +750,7 @@ function FlashPageContent() {
             ) : (
               <>
                 <div className="space-y-2">
-                  {pagedRuns.map(run => <RunCard key={run.id} run={run} />)}
+                  {pagedRuns.map(run => <RunCard key={run.id} run={run} onClick={() => { if (!user) { setShowLoginPrompt(true); return } router.push(`/flash/${run.id}`) }} />)}
                 </div>
                 <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} />
               </>
@@ -788,7 +778,7 @@ function FlashPageContent() {
             ) : (
               <>
                 <div className="space-y-2">
-                  {pagedMyRuns.map(run => <RunCard key={run.id} run={run} />)}
+                  {pagedMyRuns.map(run => <RunCard key={run.id} run={run} onClick={() => router.push(`/flash/${run.id}`)} />)}
                 </div>
                 <Pagination current={myCurrentPage} total={myTotalPages} onChange={setMyCurrentPage} />
               </>

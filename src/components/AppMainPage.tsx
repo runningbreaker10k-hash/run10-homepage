@@ -70,8 +70,8 @@ export default function AppMainPage() {
             런텐 대회
           </h2>
           <div className="mb-6">
-            <p className="text-sm sm:text-base text-gray-300 mb-0.5">전국 러닝 성지에서 펼쳐지는 수천명의</p>
-            <p className="text-sm sm:text-base text-gray-300">가장 안전하고 깔끔한 10km 레이스</p>
+            <p className="text-sm sm:text-base text-gray-300 mb-0.5">전국 러닝 성지에서 펼쳐지는</p>
+            <p className="text-sm sm:text-base text-gray-300">10km 공식 인증 대회</p>
           </div>
           <div className="mb-6">
             <Image
@@ -88,7 +88,7 @@ export default function AppMainPage() {
             href="/competitions"
             className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
           >
-            대회 확인하기
+            대회 일정 확인하기
           </Link>
         </div>
       </section>

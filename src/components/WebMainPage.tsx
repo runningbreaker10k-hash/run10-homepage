@@ -189,8 +189,8 @@ export default function WebMainPage() {
             런텐 대회
           </h2>
           <div className="mb-8 sm:mb-10 lg:mb-12">
-            <p className="text-base sm:text-lg text-gray-300 mb-1">전국 러닝 성지에서 펼쳐지는 수천명의</p>
-            <p className="text-base sm:text-lg text-gray-300">가장 안전하고 깔끔한 10km 레이스</p>
+            <p className="text-base sm:text-lg text-gray-300 mb-1">전국 러닝 성지에서 펼쳐지는</p>
+            <p className="text-base sm:text-lg text-gray-300">10km 공식 인증 대회</p>
           </div>
           {/* 모바일용 이미지 */}
           <div className="block md:hidden max-w-md mx-auto mb-8 sm:mb-10">
@@ -220,7 +220,7 @@ export default function WebMainPage() {
             href="/competitions"
             className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
           >
-            대회 확인하기
+            대회 일정 확인하기
           </Link>
         </div>
       </section>
