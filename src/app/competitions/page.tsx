@@ -215,7 +215,7 @@ export default function CompetitionsPage() {
           <div className="bg-white rounded-full px-3 py-0.5 mb-1">
             <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">마감 임박</span>
           </div>
-          <p className="text-white text-[10px] leading-tight whitespace-nowrap">선착순 {participants}</p>
+          <p className="text-white leading-tight whitespace-nowrap" style={{ fontSize: '12px', letterSpacing: '-0.04em' }}>선착순 {participants}</p>
         </div>
       )
     }
@@ -228,7 +228,7 @@ export default function CompetitionsPage() {
         <div className="bg-white rounded-full px-3 py-0.5 mb-1">
           <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">접수 중</span>
         </div>
-        <p className="text-white text-[10px] leading-tight whitespace-nowrap">선착순 {participants}</p>
+        <p className="text-white leading-tight whitespace-nowrap" style={{ fontSize: '12px', letterSpacing: '-0.04em' }}>선착순 {participants}</p>
       </div>
     )
   }
@@ -460,22 +460,22 @@ export default function CompetitionsPage() {
                   </div>
 
                   {/* 중단 바 - 좌우 분리 */}
-                  <div className="flex items-stretch min-h-[56px]">
-                    {/* 좌측 (4/6) */}
+                  <div className="flex items-stretch min-h-[64px]">
+                    {/* 좌측 */}
                     <div className={`flex-[4] px-3 py-1.5 flex flex-col justify-center min-w-0 ${
                       isClosed ? 'bg-[#2C3241]'
                       : isOngoing ? 'bg-[#E7000B]'
                       : 'bg-[#4E84FC]'
                     }`}>
-                      <p className="text-white/60 text-sm font-medium leading-none mb-1">
+                      <p className="text-base font-bold leading-none mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
                         {isUpcoming ? `${new Date(competition.date).getFullYear()}-0000` : getCompetitionNumber(competition.date)}
                       </p>
                       <h3 className="text-white text-lg font-bold truncate">
                         {competition.title}
                       </h3>
                     </div>
-                    {/* 우측 (2/6) */}
-                    <div className={`flex-[2] flex items-center justify-center px-2 py-1.5 ${
+                    {/* 우측 */}
+                    <div className={`flex-[1.6] flex items-center justify-center px-2 py-1.5 ${
                       isClosed ? 'bg-[#121212]'
                       : isOngoing ? 'bg-[#B50B14]'
                       : 'bg-[#3E6ACA]'
@@ -485,7 +485,7 @@ export default function CompetitionsPage() {
                   </div>
 
                   {/* 하단 정보 */}
-                  <div className="px-4 py-4 space-y-2.5 bg-white">
+                  <div className="px-3 py-3 space-y-2.5 bg-white">
                     <div className="text-sm text-gray-600 flex">
                       <span className="font-semibold text-gray-800 w-12 flex-shrink-0">종목</span>
                       <span className="flex-1">{getDistancesText(competition)}</span>
