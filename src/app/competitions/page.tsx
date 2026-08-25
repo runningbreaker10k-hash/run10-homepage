@@ -68,7 +68,7 @@ export default function CompetitionsPage() {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}${day}`
+    return `${year}${month}${day}`
   }
 
   // 상반기/하반기 구분 (월 기준, 1~6월: 상반기, 7~12월: 하반기)
@@ -260,8 +260,8 @@ export default function CompetitionsPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 대회</h1>
           <div className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto space-y-1">
-            <p>PB(Personal Best) 달성이 쉬운</p>
-            <p>가장 확실한 공식 대회</p>
+            <p>전국 러닝 성지에서 펼쳐지는</p>
+            <p>10km 공식 인증 대회</p>
           </div>
         </div>
       </section>
@@ -450,10 +450,10 @@ export default function CompetitionsPage() {
                     {/* 차수 메달 (좌측 중앙) */}
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20">
                       <Image
-                        src={`/images/medal/${medalIndex}.png`}
+                        src={`/images/medal2/${medalIndex}.png`}
                         alt={`${competitionOrderMap[competition.id]}차 대회`}
-                        width={72}
-                        height={80}
+                        width={81}
+                        height={90}
                         className="drop-shadow-lg"
                       />
                     </div>
@@ -468,7 +468,7 @@ export default function CompetitionsPage() {
                       : 'bg-[#4E84FC]'
                     }`}>
                       <p className="text-base font-bold leading-none mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                        {isUpcoming ? `${new Date(competition.date).getFullYear()}-0000` : getCompetitionNumber(competition.date)}
+                        {isUpcoming ? `${new Date(competition.date).getFullYear()}0000` : getCompetitionNumber(competition.date)}
                       </p>
                       <h3 className="text-white text-lg font-bold truncate">
                         {competition.title}

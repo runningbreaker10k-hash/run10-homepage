@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Edit, Trash2, MessageSquare, Send, Eye, Pin, ArrowLeft } from 'lucide-react'
+import { X, Edit, Trash2, MessageSquare, Send, Eye, Pin, ArrowLeft, Image } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatKST } from '@/lib/dateUtils'
 import { useAuth } from '@/contexts/AuthContext'
@@ -40,6 +40,9 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     post_password: post?.post_password || ''
   })
   const [editPasswordConfirm, setEditPasswordConfirm] = useState('')
+  const [editCurrentImageUrl, setEditCurrentImageUrl] = useState<string | null>(null)
+  const [editSelectedImage, setEditSelectedImage] = useState<File | null>(null)
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAdminReply, setShowAdminReply] = useState(false)
   const [replies, setReplies] = useState<any[]>([])
@@ -247,7 +250,42 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     }
     setEditFormData(newFormData)
     setEditPasswordConfirm(post.post_password || '')
+    setEditCurrentImageUrl(post.image_url || null)
+    setEditSelectedImage(null)
+    setEditImagePreview(null)
     setIsEditing(true)
+  }
+
+  const handleEditImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      alert('이미지 크기는 5MB 이하여야 합니다')
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드 가능합니다')
+      return
+    }
+    setEditSelectedImage(file)
+    const reader = new FileReader()
+    reader.onload = (e) => setEditImagePreview(e.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const uploadEditImage = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `community/${fileName}`
+      const { error } = await supabase.storage.from('competition-images').upload(filePath, file)
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('competition-images').getPublicUrl(filePath)
+      return publicUrl
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error)
+      return null
+    }
   }
 
   const handleDeleteRequest = () => {
@@ -340,6 +378,18 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
     setIsSubmitting(true)
 
     try {
+      let finalImageUrl = editCurrentImageUrl
+
+      if (editSelectedImage) {
+        const uploadedUrl = await uploadEditImage(editSelectedImage)
+        if (!uploadedUrl) {
+          alert('이미지 업로드에 실패했습니다')
+          setIsSubmitting(false)
+          return
+        }
+        finalImageUrl = uploadedUrl
+      }
+
       // 통합 시스템에서는 모든 게시글이 community_posts 테이블에 저장됨
       const { error } = await supabase
         .from('community_posts')
@@ -349,6 +399,7 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
           is_notice: editFormData.is_notice,
           is_private: editFormData.is_private,
           post_password: editFormData.is_private ? editFormData.post_password : null,
+          image_url: finalImageUrl,
           // 로컬 타임존으로 업데이트 시간 설정 (UTC 변환 방지)
           updated_at: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString()
         })
@@ -549,6 +600,44 @@ export default function PostDetailModal({ isOpen, onClose, post, onPostUpdated, 
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                {/* 이미지 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 첨부 (선택)</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-3">
+                    {editCurrentImageUrl && !editSelectedImage && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1">현재 이미지:</p>
+                        <div className="relative inline-block">
+                          <img src={editCurrentImageUrl} alt="현재 이미지" className="max-w-full h-32 object-cover rounded-lg border border-gray-300" />
+                          <button type="button" onClick={() => setEditCurrentImageUrl(null)} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {editSelectedImage ? (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">새 이미지 미리보기:</p>
+                        <div className="relative inline-block">
+                          <img src={editImagePreview!} alt="미리보기" className="max-w-full h-32 object-cover rounded-lg border border-gray-300" />
+                          <button type="button" onClick={() => { setEditSelectedImage(null); setEditImagePreview(null) }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <input id="edit-image-input" type="file" accept="image/*" onChange={handleEditImageSelect} className="hidden" />
+                        <label htmlFor="edit-image-input" className="flex items-center gap-2 cursor-pointer text-blue-600 hover:text-blue-500 text-sm">
+                          <Image className="w-4 h-4" />
+                          {editCurrentImageUrl ? '새 이미지로 교체' : '이미지 선택'}
+                        </label>
+                        <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF (최대 5MB)</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>

@@ -5677,10 +5677,16 @@ export default function AdminPage() {
                               // Excel 데이터 준비
                               const data = selectedRefundData.map(r => {
                                 const status = pendingRefunds.includes(r.id) ? 'processing' : r.status
+                                const shortTitle = r.competition_title?.replace('JUST RUN10 ', '') || ''
                                 return {
+                                  '01': r.bank_name || '-',
+                                  '02': r.account_number || '-',
+                                  '03': r.amount || '-',
+                                  '04': shortTitle ? `${r.name || ''}(${shortTitle}환불)` : (r.name || '-'),
+                                  '05': shortTitle ? `런텐 ${shortTitle} 환불` : '-',
                                   '이름': r.name || '-',
                                   '연락처': r.phone || '-',
-                                  '대회': r.competition_title?.replace('JUST RUN10 ', '') || '-',
+                                  '대회': shortTitle || '-',
                                   '거리': r.distance || '-',
                                   '금액': r.amount || '-',
                                   '은행': r.bank_name || '-',
@@ -6035,21 +6041,30 @@ export default function AdminPage() {
                             : filteredChanges
 
                           // Excel 데이터 준비
-                          const data = dataToExport.map(r => ({
-                            '신청자': r.name || '-',
-                            '연락처': r.phone || '-',
-                            '대회': r.competition_title?.replace('JUST RUN10 ', '') || '-',
-                            '현재 종목': r.change_type === 'distance' ? (r.current_distance || '-') : (r.current_shirt_size || '-'),
-                            '변경 종목': r.change_type === 'distance' ? (r.requested_distance || '-') : (r.requested_shirt_size || '-'),
-                            '관련내용': r.change_type === 'distance'
-                              ? (r.bank_name ? '환불: ₩5,000' : '추가 입금: ₩5,000')
-                              : '-',
-                            '환불 은행': (r.change_type === 'distance' && r.bank_name) ? r.bank_name : '-',
-                            '환불 계좌': (r.change_type === 'distance' && r.account_number) ? r.account_number : '-',
-                            '환불 예금주': (r.change_type === 'distance' && r.account_holder) ? r.account_holder : '-',
-                            '요청일': formatKST(r.created_at, 'yyyy.MM.dd'),
-                            '상태': r.status === 'pending' ? '대기' : r.status === 'approved' ? '승인' : '거절'
-                          }))
+                          const data = dataToExport.map(r => {
+                            const shortTitle = r.competition_title?.replace('JUST RUN10 ', '') || ''
+                            const isRefund = r.change_type === 'distance' && !!r.bank_name
+                            return {
+                              '01': isRefund ? (r.bank_name || '-') : '-',
+                              '02': isRefund ? (r.account_number || '-') : '-',
+                              '03': isRefund ? 5000 : '-',
+                              '04': isRefund && shortTitle ? `${r.name || ''}(${shortTitle}환불)` : '-',
+                              '05': isRefund && shortTitle ? `런텐 ${shortTitle} 환불` : '-',
+                              '신청자': r.name || '-',
+                              '연락처': r.phone || '-',
+                              '대회': shortTitle || '-',
+                              '현재 종목': r.change_type === 'distance' ? (r.current_distance || '-') : (r.current_shirt_size || '-'),
+                              '변경 종목': r.change_type === 'distance' ? (r.requested_distance || '-') : (r.requested_shirt_size || '-'),
+                              '관련내용': r.change_type === 'distance'
+                                ? (r.bank_name ? '환불: ₩5,000' : '추가 입금: ₩5,000')
+                                : '-',
+                              '환불 은행': isRefund ? r.bank_name : '-',
+                              '환불 계좌': isRefund ? (r.account_number || '-') : '-',
+                              '환불 예금주': isRefund ? (r.account_holder || '-') : '-',
+                              '요청일': formatKST(r.created_at, 'yyyy.MM.dd'),
+                              '상태': r.status === 'pending' ? '대기' : r.status === 'approved' ? '승인' : '거절'
+                            }
+                          })
 
                           // Excel 워크북 생성
                           const worksheet = XLSX.utils.json_to_sheet(data)

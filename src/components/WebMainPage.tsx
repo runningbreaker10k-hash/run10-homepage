@@ -145,7 +145,7 @@ export default function WebMainPage() {
         {/* 웹: 1800:500 비율 고정, 좌우 미세 크롭 */}
         <div className="hidden md:block relative w-full" style={{ aspectRatio: '1800/500' }}>
           <Image
-            src="/images/main_bg.jpg"
+            src="/images/main_bg_260825.jpg"
             alt="러너 배경"
             fill
             className="object-cover"
@@ -186,7 +186,7 @@ export default function WebMainPage() {
       <section className="py-12 sm:py-16 lg:py-20 bg-[#051735] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-red-600 mb-3 sm:mb-4">
-            런텐 대회
+            전국 런텐 대회
           </h2>
           <div className="mb-8 sm:mb-10 lg:mb-12">
             <p className="text-base sm:text-lg text-gray-300 mb-1">전국 러닝 성지에서 펼쳐지는</p>

@@ -53,7 +53,7 @@ export default function AppMainPage() {
       {/* Hero Section */}
       <section className="relative w-full">
         <Image
-          src="/images/main_bg_m.jpg"
+          src="/images/main_bg_m_260825.jpg"
           alt="러너 배경"
           width={800}
           height={1200}
@@ -67,7 +67,7 @@ export default function AppMainPage() {
       <section className="py-8 px-4 bg-[#051735] text-white">
         <div className="max-w-md mx-auto text-center">
           <h2 className="text-2xl font-black text-red-600 mb-2">
-            런텐 대회
+            전국 런텐 대회
           </h2>
           <div className="mb-6">
             <p className="text-sm sm:text-base text-gray-300 mb-0.5">전국 러닝 성지에서 펼쳐지는</p>
