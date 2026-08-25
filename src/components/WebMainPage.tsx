@@ -115,7 +115,7 @@ export default function WebMainPage() {
         {/* 모바일: 세로 전체 이미지, 텍스트 하단 */}
         <div className="md:hidden relative w-full">
           <Image
-            src="/images/main_bg_m.jpg"
+            src="/images/main_bg_m_260825.jpg"
             alt="러너 배경"
             width={800}
             height={1200}
