@@ -32,8 +32,7 @@ export default function AboutPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 RUN10</h1>
           <div className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto space-y-1">
-            <p>전국의 러너들이 함께 달리며</p>
-            <p>건강한 러닝 문화를 만들어 가겠습니다</p>
+            <p> 전국 10km 러너들을 위한 공식 플랫폼</p>
           </div>
         </div>
       </section>
@@ -43,10 +42,10 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              전국 러닝 협회가 공식 인증하는 10km 러너들의 전용 플랫폼입니다.
+              대회부터 플래시, 티어, 랭킹까지
             </p>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-4">
-              정확한 기록 측정과 체계적인 등급 시스템을 통해 러너들의 성장을 지원합니다.
+              러너의 모든 순간을 연결합니다.
             </p>
           </div>
 
@@ -101,16 +100,18 @@ export default function AboutPage() {
             <div className="mb-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="order-2 lg:order-1">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">런텐 RUN10 대회</h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">
-                    전국 러닝 협회가 인증하는 공식 10km 대회를 개최합니다.
-                    정확한 기록 측정과 함께 최고의 러닝 경험을 제공합니다.
-                  </p>
+                  <h3 className="text-2xl font-bold mb-4">
+                    <span className="text-red-600">01</span>
+                    <span className="text-gray-900"> 런텐 대회</span>
+                  </h3>
+                  <p className="text-gray-600 mb-1 leading-relaxed">전국 주요 도심에 펼쳐지는 공식 10km 대회.</p>
+                  <p className="text-gray-600 mb-4 leading-relaxed">기록과 도전을 위한 공식 레이스를 경험해보세요.</p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
-                    <li>평지코스 정확한 기록 인증</li>
-                    <li>깨끗하고 쾌적한 러닝코스</li>
-                    <li>100명 대상 국내 최고 경품</li>
-                    <li>수준별 출발 안정적 레이스</li>
+                    <li>페이스별 출발로 안정적인 레이스</li>
+                    <li>공인 칩을 통한 정확한 기록 측정</li>
+                    <li>기록을 최적화하는 평탄한 코스</li>
+                    <li>깨끗하고 쾌적한 달림 환경</li>
+                    <li>이주 메달과 100명 대상 경품 이벤트</li>
                   </ul>
                 </div>
                 <div className="order-1 lg:order-2">
@@ -127,14 +128,14 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* 커뮤니티 활동 이미지 섹션 */}
-            <div>
+            {/* 02 런텐 플래시 — 이미지(좌) 설명(우) */}
+            <div className="mt-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="order-1">
                   <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                     <Image
-                      src="/images/about-community.jpg"
-                      alt="런텐 커뮤니티"
+                      src="/images/about_flash.jpg"
+                      alt="런텐 플래시"
                       width={600}
                       height={338}
                       className="object-cover rounded-lg shadow-md w-full h-full"
@@ -142,16 +143,78 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <div className="order-2">
-                  <h3 className="text-2xl font-semibold text-gray-900 mb-4">런텐 RUN10 티어 시스템</h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">
-                    개인 기록에 따른 체계적인 등급 시스템을 운영합니다.
-                    나의 런텐 RUN10 티어를 확인하고 더 높은 등급을 향해 도전하세요.
-                  </p>
+                  <h3 className="text-2xl font-bold mb-4">
+                    <span className="text-red-600">02</span>
+                    <span className="text-gray-900"> 런텐 플래시</span>
+                  </h3>
+                  <p className="text-gray-600 mb-1 leading-relaxed">크루형, 헤비형, 다이형, 아무런 규정도 없이</p>
+                  <p className="text-gray-600 mb-4 leading-relaxed">원하는 시간과 장소에서 가볍게 모여 달려라.</p>
+                  <ul className="list-disc list-inside text-gray-600 space-y-2">
+                    <li>원하는 지역·시간에서 자유롭게 참여</li>
+                    <li>거리·페이스가 맞는 달림이 함께</li>
+                    <li>최대 10명의 부담 없는 소규모 달림</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* 03 런텐티어 — 설명(좌) 이미지(우) */}
+            <div className="mt-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="order-2 lg:order-1">
+                  <h3 className="text-2xl font-bold mb-4">
+                    <span className="text-red-600">03</span>
+                    <span className="text-gray-900"> 런텐티어</span>
+                  </h3>
+                  <p className="text-gray-600 mb-1 leading-relaxed">4가지 티어로 나의 달림 실력을 확인하고,</p>
+                  <p className="text-gray-600 mb-4 leading-relaxed">나에게 맞는 레이스를 선택해보세요.</p>
                   <ul className="list-disc list-inside text-gray-600 space-y-2">
                     <li>치타족 (남성 30-39분59초 / 여성 40-49분59초)</li>
                     <li>홀스족 (남성 40-49분59초 / 여성 50-59분59초)</li>
                     <li>울프족 (남성 50-59분59초 / 여성 60-69분59초)</li>
                     <li>터틀족 (남성 60분 이상 / 여성 70분 이상)</li>
+                  </ul>
+                </div>
+                <div className="order-1 lg:order-2">
+                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    <Image
+                      src="/images/about-tier.jpg"
+                      alt="런텐 티어 시스템"
+                      width={600}
+                      height={338}
+                      className="object-cover rounded-lg shadow-md w-full h-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 04 런텐랭커 — 이미지(좌) 설명(우) */}
+            <div className="mt-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="order-1">
+                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    <Image
+                      src="/images/about-rank.jpg"
+                      alt="런텐 랭커"
+                      width={600}
+                      height={338}
+                      className="object-cover rounded-lg shadow-md w-full h-full"
+                    />
+                  </div>
+                </div>
+                <div className="order-2">
+                  <h3 className="text-2xl font-bold mb-4">
+                    <span className="text-red-600">04</span>
+                    <span className="text-gray-900"> 런텐랭커</span>
+                  </h3>
+                  <p className="text-gray-600 mb-1 leading-relaxed">모든 대회 기록이 데이터로 쌓여 전체 랭킹과 티어별 랭킹에 반영됩니다.</p>
+                  <p className="text-gray-600 mb-4 leading-relaxed">기록은 기억되고, 당신의 랭커가 됩니다. 전국 달림이와 순위를 겨뤄보세요!</p>
+                  <ul className="list-disc list-inside text-gray-600 space-y-2">
+                    <li>공식 10km 기록 기반 랭킹</li>
+                    <li>남성·여성 랭킹 구분</li>
+                    <li>순위별 기록 및 티어 확인</li>
+                    <li>기록을 통한 지속적인 성장과 도전</li>
                   </ul>
                 </div>
               </div>

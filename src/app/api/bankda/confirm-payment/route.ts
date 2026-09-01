@@ -1,29 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
+import { sendPaymentConfirmAlimtalk } from '@/lib/ppurio'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 
-/**
- * 뱅크다A 자동 입금 확인 API
- *
- * 뱅크다A가 입금 매칭 후 호출하는 Webhook 엔드포인트
- *
- * Request:
- * {
- *   "requests": [
- *     { "order_id": "주문번호1" },
- *     { "order_id": "주문번호2" }
- *   ]
- * }
- *
- * Response:
- * {
- *   "return_code": 200,
- *   "description": "정상",
- *   "orders": [
- *     { "order_id": "주문번호1", "description": "성공" },
- *     { "order_id": "주문번호2", "description": "성공" }
- *   ]
- * }
- */
+export const maxDuration = 60
 
 interface BankdaRequest {
   requests: Array<{
@@ -36,37 +17,25 @@ interface OrderResult {
   description: string
 }
 
-// 공통 처리 로직
 async function handleConfirmPayment(request: NextRequest) {
   try {
-    // 1. JSON 파싱
     let body: BankdaRequest
     try {
       body = await request.json()
     } catch (error) {
       return NextResponse.json(
-        {
-          return_code: 400,
-          description: '요청 format 오류',
-          orders: []
-        },
+        { return_code: 400, description: '요청 format 오류', orders: [] },
         { status: 400 }
       )
     }
 
-    // 2. requests 필드 확인
     if (!body.requests || !Array.isArray(body.requests)) {
       return NextResponse.json(
-        {
-          return_code: 400,
-          description: '요청 format 오류',
-          orders: []
-        },
+        { return_code: 400, description: '요청 format 오류', orders: [] },
         { status: 400 }
       )
     }
 
-    // 3. 각 order_id DB 업데이트 (순차 처리)
     const orderResults: OrderResult[] = []
     let hasError = false
 
@@ -74,10 +43,25 @@ async function handleConfirmPayment(request: NextRequest) {
       const orderId = item.order_id
 
       try {
-        // 3-1. 주문 조회
         const { data: registration, error: selectError } = await supabase
           .from('registrations')
-          .select('id, payment_status, name, entry_fee')
+          .select(`
+            id,
+            payment_status,
+            name,
+            phone,
+            entry_fee,
+            distance,
+            participation_groups (
+              name,
+              distance,
+              competitions (
+                title,
+                date,
+                location
+              )
+            )
+          `)
           .eq('id', orderId)
           .single()
 
@@ -87,7 +71,6 @@ async function handleConfirmPayment(request: NextRequest) {
           continue
         }
 
-        // 3-2. payment_status 확인
         if (registration.payment_status !== 'pending') {
           orderResults.push({
             order_id: orderId,
@@ -100,7 +83,6 @@ async function handleConfirmPayment(request: NextRequest) {
           continue
         }
 
-        // 3-3. payment_status를 'confirmed'로 업데이트
         const { error: updateError } = await supabase
           .from('registrations')
           .update({ payment_status: 'confirmed' })
@@ -116,6 +98,40 @@ async function handleConfirmPayment(request: NextRequest) {
         orderResults.push({ order_id: orderId, description: '성공' })
         console.log(`[뱅크다A] 입금 확인 완료: ${registration.name} (${orderId}), 금액: ${registration.entry_fee}원`)
 
+        try {
+          const { data: smsSettings } = await supabase
+            .from('sms_settings')
+            .select('enabled')
+            .eq('feature_name', 'payment_confirm')
+            .single()
+
+          if (smsSettings?.enabled) {
+            const group = Array.isArray(registration.participation_groups)
+              ? registration.participation_groups[0]
+              : registration.participation_groups
+            const competition = Array.isArray(group?.competitions)
+              ? group.competitions[0]
+              : group?.competitions
+
+            if (competition && registration.phone) {
+              const eventDate = format(new Date(competition.date), 'yyyy년 M월 d일 HH:mm', { locale: ko })
+              const distance = group?.distance || registration.distance || ''
+
+              await sendPaymentConfirmAlimtalk(
+                registration.phone,
+                registration.name,
+                eventDate,
+                competition.location,
+                distance,
+                registration.entry_fee.toLocaleString()
+              )
+              console.log(`[뱅크다A] 입금 확인 알림톡 발송 성공: ${registration.name}`)
+            }
+          }
+        } catch (alimtalkError) {
+          console.error(`[뱅크다A] 입금 확인 알림톡 발송 실패:`, alimtalkError)
+        }
+
       } catch (error) {
         console.error(`주문 처리 오류 (${orderId}):`, error)
         orderResults.push({ order_id: orderId, description: '처리 중 오류 발생' })
@@ -123,7 +139,6 @@ async function handleConfirmPayment(request: NextRequest) {
       }
     }
 
-    // 4. 응답 반환
     if (hasError) {
       return NextResponse.json({
         return_code: 415,
@@ -141,27 +156,20 @@ async function handleConfirmPayment(request: NextRequest) {
   } catch (error) {
     console.error('[뱅크다A] API 오류:', error)
     return NextResponse.json(
-      {
-        return_code: 500,
-        description: '서버 오류',
-        orders: []
-      },
+      { return_code: 500, description: '서버 오류', orders: [] },
       { status: 500 }
     )
   }
 }
 
-// POST 요청 처리
 export async function POST(request: NextRequest) {
   return handleConfirmPayment(request)
 }
 
-// PUT 요청 처리 (뱅크다A가 PUT으로 요청을 보냄)
 export async function PUT(request: NextRequest) {
   return handleConfirmPayment(request)
 }
 
-// GET 요청 처리 (테스트용)
 export async function GET() {
   return NextResponse.json({
     service: '뱅크다A 자동 입금 확인',

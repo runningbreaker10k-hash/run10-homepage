@@ -194,7 +194,7 @@ export default function CompetitionsPage() {
     if (actualStatus === 'registration_closed') {
       return (
         <div className="bg-white rounded-full px-3 py-0.5 text-center">
-          <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">접수 마감</span>
+          <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">전종목 마감</span>
         </div>
       )
     }
