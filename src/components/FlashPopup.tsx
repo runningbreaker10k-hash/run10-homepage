@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 const STORAGE_KEY = 'flash_popup_hidden_date'
 
 export default function FlashPopup() {
+  return null
   const [visible, setVisible] = useState(false)
   const [noShowToday, setNoShowToday] = useState(false)
 
