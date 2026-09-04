@@ -42,7 +42,7 @@ const MAX_REGIONS = 3
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   open:      { label: '모집중', cls: 'bg-[#CEECD3] text-[#063E18]' },
   closed:    { label: '마감',   cls: 'bg-yellow-100 text-yellow-800' },
-  completed: { label: '완료',   cls: 'bg-gray-100 text-gray-500' },
+  completed: { label: '종료',   cls: 'bg-gray-100 text-gray-500' },
   cancelled: { label: '취소',   cls: 'bg-red-100 text-red-700' },
 }
 
