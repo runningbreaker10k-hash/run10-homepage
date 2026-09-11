@@ -89,7 +89,7 @@ export default function RankPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 히어로 섹션 */}
-      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-16 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-10 sm:py-16 overflow-hidden">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 opacity-20">
           <Image
@@ -101,23 +101,23 @@ export default function RankPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">런텐 랭커</h1>
-          <p className="text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold mb-2 sm:mb-4">런텐 랭커</h1>
+          <p className="text-base sm:text-lg md:text-xl text-red-100 max-w-3xl mx-auto">
             전국 러닝 협회 공식 인증 10km 랭커
           </p>
         </div>
       </section>
 
       {/* 필터 및 랭킹 섹션 */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-6 sm:py-12 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* 티어 소개 제목 */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">런텐 랭커에 도전하세요</h2>
+          <div className="text-center mb-4 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">런텐 랭커에 도전하세요</h2>
           </div>
 
           {/* 티어 소개 섹션 */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-12">
             {/* 치타족 */}
             <div className="text-center p-4 md:p-6 bg-white rounded-lg shadow-md">
               <div className="mb-3 md:mb-4">
@@ -216,7 +216,7 @@ export default function RankPage() {
           </div>
 
           {/* 런텐 랭커 등록 수칙 */}
-          <div className="mb-8 max-w-4xl mx-auto bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
+          <div className="mb-4 sm:mb-8 max-w-4xl mx-auto bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
             <div className="text-xs md:text-sm text-gray-700 space-y-1.5">
               <p>• 엘리트선수는 랭킹에서 제외 (단, 해지 후 7년 경과자는 가능)</p>
               <p>• 매 대회마다 기록에 따라 통합 랭킹 새롭게 갱신</p>
@@ -225,10 +225,10 @@ export default function RankPage() {
           </div>
 
           {/* 성별 필터 */}
-          <div className="flex gap-3 md:gap-4 mb-8 max-w-2xl mx-auto">
+          <div className="flex gap-3 md:gap-4 mb-4 sm:mb-8 max-w-2xl mx-auto">
             <button
               onClick={() => setGender('male')}
-              className={`flex-1 px-6 md:px-12 py-3 md:py-4 rounded-lg font-bold text-base md:text-xl transition-all ${
+              className={`flex-1 px-4 sm:px-6 md:px-12 py-2 sm:py-3 md:py-4 rounded-lg font-bold text-sm sm:text-base md:text-xl transition-all ${
                 gender === 'male'
                   ? 'bg-red-600 text-white shadow-lg'
                   : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
@@ -238,7 +238,7 @@ export default function RankPage() {
             </button>
             <button
               onClick={() => setGender('female')}
-              className={`flex-1 px-6 md:px-12 py-3 md:py-4 rounded-lg font-bold text-base md:text-xl transition-all ${
+              className={`flex-1 px-4 sm:px-6 md:px-12 py-2 sm:py-3 md:py-4 rounded-lg font-bold text-sm sm:text-base md:text-xl transition-all ${
                 gender === 'female'
                   ? 'bg-red-600 text-white shadow-lg'
                   : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-red-400'
@@ -254,10 +254,10 @@ export default function RankPage() {
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
             </div>
           ) : rankData.length === 0 ? (
-            <div className="text-center py-20">
-              <Trophy className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">랭킹 데이터가 없습니다</h3>
-              <p className="text-gray-600">곧 랭킹 데이터가 업데이트될 예정입니다.</p>
+            <div className="text-center py-12 sm:py-20">
+              <Trophy className="h-10 w-10 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+              <h3 className="text-base sm:text-xl font-bold text-gray-900 mb-2">랭킹 데이터가 없습니다</h3>
+              <p className="text-sm sm:text-base text-gray-600">곧 랭킹 데이터가 업데이트될 예정입니다.</p>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-md overflow-hidden">

@@ -123,6 +123,15 @@ export default function WebMainPage() {
             quality={75}
             priority
           />
+          {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+            <Link
+              href="/competitions"
+              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-5 py-2 rounded-lg font-bold text-base hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl border border-red-500 drop-shadow-lg"
+            >
+              대회 일정 확인하기
+            </Link>
+          </div>
           <div className="hidden absolute bottom-0 left-0 right-0 px-6 pb-10 text-center text-white">
             <div className="mb-4">
               <div className="space-y-1 text-base font-medium leading-relaxed">
@@ -143,7 +152,7 @@ export default function WebMainPage() {
         </div>
 
         {/* 웹: 1800:500 비율 고정, 좌우 미세 크롭 */}
-        <div className="hidden md:block relative w-full" style={{ aspectRatio: '1800/500' }}>
+        <div className="hidden md:block relative w-full" style={{ aspectRatio: '1800/560' }}>
           <Image
             src="/images/main_bg_260825.jpg"
             alt="러너 배경"
@@ -152,6 +161,15 @@ export default function WebMainPage() {
             quality={75}
             priority
           />
+          {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
+          <div className="absolute bottom-3 lg:bottom-4 left-0 right-0 flex justify-center">
+            <Link
+              href="/competitions"
+              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-3 md:px-10 md:py-4 rounded-xl font-black text-lg md:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-2xl border-2 border-red-500 drop-shadow-lg"
+            >
+              대회 일정 확인하기
+            </Link>
+          </div>
           <div className="hidden absolute inset-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex">
               {/* 좌측: A(상단) + B(하단) */}
@@ -216,12 +234,6 @@ export default function WebMainPage() {
               sizes="(max-width: 1024px) 90vw, 85vw"
             />
           </div>
-          <Link
-            href="/competitions"
-            className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 md:px-12 md:py-6 rounded-2xl font-black text-lg sm:text-xl md:text-2xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-red-500"
-          >
-            대회 일정 확인하기
-          </Link>
         </div>
       </section>
 

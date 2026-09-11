@@ -61,6 +61,15 @@ export default function AppMainPage() {
           quality={75}
           priority
         />
+        {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
+          <Link
+            href="/competitions"
+            className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-5 py-2 rounded-lg font-bold text-base hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl border border-red-500 drop-shadow-lg active:scale-95"
+          >
+            대회 일정 확인하기
+          </Link>
+        </div>
       </section>
 
       {/* 런텐 대회 Section */}
@@ -84,12 +93,6 @@ export default function AppMainPage() {
               sizes="100vw"
             />
           </div>
-          <Link
-            href="/competitions"
-            className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 sm:px-10 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 active:scale-95 border-2 border-red-500"
-          >
-            대회 일정 확인하기
-          </Link>
         </div>
       </section>
 

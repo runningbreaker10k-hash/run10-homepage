@@ -515,6 +515,8 @@ export default function CompetitionsPage() {
                             : competition.title.includes('김해') ? '낙동강 러닝성지'
                             : competition.title.includes('청주') ? '무심천 러닝성지'
                             : competition.title.includes('포천') ? '포천천 러닝성지'
+                            : competition.title.includes('대전') ? '갑천 러닝성지'
+                            : competition.title.includes('대구') ? '화랑교 밑 금호강 러닝성지'
                             : competition.location)
                         }
                       </span>

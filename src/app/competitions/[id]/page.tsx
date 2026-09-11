@@ -507,11 +507,11 @@ function CompetitionDetailPageContent() {
 
   const tabContent = {
     overview: (
-      <div className="space-y-8">
+      <div className="space-y-4 sm:space-y-8">
         <div>
-          <div className="flex items-center mb-4">
-            <Trophy className="h-6 w-6 text-blue-600 mr-2" />
-            <h3 className="text-xl font-semibold text-gray-900">대회 개요</h3>
+          <div className="flex items-center mb-2 sm:mb-4">
+            <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mr-2" />
+            <h3 className="text-base sm:text-xl font-semibold text-gray-900">대회 개요</h3>
           </div>
           <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
             {competition.description}
@@ -519,8 +519,8 @@ function CompetitionDetailPageContent() {
         </div>
 
         <div className="max-w-4xl mx-auto">
-            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-6 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
                     <Calendar className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -596,10 +596,10 @@ function CompetitionDetailPageContent() {
 
         {/* 코스 이미지 */}
         {competition.course_image_url && (
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <div className="flex items-center">
-              <Route className="h-6 w-6 text-blue-600 mr-2" />
-              <h3 className="text-xl font-semibold text-gray-900">코스 안내</h3>
+              <Route className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mr-2" />
+              <h3 className="text-base sm:text-xl font-semibold text-gray-900">코스 안내</h3>
             </div>
             <div className="w-full max-w-4xl mx-auto">
               <img
@@ -613,10 +613,10 @@ function CompetitionDetailPageContent() {
 
         {/* 상금/상품 이미지 */}
         {competition.prizes_image_url && (
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <div className="flex items-center">
-              <Award className="h-6 w-6 text-blue-600 mr-2" />
-              <h3 className="text-xl font-semibold text-gray-900">시상 내역</h3>
+              <Award className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mr-2" />
+              <h3 className="text-base sm:text-xl font-semibold text-gray-900">시상 내역</h3>
             </div>
             <div className="w-full max-w-4xl mx-auto">
               <img
@@ -631,8 +631,8 @@ function CompetitionDetailPageContent() {
     ),
 
     register: (
-      <div className="space-y-6">
-        <h3 className="text-xl font-semibold text-gray-900">참가 신청</h3>
+      <div className="space-y-4 sm:space-y-6">
+        <h3 className="text-base sm:text-xl font-semibold text-gray-900">참가 신청</h3>
         {registrationLoading ? (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -640,17 +640,17 @@ function CompetitionDetailPageContent() {
           </div>
         ) : userRegistration ? (
           <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8 text-center">
-              <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
-              <h3 className="text-2xl font-bold text-green-900 mb-4">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 sm:p-8 text-center">
+              <CheckCircle className="h-12 w-12 sm:h-20 sm:w-20 text-green-500 mx-auto mb-3 sm:mb-6" />
+              <h3 className="text-lg sm:text-2xl font-bold text-green-900 mb-2 sm:mb-4">
                 ✅ 신청완료
               </h3>
-              <p className="text-gray-700 mb-6">
+              <p className="text-gray-700 mb-3 sm:mb-6 text-sm sm:text-base">
                 이미 이 대회에 참가 신청하셨습니다.<br />
                 자세한 신청 내역은 "조회" 탭에서 확인하실 수 있습니다.
               </p>
-              <div className="bg-white rounded-lg p-4 mb-6">
-                <div className="text-sm text-gray-600 space-y-2">
+              <div className="bg-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-6">
+                <div className="text-xs sm:text-sm text-gray-600 space-y-2">
                   <div className="flex justify-between">
                     <span>대회명:</span>
                     <span className="font-semibold">{competition.title}</span>
@@ -685,7 +685,7 @@ function CompetitionDetailPageContent() {
               </div>
               <button
                 onClick={() => setActiveTab('lookup')}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-lg"
+                className="bg-blue-600 text-white px-4 py-2 sm:px-8 sm:py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm sm:text-lg"
               >
                 신청 내역 상세 보기
               </button>
@@ -705,44 +705,26 @@ function CompetitionDetailPageContent() {
                 }}
               />
             ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-                  <Users className="h-16 w-16 text-blue-400 mx-auto mb-6" />
-                  <h4 className="text-2xl font-bold text-blue-900 mb-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-8 text-center">
+                  <Users className="h-10 w-10 sm:h-16 sm:w-16 text-blue-400 mx-auto mb-3 sm:mb-6" />
+                  <h4 className="text-base sm:text-2xl font-bold text-blue-900 mb-2 sm:mb-4">
                     대회 참가를 위해 아주 간단한 회원가입이 필요합니다.
                   </h4>
-                  <p className="text-blue-700 text-lg mb-6">                    
-                    주소와 전번이 정확히 기재되어야 기록칩과 사전 기념품이 발송됩니다.
+                  <p className="text-blue-700 text-sm sm:text-lg mb-3 sm:mb-6">
+                    주소와 연락처가 정확히 기재되어야 기록칩과 사전 기념품이 발송됩니다.
                   </p>
 
-                  <div className="bg-white rounded-lg p-6 mb-6">
-                    <h5 className="text-lg font-semibold text-gray-900 mb-4">회원가입 혜택</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        간편한 대회 신청
-                      </div>
-                      <div className="flex items-center text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        마이페이지 관리
-                      </div>
-                      <div className="flex items-center text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        문의 게시판 이용
-                      </div>
-                      <div className="flex items-center text-gray-700">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                        대회 일정 공유
-                      </div>
-                    </div>
+                  <div className="bg-white rounded-lg p-3 sm:p-6 mb-3 sm:mb-6">
+                    <h5 className="text-sm sm:text-lg font-semibold text-gray-900">1분이면 간단히 회원가입하고 신청할 수 있습니다!</h5>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                     <button
                       onClick={() => {
                         setAuthDefaultTab('signup')
                         setShowAuthModal(true)
                       }}
-                      className="px-8 py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+                      className="px-4 py-2 sm:px-8 sm:py-3 bg-blue-600 text-white rounded-lg text-sm sm:text-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
                     >
                       회원가입하고 신청하기
                     </button>
@@ -751,7 +733,7 @@ function CompetitionDetailPageContent() {
                         setAuthDefaultTab('login')
                         setShowAuthModal(true)
                       }}
-                      className="px-8 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg text-lg font-semibold hover:bg-blue-50 transition-colors"
+                      className="px-4 py-2 sm:px-8 sm:py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg text-sm sm:text-lg font-semibold hover:bg-blue-50 transition-colors"
                     >
                       로그인
                     </button>
@@ -760,9 +742,9 @@ function CompetitionDetailPageContent() {
               )}
             </>
         ) : (
-          <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="bg-gray-50 rounded-lg p-4 sm:p-8 text-center">
+            <Users className="h-10 w-10 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
               현재 참가 신청을 받지 않습니다
             </h4>
             <p className="text-gray-600">
@@ -778,10 +760,9 @@ function CompetitionDetailPageContent() {
     ),
 
     lookup: (
-      <div className="space-y-6">
-        <div className="flex items-center mb-4">
-
-          <h3 className="text-xl font-semibold text-gray-900">신청 조회</h3>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex items-center mb-2 sm:mb-4">
+          <h3 className="text-base sm:text-xl font-semibold text-gray-900">신청 조회</h3>
         </div>
         {user && userRegistration ? (
           <>
@@ -794,33 +775,33 @@ function CompetitionDetailPageContent() {
             />
           </>
         ) : (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-8 text-center">
-            <Search className="h-16 w-16 text-orange-400 mx-auto mb-6" />
-            <h4 className="text-2xl font-bold text-orange-900 mb-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 sm:p-8 text-center">
+            <Search className="h-10 w-10 sm:h-16 sm:w-16 text-orange-400 mx-auto mb-3 sm:mb-6" />
+            <h4 className="text-base sm:text-2xl font-bold text-orange-900 mb-2 sm:mb-4">
               먼저 신청해 주세요
             </h4>
-            <p className="text-orange-700 text-lg mb-6">
+            <p className="text-orange-700 text-sm sm:text-lg mb-3 sm:mb-6">
               아직 이 대회에 참가 신청을 하지 않으셨습니다.<br />
               "신청" 탭에서 대회 참가를 신청해주세요.
             </p>
 
-            <div className="bg-white rounded-lg p-6 mb-6">
-              <h5 className="text-lg font-semibold text-gray-900 mb-4">신청 후 이용 가능한 서비스</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="bg-white rounded-lg p-3 sm:p-6 mb-3 sm:mb-6">
+              <h5 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4">신청 후 이용 가능한 서비스</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   신청 정보 조회 및 수정
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   결제 상태 실시간 확인
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   개인정보 변경 가능
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <CheckCircle className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-500 mr-2 flex-shrink-0" />
                   대회 관련 알림 수신
                 </div>
               </div>
@@ -828,7 +809,7 @@ function CompetitionDetailPageContent() {
 
             <button
               onClick={() => setActiveTab('register')}
-              className="px-8 py-3 bg-orange-600 text-white rounded-lg text-lg font-semibold hover:bg-orange-700 transition-colors shadow-lg"
+              className="px-4 py-2 sm:px-8 sm:py-3 bg-orange-600 text-white rounded-lg text-sm sm:text-lg font-semibold hover:bg-orange-700 transition-colors shadow-lg"
             >
               대회 신청하러 가기
             </button>
@@ -1165,9 +1146,9 @@ function CompetitionDetailPageContent() {
     ),
 
     photos: (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">대회 사진</h3>
+          <h3 className="text-base sm:text-xl font-semibold text-gray-900">대회 사진</h3>
           {galleryPhotos.length > 0 && (
             <span className="text-sm text-gray-500">{galleryPhotos.length}장</span>
           )}
@@ -1298,7 +1279,7 @@ function CompetitionDetailPageContent() {
       <PagePopup pageId="competition" competitionId={competitionId} />
         {/* Hero Section */}
       <div className="relative">
-        <div className="relative w-full h-64 md:h-80 overflow-hidden">
+        <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
           {competition.image_url ? (
             <>
               <Image
@@ -1317,7 +1298,7 @@ function CompetitionDetailPageContent() {
         </div>
         <div className="absolute inset-0 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-6 drop-shadow-2xl">
+            <h1 className="text-xl sm:text-4xl md:text-6xl lg:text-7xl font-black text-white mb-2 sm:mb-6 drop-shadow-2xl leading-tight">
               {competition.title}
             </h1>
             <div className="flex items-center space-x-4">
@@ -1328,9 +1309,9 @@ function CompetitionDetailPageContent() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-8">
+        <div className="border-b border-gray-200 mb-4 sm:mb-8">
           <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {(isCompetitionEnded(competition) ? [
               { key: 'overview', label: '개요', icon: Trophy },
@@ -1358,7 +1339,7 @@ function CompetitionDetailPageContent() {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-white rounded-lg shadow-sm p-3 sm:p-6">
           {tabContent[activeTab]}
         </div>
       </div>
