@@ -25,8 +25,8 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
 
   // 이미지 압축 함수 (Canvas API 사용)
   const compressImage = async (file: File): Promise<File> => {
-    const MAX_SIZE = 1920      // 최대 가로/세로 1920px
-    const QUALITY = 0.82       // 압축 품질 82%
+    const MAX_SIZE = 1000      // 최대 가로/세로 1000px
+    const QUALITY = 0.70       // 압축 품질 70%
 
     return new Promise((resolve) => {
       const img = new Image()
@@ -34,8 +34,8 @@ export default function MultipleImageUpload({ onUploadComplete, competitionId }:
       img.onload = () => {
         URL.revokeObjectURL(img.src)
 
-        // 이미 작은 이미지는 스킵 (1MB 미만 + 1920px 이하)
-        if (img.width <= MAX_SIZE && img.height <= MAX_SIZE && file.size < 1024 * 1024) {
+        // 이미 작은 이미지는 스킵 (300KB 미만 + 1000px 이하)
+        if (img.width <= MAX_SIZE && img.height <= MAX_SIZE && file.size < 300 * 1024) {
           resolve(file)
           return
         }

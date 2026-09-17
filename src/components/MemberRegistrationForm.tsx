@@ -576,9 +576,8 @@ export default function MemberRegistrationForm({
             ) : (
               <p><strong>참가비:</strong> 종목 선택 후 확인 가능</p>
             )}
-            <p className="text-xs mt-2">
-              ※ 입금 확인 후 참가 확정됩니다.
-            </p>
+            <p className="text-xs mt-2">※ 입금 확인 후 참가 확정됩니다.</p>
+            <p className="text-xs mt-1">※ 입금 기한은 신청일로부터 <strong>7일</strong>이며, 기한 내 미입금 시 신청 내역이 삭제될 수 있습니다.</p>
           </div>
         </div>
 

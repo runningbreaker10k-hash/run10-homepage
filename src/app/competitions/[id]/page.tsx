@@ -682,6 +682,11 @@ function CompetitionDetailPageContent() {
                     <span className="font-semibold">{competition.account_holder || '(주)러닝브레이커'}</span>
                   </div>
                 </div>
+                {userRegistration.payment_status === 'pending' && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded-lg text-xs text-yellow-800">
+                    ⚠ 입금 기한은 신청일로부터 <strong>7일</strong>입니다. 기한 내 미입금 시 신청 내역이 삭제될 수 있습니다.
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setActiveTab('lookup')}
@@ -1181,13 +1186,11 @@ function CompetitionDetailPageContent() {
                       }}
                       className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group bg-gray-100"
                     >
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={photo.image_url}
                         alt={photo.caption || `대회 사진 ${actualIndex + 1}`}
-                        fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        quality={75}
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
                       />
                       {showRanking && (
@@ -1412,14 +1415,11 @@ function CompetitionDetailPageContent() {
               className="max-w-full max-h-full flex flex-col items-center px-8 sm:px-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={galleryPhotos[currentPhotoIndex].image_url}
                 alt={galleryPhotos[currentPhotoIndex].caption || `대회 사진 ${currentPhotoIndex + 1}`}
-                width={1280}
-                height={1280}
-                quality={90}
                 className="max-w-full max-h-[calc(100vh-140px)] sm:max-h-[70vh] w-auto h-auto object-contain"
-                priority
               />
               {galleryPhotos[currentPhotoIndex].caption && (
                 <div className="mt-3 sm:mt-4 bg-black bg-opacity-75 rounded-lg px-3 sm:px-6 py-2 sm:py-3 max-w-full sm:max-w-2xl">
