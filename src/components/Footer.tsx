@@ -41,13 +41,15 @@ export default function Footer() {
               <Link href="/competitions" className="block text-gray-300 hover:text-white hover:text-red-200 transition-colors text-sm">
                 런텐 대회
               </Link>
+              <Link href="/flash" className="block text-gray-300 hover:text-white hover:text-red-200 transition-colors text-sm">
+                런텐 플래시
+              </Link>
               <Link href="/rank" className="block text-gray-300 hover:text-white hover:text-red-200 transition-colors text-sm">
                 런텐 랭커
               </Link>
               <Link href="/community" className="block text-gray-300 hover:text-white hover:text-red-200 transition-colors text-sm">
                 공지게시판
-              </Link>
-              
+              </Link>              
             </div>
           </div>
 
