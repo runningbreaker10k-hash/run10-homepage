@@ -115,7 +115,7 @@ export default function WebMainPage() {
         {/* 모바일: 세로 전체 이미지, 텍스트 하단 */}
         <div className="md:hidden relative w-full">
           <Image
-            src="/images/main_bg_m_260825.jpg"
+            src="/images/main_bg_m_260922.jpg"
             alt="러너 배경"
             width={800}
             height={1200}
@@ -123,15 +123,13 @@ export default function WebMainPage() {
             quality={75}
             priority
           />
-          {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-            <Link
-              href="/competitions"
-              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-5 py-2 rounded-lg font-bold text-base hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl border border-red-500 drop-shadow-lg"
-            >
-              대회 일정 확인하기
-            </Link>
-          </div>
+          {/* 투명 클릭 영역 — 모바일 이미지 버튼 위치 */}
+          <Link
+            href="/competitions"
+            className="absolute"
+            style={{ top: '78%', left: '20%', width: '60%', height: '10%' }}
+            aria-label="대회 일정 확인하기"
+          />
           <div className="hidden absolute bottom-0 left-0 right-0 px-6 pb-10 text-center text-white">
             <div className="mb-4">
               <div className="space-y-1 text-base font-medium leading-relaxed">
@@ -154,22 +152,20 @@ export default function WebMainPage() {
         {/* 웹: 1800:500 비율 고정, 좌우 미세 크롭 */}
         <div className="hidden md:block relative w-full" style={{ aspectRatio: '1800/560' }}>
           <Image
-            src="/images/main_bg_260825.jpg"
+            src="/images/main_bg_260922.jpg"
             alt="러너 배경"
             fill
             className="object-cover"
             quality={75}
             priority
           />
-          {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
-          <div className="absolute bottom-3 lg:bottom-4 left-0 right-0 flex justify-center">
-            <Link
-              href="/competitions"
-              className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-3 md:px-10 md:py-4 rounded-xl font-black text-lg md:text-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-2xl border-2 border-red-500 drop-shadow-lg"
-            >
-              대회 일정 확인하기
-            </Link>
-          </div>
+          {/* 투명 클릭 영역 — PC 이미지 버튼 위치 */}
+          <Link
+            href="/competitions"
+            className="absolute"
+            style={{ top: '57%', left: '17%', width: '13%', height: '10%' }}
+            aria-label="대회 일정 확인하기"
+          />
           <div className="hidden absolute inset-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex">
               {/* 좌측: A(상단) + B(하단) */}

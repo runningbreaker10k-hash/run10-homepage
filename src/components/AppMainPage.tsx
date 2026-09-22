@@ -53,7 +53,7 @@ export default function AppMainPage() {
       {/* Hero Section */}
       <section className="relative w-full">
         <Image
-          src="/images/main_bg_m_260825.jpg"
+          src="/images/main_bg_m_260922.jpg"
           alt="러너 배경"
           width={800}
           height={1200}
@@ -61,15 +61,13 @@ export default function AppMainPage() {
           quality={75}
           priority
         />
-        {/* 대회 일정 버튼 — 이미지 하단 중앙 오버레이 */}
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-          <Link
-            href="/competitions"
-            className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white px-5 py-2 rounded-lg font-bold text-base hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-xl border border-red-500 drop-shadow-lg active:scale-95"
-          >
-            대회 일정 확인하기
-          </Link>
-        </div>
+        {/* 투명 클릭 영역 — 이미지 버튼 위치 */}
+        <Link
+          href="/competitions"
+          className="absolute"
+          style={{ top: '78%', left: '20%', width: '60%', height: '10%' }}
+          aria-label="대회 일정 확인하기"
+        />
       </section>
 
       {/* 런텐 대회 Section */}
