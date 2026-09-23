@@ -4385,6 +4385,9 @@ export default function AdminPage() {
                         <table className="min-w-full divide-y divide-gray-200">
                           <thead className="bg-gray-50">
                             <tr>
+                              <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                                #
+                              </th>
                               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 참가자 정보
                               </th>
@@ -4409,11 +4412,12 @@ export default function AdminPage() {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {registrations.map((registration) => {
+                            {registrations.map((registration, index) => {
                               const isNameMismatch = registration.depositor_name &&
                                                      registration.name !== registration.depositor_name
                               return (
                                 <tr key={registration.id} className="hover:bg-gray-50">
+                                  <td className="px-3 py-4 text-center text-sm text-gray-400 w-10">{index + 1}</td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-1">
                                       <button
@@ -5756,6 +5760,7 @@ export default function AdminPage() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
+                          <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase w-10">#</th>
                           <th className="px-2 sm:px-3 py-3 text-center w-10">
                             <input
                               type="checkbox"
@@ -5784,8 +5789,9 @@ export default function AdminPage() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {paginatedRefunds.map((refund) => (
+                        {paginatedRefunds.map((refund, index) => (
                           <tr key={refund.id} className={`hover:bg-gray-50 ${selectedRefunds.includes(refund.id) ? 'bg-blue-50' : ''}`}>
+                            <td className="px-3 py-3 text-center text-sm text-gray-400 w-10">{(currentRefundPage - 1) * refundsPerPage + index + 1}</td>
                             <td className="px-2 sm:px-3 py-3 text-center">
                               <input
                                 type="checkbox"
@@ -7577,8 +7583,8 @@ export default function AdminPage() {
 
       {/* 종목별 참가자 수 모달 */}
       {showGroupsModal && selectedCompetitionForGroups && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => { setShowGroupsModal(false); setGroupsModalTab('groups') }}>
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
                 {selectedCompetitionForGroups.title} - 참가자 현황
@@ -7757,14 +7763,14 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                   const periodStart = new Date(firstYear, firstMonth - 1, firstDay, 0, 0, 0, 0)
                   const periodEnd = new Date(lastYear, lastMonth - 1, lastDay, 23, 59, 59, 999)
 
-                  const dayMap = new Map<string, { total: number; day: string }>()
+                  const dayMap = new Map<string, { total: number; confirmed: number; pending: number; day: string }>()
 
                   // 모든 날짜를 초기화
                   const current = new Date(periodStart)
                   while (current.getTime() <= periodEnd.getTime()) {
                     const dateKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
                     const dayName = ['일', '월', '화', '수', '목', '금', '토'][current.getDay()]
-                    dayMap.set(dateKey, { total: 0, day: dayName })
+                    dayMap.set(dateKey, { total: 0, confirmed: 0, pending: 0, day: dayName })
                     current.setDate(current.getDate() + 1)
                   }
 
@@ -7780,6 +7786,8 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                     const dayData = dayMap.get(dateKey)
                     if (dayData) {
                       dayData.total++
+                      if (reg.payment_status === 'confirmed') dayData.confirmed++
+                      else if (reg.payment_status === 'pending') dayData.pending++
                     }
                   })
 
@@ -7793,6 +7801,8 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                       date: dateKey.substring(5),
                       fullDate: dateKey,
                       total: data.total,
+                      confirmed: data.confirmed,
+                      pending: data.pending,
                       day: data.day
                     })
                     current2.setDate(current2.getDate() + 1)
@@ -7803,13 +7813,13 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
 
                 const getHourlyChartData = (regs: RegistrationWithCompetition[], dateKey: string) => {
                   const filtered = regs.filter(r => r.competition_id === selectedCompetitionForGroups.id && r.payment_status !== 'cancelled')
-                  const hourMap = new Map<number, { hour: string; total: number }>()
+                  const hourMap = new Map<number, { hour: string; total: number; confirmed: number; pending: number }>()
 
                   // dateKey 파싱: "2026-02-22" 형식
                   const [keyYear, keyMonth, keyDay] = dateKey.split('-').map(Number)
 
                   for (let h = 0; h < 24; h++) {
-                    hourMap.set(h, { hour: `${String(h).padStart(2, '0')}:00`, total: 0 })
+                    hourMap.set(h, { hour: `${String(h).padStart(2, '0')}:00`, total: 0, confirmed: 0, pending: 0 })
                   }
 
                   filtered
@@ -7835,6 +7845,8 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                       const data = hourMap.get(hour)
                       if (data) {
                         data.total++
+                        if (reg.payment_status === 'confirmed') data.confirmed++
+                        else if (reg.payment_status === 'pending') data.pending++
                       }
                     })
 
@@ -7926,13 +7938,20 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                         <div>
                           <p className="text-sm font-semibold text-gray-700 mb-3">일별 신청 현황 (전체 모집기간)</p>
                           <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={getDailyChartData(registrations)}>
+                            <BarChart data={getDailyChartData(registrations)} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                              <YAxis tick={{ fontSize: 12 }} />
-                              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
-                              <Legend />
-                              <Bar dataKey="total" fill="#3b82f6" name="신청" onClick={(data: any) => {
+                              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                              <Tooltip
+                                cursor={{ fill: 'rgba(0,0,0,0.1)' }}
+                                formatter={(value: any, name: string) => [value + '명', name]}
+                              />
+                              <Legend wrapperStyle={{ fontSize: 12 }} />
+                              <Bar dataKey="confirmed" stackId="a" fill="#22c55e" name="확정" onClick={(data: any) => {
+                                setStatsDrillView('hourly')
+                                setStatsDrillDay(data.fullDate)
+                              }} cursor="pointer" />
+                              <Bar dataKey="pending" stackId="a" fill="#eab308" name="대기" onClick={(data: any) => {
                                 setStatsDrillView('hourly')
                                 setStatsDrillDay(data.fullDate)
                               }} cursor="pointer" />
@@ -7943,8 +7962,10 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                           <table className="min-w-full text-sm">
                             <thead className="bg-gray-50 border-b">
                               <tr>
-                                <th className="px-4 py-2 text-left text-gray-600">날짜</th>
-                                <th className="px-4 py-2 text-center text-gray-600">신청</th>
+                                <th className="px-3 py-2 text-left text-gray-600 whitespace-nowrap">날짜</th>
+                                <th className="px-3 py-2 text-center text-gray-600">신청</th>
+                                <th className="px-3 py-2 text-center text-green-600">확정</th>
+                                <th className="px-3 py-2 text-center text-yellow-600">대기</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -7953,8 +7974,10 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                                   setStatsDrillView('hourly')
                                   setStatsDrillDay(day.fullDate)
                                 }}>
-                                  <td className="px-4 py-2">{day.date} ({day.day})</td>
-                                  <td className="px-4 py-2 text-center font-semibold text-blue-600">{day.total}</td>
+                                  <td className="px-3 py-2 whitespace-nowrap">{day.date} ({day.day})</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-blue-600">{day.total}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-green-600">{day.confirmed}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-yellow-600">{day.pending}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -7969,12 +7992,14 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                         <div>
                           <p className="text-sm font-semibold text-gray-700 mb-3">시간대별 신청 현황 ({statsDrillDay})</p>
                           <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={getHourlyChartData(registrations, statsDrillDay)}>
+                            <BarChart data={getHourlyChartData(registrations, statsDrillDay)} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="hour" tick={{ fontSize: 12 }} />
-                              <YAxis tick={{ fontSize: 12 }} />
-                              <Tooltip />
-                              <Bar dataKey="total" fill="#3b82f6" name="신청" />
+                              <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                              <Tooltip formatter={(value: any, name: string) => [value + '명', name]} />
+                              <Legend wrapperStyle={{ fontSize: 12 }} />
+                              <Bar dataKey="confirmed" stackId="a" fill="#22c55e" name="확정" />
+                              <Bar dataKey="pending" stackId="a" fill="#eab308" name="대기" />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -7982,15 +8007,19 @@ const getDailyChartData = (regs: RegistrationWithCompetition[]) => {
                           <table className="min-w-full text-sm">
                             <thead className="bg-gray-50 border-b">
                               <tr>
-                                <th className="px-4 py-2 text-left text-gray-600">시간</th>
-                                <th className="px-4 py-2 text-center text-gray-600">신청</th>
+                                <th className="px-3 py-2 text-left text-gray-600">시간</th>
+                                <th className="px-3 py-2 text-center text-gray-600">신청</th>
+                                <th className="px-3 py-2 text-center text-green-600">확정</th>
+                                <th className="px-3 py-2 text-center text-yellow-600">대기</th>
                               </tr>
                             </thead>
                             <tbody>
                               {getHourlyChartData(registrations, statsDrillDay).map((hour, idx) => (
-                                <tr key={idx} className="border-b">
-                                  <td className="px-4 py-2">{hour.hour}</td>
-                                  <td className="px-4 py-2 text-center font-semibold text-blue-600">{hour.total}</td>
+                                <tr key={idx} className="border-b hover:bg-gray-50">
+                                  <td className="px-3 py-2">{hour.hour}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-blue-600">{hour.total}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-green-600">{hour.confirmed}</td>
+                                  <td className="px-3 py-2 text-center font-semibold text-yellow-600">{hour.pending}</td>
                                 </tr>
                               ))}
                             </tbody>
