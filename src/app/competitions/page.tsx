@@ -174,61 +174,34 @@ export default function CompetitionsPage() {
   const getStatusBadge = (competition: Competition) => {
     const actualStatus = getActualCompetitionStatus(competition)
 
-    // 1줄 배지: 흰 배경 + 우측 배경색 텍스트
-    if (actualStatus === 'closed') {
-      return (
-        <div className="bg-white rounded-full px-3 py-0.5 text-center">
-          <span className="text-[#121212] text-sm font-bold whitespace-nowrap">대회 종료</span>
-        </div>
-      )
-    }
+    // ── 1줄 배지 (단순 상태 표시) ──────────────────────────────
+    const badge1Line = (label: string, color: string) => (
+      <div className="bg-white rounded-full px-3 py-0.5 text-center">
+        <span className={`${color} text-sm font-bold whitespace-nowrap`}>{label}</span>
+      </div>
+    )
 
-    if (actualStatus === 'upcoming') {
-      return (
-        <div className="bg-white rounded-full px-3 py-0.5 text-center">
-          <span className="text-[#3E6ACA] text-sm font-bold whitespace-nowrap">접수 예정</span>
-        </div>
-      )
-    }
+    if (actualStatus === 'closed')              return badge1Line('대회 종료',   'text-[#121212]')
+    if (actualStatus === 'upcoming')            return badge1Line('접수 예정',   'text-[#3E6ACA]')
+    if (actualStatus === 'registration_closed') return badge1Line('전종목 마감', 'text-[#B50B14]')
 
-    if (actualStatus === 'registration_closed') {
-      return (
-        <div className="bg-white rounded-full px-3 py-0.5 text-center">
-          <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">전종목 마감</span>
-        </div>
-      )
-    }
-
-    // 2줄 배지: 1줄(흰 배경+우측색 텍스트) + 2줄(흰색 텍스트)
-    if (actualStatus === 'deadline_approaching') {
-      if (competition.title.includes('대구')) {
-        return (
-          <div className="bg-white rounded-full px-3 py-0.5 text-center">
-            <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">추가 모집</span>
-          </div>
-        )
-      }
-      const participants = (competition.title.includes('청주') || competition.title.includes('대전'))
-        ? '3,500명' : '3,000명'
-      return (
-        <div className="text-center">
-          <div className="bg-white rounded-full px-3 py-0.5 mb-1">
-            <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">마감 임박</span>
-          </div>
-          <p className="text-white leading-tight whitespace-nowrap" style={{ fontSize: '12px', letterSpacing: '-0.04em' }}>선착순 {participants}</p>
-        </div>
-      )
-    }
-
-    // 접수중 (2줄)
-    const participants = (competition.title.includes('청주') || competition.title.includes('대전'))
+    // ── 2줄 배지 (접수 중 / 마감 임박) ────────────────────────
+    // 선착순 인원: 기본 3,000명 / 청주·대전은 3,500명
+    const participants = 
+    (competition.title.includes('청주') 
+    || competition.title.includes('대전')) 
       ? '3,500명' : '3,000명'
+
+    const label = actualStatus === 'deadline_approaching' ? '마감 임박' : '접수 중'
+
     return (
       <div className="text-center">
         <div className="bg-white rounded-full px-3 py-0.5 mb-1">
-          <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">접수 중</span>
+          <span className="text-[#B50B14] text-sm font-bold whitespace-nowrap">{label}</span>
         </div>
-        <p className="text-white leading-tight whitespace-nowrap" style={{ fontSize: '12px', letterSpacing: '-0.04em' }}>선착순 {participants}</p>
+        <p className="text-white leading-tight whitespace-nowrap" style={{ fontSize: '12px', letterSpacing: '-0.04em' }}>
+          선착순 {participants}
+        </p>
       </div>
     )
   }
