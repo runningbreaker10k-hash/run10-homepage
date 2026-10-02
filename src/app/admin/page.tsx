@@ -3796,6 +3796,13 @@ export default function AdminPage() {
                 <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 플래시 관리
               </Link>
+              <Link
+                href="/admin/stats"
+                className="py-2.5 sm:py-3 px-1 border-b-2 border-transparent font-medium text-xs sm:text-sm flex items-center whitespace-nowrap text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              >
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                통계
+              </Link>
             </nav>
           </div>
         </div>
