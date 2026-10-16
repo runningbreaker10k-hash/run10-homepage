@@ -167,8 +167,8 @@ export default function AppMainPage() {
               런텐 랭커
             </h2>
             <div className="mt-2">
-              <p className="text-sm sm:text-base text-white mb-0.5">RUN10 랭커에 도전하세요.</p>
-              <p className="text-sm sm:text-base text-white">모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다.</p>
+              <p className="text-sm sm:text-base text-white mb-0.5">2026년 전국 10km 랭킹</p>
+              <p className="text-sm sm:text-base text-white">모든 대회 기록을 반영한 현재 시점 통합 랭킹입니다</p>
             </div>
           </div>
 

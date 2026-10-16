@@ -6,11 +6,16 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { KOREA_REGIONS, SIDO_LIST } from '@/lib/korea-regions'
+import FlashRerunModal, { deleteFlashRunCascade } from '@/components/FlashRerunModal'
 import {
   Zap, ArrowLeft, Flag, Loader2,
   ChevronDown, ChevronUp, CheckCircle, XCircle, Clock,
-  MapPin, Calendar, Users, Plus, Trash2,
+  MapPin, Calendar, Users, Plus, Trash2, AlertTriangle,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
 } from 'lucide-react'
+
+const PER_PAGE_OPTIONS = [10, 20, 50, 100]
+const PAGE_BUTTON_COUNT = 5
 
 type FlashSubTab = 'runs' | 'reports' | 'seed' | 'members'
 type ReportStatus = 'pending' | 'reviewing' | 'resolved' | 'dismissed'
@@ -117,8 +122,13 @@ export default function FlashAdminPage() {
 
   // 플래시 목록
   const [runs, setRuns] = useState<FlashRun[]>([])
+  const [runPage, setRunPage] = useState(1)
+  const [runsPerPage, setRunsPerPage] = useState(20)
+  const [pageJumpInput, setPageJumpInput] = useState('')
   const [isLoadingRuns, setIsLoadingRuns] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
+  const [openReportCounts, setOpenReportCounts] = useState<Record<string, number>>({})
+  const [rerunTargetId, setRerunTargetId] = useState<string | null>(null)
 
   // 샘플 생성
   const [seedRows, setSeedRows]   = useState<SeedRow[]>([emptyRow()])
@@ -207,6 +217,14 @@ export default function FlashAdminPage() {
       for (const p of profiles || []) profileMap[p.id] = p.name
 
       setRuns((data || []).map(r => ({ ...r, creator_name: profileMap[r.creator_id] || '알 수 없음' })))
+
+      const { data: openReports } = await supabase
+        .from('flash_reports')
+        .select('flash_run_id')
+        .in('status', ['pending', 'reviewing'])
+      const counts: Record<string, number> = {}
+      for (const r of openReports || []) counts[r.flash_run_id] = (counts[r.flash_run_id] || 0) + 1
+      setOpenReportCounts(counts)
     } catch (err) {
       console.error('플래시 목록 조회 오류:', err)
     }
@@ -229,12 +247,7 @@ export default function FlashAdminPage() {
     if (!confirm('이 플래시를 삭제하시겠습니까? 복구할 수 없습니다.')) return
     setProcessingId(runId)
     try {
-      await Promise.all([
-        supabase.from('flash_participants').delete().eq('flash_run_id', runId),
-        supabase.from('flash_likes').delete().eq('flash_run_id', runId),
-        supabase.from('flash_reports').delete().eq('flash_run_id', runId),
-      ])
-      await supabase.from('flash_runs').delete().eq('id', runId)
+      await deleteFlashRunCascade(runId)
       setRuns(prev => prev.filter(r => r.id !== runId))
     } catch (err) {
       console.error('삭제 오류:', err)
@@ -383,6 +396,35 @@ export default function FlashAdminPage() {
     setUpdatingId(null)
   }
 
+  const runTotalPages = Math.max(1, Math.ceil(runs.length / runsPerPage))
+  // 삭제·재등록으로 목록이 줄어도 빈 페이지에 머물지 않도록 보정
+  const currentRunPage = Math.min(runPage, runTotalPages)
+  const runRangeStart = (currentRunPage - 1) * runsPerPage
+  const pagedRuns = runs.slice(runRangeStart, runRangeStart + runsPerPage)
+  const runPageStart = Math.max(
+    1,
+    Math.min(currentRunPage - Math.floor(PAGE_BUTTON_COUNT / 2), runTotalPages - PAGE_BUTTON_COUNT + 1)
+  )
+  const runPageNumbers = Array.from(
+    { length: Math.min(PAGE_BUTTON_COUNT, runTotalPages) },
+    (_, i) => runPageStart + i
+  )
+  const goRunPage = (page: number) => {
+    setRunPage(Math.min(Math.max(1, page), runTotalPages))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const changeRunsPerPage = (n: number) => {
+    // 보던 첫 항목이 포함된 페이지로 이동
+    setRunPage(Math.floor(runRangeStart / n) + 1)
+    setRunsPerPage(n)
+  }
+  const handlePageJump = (e: React.FormEvent) => {
+    e.preventDefault()
+    const n = parseInt(pageJumpInput, 10)
+    if (!isNaN(n)) goRunPage(n)
+    setPageJumpInput('')
+  }
+
   const filteredReports = reportStatusFilter === 'all'
     ? reports
     : reports.filter(r => r.status === reportStatusFilter)
@@ -464,7 +506,24 @@ export default function FlashAdminPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {runs.map(run => {
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-xs text-gray-500">
+                  전체 <span className="font-semibold text-gray-700">{runs.length}</span>건
+                  <span className="text-gray-400 ml-1.5">
+                    ({runRangeStart + 1}–{runRangeStart + pagedRuns.length})
+                  </span>
+                </p>
+                <select
+                  value={runsPerPage}
+                  onChange={e => changeRunsPerPage(Number(e.target.value))}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  {PER_PAGE_OPTIONS.map(n => (
+                    <option key={n} value={n}>{n}개씩 보기</option>
+                  ))}
+                </select>
+              </div>
+              {pagedRuns.map(run => {
                 const ds = getDisplayStatus(run)
                 const badge = RUN_STATUS_BADGE[ds]
                 return (
@@ -474,6 +533,12 @@ export default function FlashAdminPage() {
                         <div className="flex items-center gap-2 mb-1">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>{badge.label}</span>
                           <span className="text-xs text-gray-400">{run.creator_name}</span>
+                          {openReportCounts[run.id] > 0 && (
+                            <span className="flex items-center gap-0.5 text-xs px-2 py-0.5 rounded-full font-medium bg-orange-100 text-orange-700">
+                              <AlertTriangle className="w-3 h-3" />
+                              미처리 신고 {openReportCounts[run.id]}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm font-semibold text-gray-800 truncate">{run.title}</p>
                         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
@@ -495,6 +560,15 @@ export default function FlashAdminPage() {
                         >
                           보기
                         </Link>
+                        {ds === 'completed' && (
+                          <button
+                            onClick={() => setRerunTargetId(run.id)}
+                            disabled={processingId === run.id}
+                            className="px-2.5 py-1.5 text-xs text-green-700 border border-green-200 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-40"
+                          >
+                            재등록
+                          </button>
+                        )}
                         {run.status !== 'cancelled' && (
                           <button
                             onClick={() => handleCancel(run.id)}
@@ -522,6 +596,77 @@ export default function FlashAdminPage() {
                   </div>
                 )
               })}
+
+              {runTotalPages > 1 && (
+                <div className="flex flex-col items-center gap-2 pt-3">
+                <div className="flex items-center justify-center gap-0.5 sm:gap-1">
+                  <button
+                    onClick={() => goRunPage(1)}
+                    disabled={currentRunPage === 1}
+                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="처음 페이지"
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => goRunPage(currentRunPage - 1)}
+                    disabled={currentRunPage === 1}
+                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="이전 페이지"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {runPageNumbers.map(n => (
+                    <button
+                      key={n}
+                      onClick={() => goRunPage(n)}
+                      className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-colors ${
+                        n === currentRunPage
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => goRunPage(currentRunPage + 1)}
+                    disabled={currentRunPage === runTotalPages}
+                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="다음 페이지"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => goRunPage(runTotalPages)}
+                    disabled={currentRunPage === runTotalPages}
+                    className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    aria-label="마지막 페이지"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handlePageJump} className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <input
+                    type="number"
+                    min={1}
+                    max={runTotalPages}
+                    value={pageJumpInput}
+                    onChange={e => setPageJumpInput(e.target.value)}
+                    placeholder={String(currentRunPage)}
+                    className="w-14 px-2 py-1 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                  <span>/ {runTotalPages} 페이지</span>
+                  <button
+                    type="submit"
+                    className="px-2.5 py-1 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+                  >
+                    이동
+                  </button>
+                </form>
+                </div>
+              )}
             </div>
           )
         )}
@@ -991,6 +1136,19 @@ export default function FlashAdminPage() {
           </>
         )}
       </div>
+
+      {rerunTargetId && (
+        <FlashRerunModal
+          runId={rerunTargetId}
+          openReportCount={openReportCounts[rerunTargetId] || 0}
+          onClose={() => setRerunTargetId(null)}
+          onDone={() => {
+            setRerunTargetId(null)
+            loadRuns()
+            setReports([])
+          }}
+        />
+      )}
     </div>
   )
 }
