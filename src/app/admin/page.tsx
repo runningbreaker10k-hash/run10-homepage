@@ -2268,15 +2268,6 @@ export default function AdminPage() {
     if (!confirm(`'${registrationName}' 님의 참가 신청을 취소하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return
 
     try {
-      // 삭제 전 competition_id, participation_group_id, payment_status 가져오기
-      const { data: registration, error: fetchError } = await supabase
-        .from('registrations')
-        .select('competition_id, participation_group_id, payment_status')
-        .eq('id', registrationId)
-        .single()
-
-      if (fetchError) throw fetchError
-
       // 1단계: 현금영수증 요청 삭제
       const { error: receiptDeleteError } = await supabase
         .from('receipt_requests')
@@ -2293,50 +2284,7 @@ export default function AdminPage() {
 
       if (deleteError) throw deleteError
 
-      // current_participants 자동 감소 (취소된 신청이 아닌 경우만)
-      if (registration?.competition_id && registration?.payment_status !== 'cancelled') {
-        // 대회 전체 참가자 수 감소
-        const { data: competition, error: fetchCompError } = await supabase
-          .from('competitions')
-          .select('current_participants')
-          .eq('id', registration.competition_id)
-          .single()
-
-        if (!fetchCompError && competition) {
-          const newCount = Math.max(0, competition.current_participants - 1)
-
-          const { error: updateError } = await supabase
-            .from('competitions')
-            .update({ current_participants: newCount })
-            .eq('id', registration.competition_id)
-
-          if (updateError) {
-            console.error('대회 참가자 수 업데이트 오류:', updateError)
-          }
-        }
-
-        // 참가 그룹 참가자 수 감소
-        if (registration?.participation_group_id) {
-          const { data: group, error: fetchGroupError } = await supabase
-            .from('participation_groups')
-            .select('current_participants')
-            .eq('id', registration.participation_group_id)
-            .single()
-
-          if (!fetchGroupError && group) {
-            const newGroupCount = Math.max(0, group.current_participants - 1)
-
-            const { error: updateGroupError } = await supabase
-              .from('participation_groups')
-              .update({ current_participants: newGroupCount })
-              .eq('id', registration.participation_group_id)
-
-            if (updateGroupError) {
-              console.error('그룹 참가자 수 업데이트 오류:', updateGroupError)
-            }
-          }
-        }
-      }
+      // 대회·그룹 참가자 수는 registrations 트리거가 다시 계산함
 
       // 페이지에 데이터가 없으면 이전 페이지로
       if (registrations.length === 1 && currentRegistrationPage > 1) {
@@ -2385,60 +2333,7 @@ export default function AdminPage() {
 
       if (deleteError) throw deleteError
 
-      // 각 대회 및 그룹의 참가자 수 조정
-      const competitionCounts = new Map<string, number>()
-      const groupCounts = new Map<string, number>()
-
-      expiredRegs.forEach(reg => {
-        if (reg.competition_id) {
-          competitionCounts.set(
-            reg.competition_id,
-            (competitionCounts.get(reg.competition_id) || 0) + 1
-          )
-        }
-        if (reg.participation_group_id) {
-          groupCounts.set(
-            reg.participation_group_id,
-            (groupCounts.get(reg.participation_group_id) || 0) + 1
-          )
-        }
-      })
-
-      // 대회 참가자 수 감소
-      for (const [compId, count] of competitionCounts) {
-        const { data: comp } = await supabase
-          .from('competitions')
-          .select('current_participants')
-          .eq('id', compId)
-          .single()
-
-        if (comp) {
-          await supabase
-            .from('competitions')
-            .update({
-              current_participants: Math.max(0, comp.current_participants - count)
-            })
-            .eq('id', compId)
-        }
-      }
-
-      // 그룹 참가자 수 감소
-      for (const [groupId, count] of groupCounts) {
-        const { data: group } = await supabase
-          .from('participation_groups')
-          .select('current_participants')
-          .eq('id', groupId)
-          .single()
-
-        if (group) {
-          await supabase
-            .from('participation_groups')
-            .update({
-              current_participants: Math.max(0, group.current_participants - count)
-            })
-            .eq('id', groupId)
-        }
-      }
+      // 대회·그룹 참가자 수는 registrations 트리거가 다시 계산함
 
       alert(`만료된 신청 ${expiredRegs.length}건을 삭제했습니다.`)
 
@@ -2970,12 +2865,19 @@ export default function AdminPage() {
     if (!confirm('정말로 이 회원을 삭제하시겠습니까?')) return
 
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId)
+      // 회원 탈퇴와 같은 조건·처리를 적용
+      const { data: blockers, error } = await supabase
+        .rpc('withdraw_member', { p_user_id: userId })
 
       if (error) throw error
+
+      if (blockers && blockers.length > 0) {
+        alert(
+          `다음 내역이 있어 회원을 삭제할 수 없습니다.\n\n${blockers.map((b: string) => `- ${b}`).join('\n')}\n\n해당 내역이 처리되면 삭제할 수 있습니다.`
+        )
+        return
+      }
+
       fetchMembers()
       alert('회원이 삭제되었습니다.')
     } catch (error) {

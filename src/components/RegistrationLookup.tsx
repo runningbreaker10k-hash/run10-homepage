@@ -351,42 +351,9 @@ export default function RegistrationLookup({ competition, onCancelRequest }: Reg
         return
       }
 
-      // 2. 대회 참가자 수 감소
-      const { error: updateCompError } = await supabase
-        .from('competitions')
-        .update({
-          current_participants: competition.current_participants - 1
-        })
-        .eq('id', competition.id)
+      // 대회·그룹 참가자 수는 registrations 트리거가 다시 계산함
 
-      if (updateCompError) {
-        console.error('대회 참가자 수 업데이트 오류:', updateCompError)
-      }
-
-      // 3. 참가 그룹 참가자 수 감소 (participation_group_id가 있는 경우만)
-      if (registration.participation_group_id) {
-        // 현재 참가 그룹 정보 조회
-        const { data: groupData, error: groupFetchError } = await supabase
-          .from('participation_groups')
-          .select('current_participants')
-          .eq('id', registration.participation_group_id)
-          .single()
-
-        if (!groupFetchError && groupData) {
-          const { error: updateGroupError } = await supabase
-            .from('participation_groups')
-            .update({
-              current_participants: Math.max(0, groupData.current_participants - 1)
-            })
-            .eq('id', registration.participation_group_id)
-
-          if (updateGroupError) {
-            console.error('참가 그룹 참가자 수 업데이트 오류:', updateGroupError)
-          }
-        }
-      }
-
-      // 4. 성공 처리
+      // 2. 성공 처리
       alert('신청이 성공적으로 취소되었습니다.')
       setShowCancelModal(false)
       handleReset()

@@ -592,6 +592,28 @@ function MyPageContent() {
   const handleWithdraw = async () => {
     if (!user) return
 
+    const showBlockers = (blockers: string[]) => {
+      alert(
+        `다음 내역이 있어 탈퇴할 수 없습니다.\n\n${blockers.map(b => `- ${b}`).join('\n')}\n\n해당 내역이 처리되면 회원 탈퇴가 가능합니다.`
+      )
+    }
+
+    setIsLoading(true)
+    const { data: blockers, error: blockerError } = await supabase
+      .rpc('get_withdraw_blockers', { p_user_id: user.id })
+    setIsLoading(false)
+
+    if (blockerError) {
+      console.error('탈퇴 가능 여부 확인 오류:', blockerError)
+      alert('탈퇴 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      return
+    }
+
+    if (blockers && blockers.length > 0) {
+      showBlockers(blockers)
+      return
+    }
+
     const isConfirmed = confirm(
       '정말로 탈퇴하시겠습니까?\n\n탈퇴 시 모든 회원 정보와 대회 신청 내역이 삭제되며,\n이 작업은 되돌릴 수 없습니다.'
     )
@@ -607,22 +629,16 @@ function MyPageContent() {
     setIsLoading(true)
 
     try {
-      // 입금대기 상태의 신청 내역만 삭제 (입금확인은 유지)
-      const { error: regError } = await supabase
-        .from('registrations')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('payment_status', 'pending')
-
-      if (regError) throw regError
-
-      // 회원 데이터 삭제
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user.id)
+      const { data: remaining, error } = await supabase
+        .rpc('withdraw_member', { p_user_id: user.id })
 
       if (error) throw error
+
+      // 확인창이 떠 있는 사이 새 신청·요청이 생긴 경우
+      if (remaining && remaining.length > 0) {
+        showBlockers(remaining)
+        return
+      }
 
       alert('회원 탈퇴가 완료되었습니다.')
 
