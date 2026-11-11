@@ -1154,9 +1154,6 @@ function CompetitionDetailPageContent() {
       <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="text-base sm:text-xl font-semibold text-gray-900">대회 사진</h3>
-          {galleryPhotos.length > 0 && (
-            <span className="text-sm text-gray-500">{galleryPhotos.length}장</span>
-          )}
         </div>
 
         {galleryLoading ? (
@@ -1318,7 +1315,7 @@ function CompetitionDetailPageContent() {
           <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto">
             {(isCompetitionEnded(competition) ? [
               { key: 'overview', label: '개요', icon: Trophy },
-              { key: 'photos', label: '베스트포토100', icon: Camera }
+              { key: 'photos', label: '베스트포토', icon: Camera }
             ] : [
               { key: 'overview', label: '개요', icon: Trophy },
               { key: 'register', label: '신청', icon: Users },
