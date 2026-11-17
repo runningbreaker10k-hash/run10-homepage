@@ -467,7 +467,7 @@ export default function CompetitionsPage() {
                       <span className="font-semibold text-gray-800 w-12 flex-shrink-0">일정</span>
                       <span className="flex-1">
                         {isUpcoming
-                          ? (competition.title.includes('오산') ? '2026년 6월 예정' : '하반기 예정')
+                          ? (competition.title.includes('세종') ? '2027년 상반기 예정' : '상반기 예정')
                           : format(new Date(competition.date), 'yyyy. M. d (E) HH:mm', { locale: ko })
                         }
                       </span>
