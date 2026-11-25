@@ -440,7 +440,10 @@ export default function CompetitionsPage() {
                       : isOngoing ? 'bg-[#E7000B]'
                       : 'bg-[#4E84FC]'
                     }`}>
-                      <p className="text-base font-bold leading-none mb-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                      <p
+                        className={`text-base leading-none mb-1 ${isOngoing ? 'font-black' : 'font-bold'}`}
+                        style={{ color: isOngoing ? '#FFFFFF' : 'rgba(255,255,255,0.8)' }}
+                      >
                         {isUpcoming ? `${new Date(competition.date).getFullYear()}0000` : getCompetitionNumber(competition.date)}
                       </p>
                       <h3 className="text-white text-lg font-bold truncate">
